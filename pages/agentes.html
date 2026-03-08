@@ -209,22 +209,20 @@
                     return;
                 }
 
-                // Columnas de QueryActores:
-                // Índice 1: Agente de cambio (Nombre)
-                // Índice 3: Área (Especialidad)
-                // Índice 4: Ubicación o zona
-                // Índice 7: Instagram
-                // Notas: No hay columna de foto en la DB original, usamos placeholder.
-
-                for (let i = 1; i < rows.length; i++) {
+                // Columnas estandarizadas del nuevo Sheet:
+                // A(0):Nombre, B(1):Especialidad, C(2):Organización, D(3):Foto_URL, E(4):Contacto_URL
+                // parsedNumHeaders=1 => Google ya omite la fila de encabezados
+                for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
-                    if (!row || !row.c || !row.c[1]) continue;
+                    if (!row || !row.c) continue;
 
-                    const nombre = row.c[1] && row.c[1].v ? row.c[1].v : 'Agente sin nombre';
-                    const especialidad = row.c[3] && row.c[3].v ? row.c[3].v : 'Ambientalista';
-                    const organizacion = row.c[4] && row.c[4].v ? row.c[4].v : 'Varias zonas';
-                    const imgUrl = '../assets/img/kpop.webp'; // Fijo por ahora al no existir en la BD
-                    const contacto = row.c[7] && row.c[7].v ? row.c[7].v : '#';
+                    const nombre = row.c[0] && row.c[0].v ? row.c[0].v : '';
+                    if (!nombre) continue; // Saltar filas sin nombre
+
+                    const especialidad = row.c[1] && row.c[1].v ? row.c[1].v : 'Ambientalista';
+                    const organizacion = row.c[2] && row.c[2].v ? row.c[2].v : 'Independiente';
+                    const imgUrl = row.c[3] && row.c[3].v ? row.c[3].v : '../assets/img/kpop.webp';
+                    const contacto = row.c[4] && row.c[4].v ? row.c[4].v : '#';
 
                     const cardHtml = `
                         <article class="agente-card glass-effect fade-in">
