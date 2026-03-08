@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentales y Vídeos | EcoGuía SOS</title>
+    <meta name="description"
+        content="Documentales, películas y vídeos educativos sobre medio ambiente y sustentabilidad.">
+
+    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#72B04D">
+    <link rel="stylesheet" href="../assets/css/global.css">
+
+    <style>
+        .interior-hero {
+            padding: 120px 20px 40px 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, rgba(74, 107, 89, 0.9), rgba(30, 30, 30, 0.8)), url('../assets/img/colibri.webp') center/cover no-repeat;
+            color: white;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .interior-hero h2 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .category-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 15px;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+
+        .content-section {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .intro-text {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            color: #ccc;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .video-card {
+            background: rgba(43, 44, 46, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            background: rgba(43, 44, 46, 0.8);
+            border-color: var(--primary-color);
+        }
+
+        .video-thumb {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-thumb i {
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+
+        .video-card:hover .video-thumb i {
+            color: var(--primary-color);
+        }
+
+        .video-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .video-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .video-tipo {
+            display: inline-block;
+            background: rgba(114, 176, 77, 0.2);
+            color: var(--primary-color);
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+
+        .video-content h3 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin: 0 0 5px 0;
+        }
+
+        .video-director {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .video-content p {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .btn-ver {
+            margin-top: auto;
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--bg-dark);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .btn-ver:hover {
+            background-color: white;
+        }
+
+        .card-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="navbar glass-effect sticky-top">
+        <div class="logo-container">
+            <a href="../index.html" class="logo-circle">
+                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
+                    style="border-radius:50%">
+            </a>
+            <h1>EcoGuía SOS</h1>
+        </div>
+        <div class="hamburger-menu"><i class="fa-solid fa-bars"></i></div>
+        <ul class="nav-menu" id="nav-menu-list">
+            <li><a href="../index.html">Inicio</a></li>
+            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="#">Directorio</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
+        </ul>
+    </nav>
+
+    <header class="interior-hero">
+        <span class="category-badge">🐦 Nivel Colibrí (Polinización)</span>
+        <h2>🎬 Documentales y Vídeos</h2>
+        <p>Selección de documentales y videos que inspiran la acción ambiental.</p>
+    </header>
+
+    <main class="content-section">
+        <p class="intro-text">Contenido audiovisual poderoso que te abrirá los ojos sobre los retos y las soluciones
+            ambientales. Desde documentales premiados hasta charlas TED inspiradoras.</p>
+
+        <div class="card-grid-container">
+
+            <article class="video-card glass-effect">
+                <div class="video-thumb">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="video-duration">1h 36min</span>
+                </div>
+                <div class="video-content">
+                    <span class="video-tipo">🎬 Documental</span>
+                    <h3>Antes de que sea Tarde (Before the Flood)</h3>
+                    <p class="video-director">Dir. Fisher Stevens • 2016</p>
+                    <p>Leonardo DiCaprio recorre el mundo para documentar los efectos devastadores del cambio climático
+                        y las soluciones posibles.</p>
+                    <a href="#" class="btn-ver">Ver documental</a>
+                </div>
+            </article>
+
+            <article class="video-card glass-effect">
+                <div class="video-thumb">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="video-duration">1h 29min</span>
+                </div>
+                <div class="video-content">
+                    <span class="video-tipo">🎬 Documental</span>
+                    <h3>Seaspiracy: La Pesca Insostenible</h3>
+                    <p class="video-director">Dir. Ali Tabrizi • 2021</p>
+                    <p>Investiga la industria pesquera global y el impacto devastador de la pesca comercial en los
+                        ecosistemas marinos.</p>
+                    <a href="#" class="btn-ver">Ver documental</a>
+                </div>
+            </article>
+
+            <article class="video-card glass-effect">
+                <div class="video-thumb">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="video-duration">1h 23min</span>
+                </div>
+                <div class="video-content">
+                    <span class="video-tipo">🎬 Documental</span>
+                    <h3>Kiss the Ground</h3>
+                    <p class="video-director">Dir. Josh Tickell • 2020</p>
+                    <p>Explora cómo la agricultura regenerativa puede ser una solución clave para el cambio climático
+                        restaurando el suelo.</p>
+                    <a href="#" class="btn-ver">Ver documental</a>
+                </div>
+            </article>
+
+            <article class="video-card glass-effect">
+                <div class="video-thumb">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="video-duration">1h 33min</span>
+                </div>
+                <div class="video-content">
+                    <span class="video-tipo">🎬 Documental</span>
+                    <h3>Cowspiracy</h3>
+                    <p class="video-director">Dir. Kip Andersen • 2014</p>
+                    <p>Examina el impacto de la ganadería industrial en el medio ambiente y por qué las principales
+                        organizaciones evitan hablar del tema.</p>
+                    <a href="#" class="btn-ver">Ver documental</a>
+                </div>
+            </article>
+
+            <article class="video-card glass-effect">
+                <div class="video-thumb">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="video-duration">1h 29min</span>
+                </div>
+                <div class="video-content">
+                    <span class="video-tipo">🎬 Documental</span>
+                    <h3>Nuestro Planeta (Our Planet)</h3>
+                    <p class="video-director">Dir. Alastair Fothergill • 2019</p>
+                    <p>Serie de Netflix narrada por David Attenborough que muestra la belleza de la naturaleza y los
+                        retos que enfrenta por la actividad humana.</p>
+                    <a href="#" class="btn-ver">Ver documental</a>
+                </div>
+            </article>
+
+            <article class="video-card glass-effect">
+                <div class="video-thumb">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span class="video-duration">20min</span>
+                </div>
+                <div class="video-content">
+                    <span class="video-tipo">🎤 Charla TED</span>
+                    <h3>The Surprising Solution to Ocean Plastic</h3>
+                    <p class="video-director">David Katz • TEDx</p>
+                    <p>Propone convertir los residuos plásticos en moneda de cambio para combatir simultáneamente la
+                        pobreza y la contaminación marina.</p>
+                    <a href="#" class="btn-ver">Ver charla</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <div style="text-align: center; padding: 20px; color: #888;">
+            <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        const hamburger = document.querySelector('.hamburger-menu');
+        const navMenu = document.getElementById('nav-menu-list');
+        if (hamburger && navMenu) {
+            hamburger.addEventListener('click', () => {
+                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
+            });
+        }
+    </script>
+</body>
+
+</html>
