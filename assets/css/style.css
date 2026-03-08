@@ -405,9 +405,16 @@ html {
 }
 
 .tooltip-list ul li {
-    padding: 10px 15px;
-    font-size: 0.95rem;
+    padding: 15px 15px;
+    /* Mejorado para touch targets en móvil */
+    font-size: 1rem;
     border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.tooltip-list ul li:hover {
+    background-color: #f5f5f5;
 }
 
 .tooltip-list ul li:last-child {
@@ -890,7 +897,11 @@ footer {
 
     .card-content {
         padding: 1.2rem;
-        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .card-title {
+        font-size: 1.05rem;
     }
 
     /* Ajuste para el botón "Cómo usar" siempre visible en móvil */
