@@ -209,28 +209,61 @@
                     return;
                 }
 
-                // Columnas estandarizadas del nuevo Sheet:
-                // A(0):Nombre, B(1):Especialidad, C(2):Organización, D(3):Foto_URL, E(4):Contacto_URL
-                // parsedNumHeaders=1 => Google ya omite la fila de encabezados
+                // Columnas estandarizadas del nuevo Sheet (A-Q):
+                // 0:Nombre, 1:Especialidad, 2:Org, 3:Foto, 4:Zona, 5:Alcaldia, 6:Estado, 
+                // 7:Ig, 8:Fb, 9:Web, 10:Desc, 11:X, 12:LinkedIn, 13:YT, 14:TikTok, 15:WhatsApp, 16:Maps
+
                 for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
                     if (!row || !row.c) continue;
 
                     const nombre = row.c[0] && row.c[0].v ? row.c[0].v : '';
-                    if (!nombre) continue; // Saltar filas sin nombre
+                    if (!nombre) continue;
 
                     const especialidad = row.c[1] && row.c[1].v ? row.c[1].v : 'Ambientalista';
                     const organizacion = row.c[2] && row.c[2].v ? row.c[2].v : 'Independiente';
                     const imgUrl = row.c[3] && row.c[3].v ? row.c[3].v : '../assets/img/kpop.webp';
-                    const contacto = row.c[4] && row.c[4].v ? row.c[4].v : '#';
+
+                    // Info de ubicación para mostrar y para futuros filtros
+                    const zona = row.c[4] && row.c[4].v ? row.c[4].v : '';
+                    const alcaldia = row.c[5] && row.c[5].v ? row.c[5].v : '';
+                    const mapsUrl = row.c[16] && row.c[16].v ? row.c[16].v : '';
+
+                    // Redes Sociales
+                    const redes = {
+                        ig: row.c[7] && row.c[7].v ? row.c[7].v : '',
+                        fb: row.c[8] && row.c[8].v ? row.c[8].v : '',
+                        web: row.c[9] && row.c[9].v ? row.c[9].v : '',
+                        x: row.c[11] && row.c[11].v ? row.c[11].v : '',
+                        li: row.c[12] && row.c[12].v ? row.c[12].v : '',
+                        wa: row.c[15] && row.c[15].v ? row.c[15].v : ''
+                    };
+
+                    const descripcion = row.c[10] && row.c[10].v ? row.c[10].v : '';
+
+                    let redesHtml = '';
+                    if (redes.ig) redesHtml += `<a href="${redes.ig}" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
+                    if (redes.fb) redesHtml += `<a href="${redes.fb}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>`;
+                    if (redes.x) redesHtml += `<a href="${redes.x}" target="_blank" title="X"><i class="fa-brands fa-x-twitter"></i></a>`;
+                    if (redes.li) redesHtml += `<a href="${redes.li}" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>`;
+                    if (redes.wa) redesHtml += `<a href="https://wa.me/${redes.wa}" target="_blank" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`;
+                    if (redes.web) redesHtml += `<a href="${redes.web}" target="_blank" title="Web"><i class="fa-solid fa-globe"></i></a>`;
+
+                    const locText = mapsUrl
+                        ? `<a href="${mapsUrl}" target="_blank" class="agente-org" style="text-decoration:underline;"><i class="fa-solid fa-location-dot"></i> ${alcaldia || zona || 'Ver Mapa'}</a>`
+                        : `<div class="agente-org"><i class="fa-solid fa-location-dot"></i> ${alcaldia || zona || 'Varias zonas'}</div>`;
 
                     const cardHtml = `
-                        <article class="agente-card glass-effect fade-in">
+                        <article class="agente-card glass-effect fade-in" data-alcaldia="${alcaldia}" data-categoria="${especialidad}">
                             <img src="${imgUrl}" alt="${nombre}" class="agente-img" onerror="this.src='../assets/img/kpop.webp'">
                             <h3>${nombre}</h3>
                             <div class="agente-especialidad">${especialidad}</div>
                             <div class="agente-org"><i class="fa-solid fa-users"></i> ${organizacion}</div>
-                            <a href="${contacto}" class="btn-contact" target="_blank"><i class="fa-regular fa-envelope"></i> Contactar</a>
+                            ${locText}
+                            ${descripcion ? `<p style="font-size:0.8rem; color:#ccc; margin:10px 0;">${descripcion}</p>` : ''}
+                            <div class="agente-socials" style="margin-top:15px; display:flex; gap:15px; font-size:1.2rem;">
+                                ${redesHtml}
+                            </div>
                         </article>
                     `;
                     container.innerHTML += cardHtml;
