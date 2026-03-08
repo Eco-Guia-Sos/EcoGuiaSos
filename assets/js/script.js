@@ -157,17 +157,37 @@ function setupMapaToggle() {
 
 function setupMobileTooltips() {
     const toggles = document.querySelectorAll('.mobile-info-toggle');
+    const categoryLinks = document.querySelectorAll('.level-btn-link');
+
+    // Función genérica para alternar tooltip
+    const toggleTooltip = (targetElement) => {
+        const parentWrapper = targetElement.closest('.btn-wrapper');
+        const tooltip = parentWrapper.querySelector('.tooltip-list');
+
+        document.querySelectorAll('.tooltip-list').forEach(el => {
+            if (el !== tooltip) el.classList.remove('activo');
+        });
+        tooltip.classList.toggle('activo');
+    };
+
     toggles.forEach(toggle => {
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            const parentWrapper = toggle.closest('.btn-wrapper');
-            const tooltip = parentWrapper.querySelector('.tooltip-list');
-            document.querySelectorAll('.tooltip-list').forEach(el => {
-                if (el !== tooltip) el.classList.remove('activo');
-            });
-            tooltip.classList.toggle('activo');
+            toggleTooltip(toggle);
         });
     });
+
+    // En móviles, permitir que el link principal también abra el menú
+    categoryLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (window.innerWidth <= 1200) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleTooltip(link);
+            }
+        });
+    });
+
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.btn-wrapper')) {
             document.querySelectorAll('.tooltip-list').forEach(el => el.classList.remove('activo'));
