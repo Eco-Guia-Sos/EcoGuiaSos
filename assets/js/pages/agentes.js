@@ -1,5 +1,5 @@
 /* assets/js/pages/agentes.js */
-import { fetchSheetData, getCellValue } from '../fetching.js';
+import { supabase } from '../supabase.js';
 import { setupNavbar, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
 
 async function initAgentes() {
@@ -10,48 +10,37 @@ async function initAgentes() {
     showLoader('agentes-container', 'Buscando líderes ambientales comunitarios...');
 
     try {
-        const rows = await fetchSheetData('Agentes');
+        const { data: agentes, error } = await supabase
+            .from('agentes')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
         container.innerHTML = '';
 
-        if (!rows || rows.length === 0) {
+        if (!agentes || agentes.length === 0) {
             showEmptyState('agentes-container', 'Aún no hay agentes registrados.');
             return;
         }
 
-        // Columnas estandarizadas del nuevo Sheet (A-Q):
-        // 0:Nombre, 1:Especialidad, 2:Org, 3:Foto, 4:Zona, 5:Alcaldia, 6:Estado, 
-        // 7:Ig, 8:Fb, 9:Web, 10:Desc, 11:X, 12:LinkedIn, 13:YT, 14:TikTok, 15:WhatsApp, 16:Maps
-        rows.forEach(row => {
-            if (!row || !row.c) return;
-
-            const nombre = getCellValue(row, 0);
-            if (!nombre) return;
-
-            const especialidad = getCellValue(row, 1, 'Ambientalista');
-            const organizacion = getCellValue(row, 2, 'Independiente');
-            const imgUrl = getCellValue(row, 3, '/assets/img/kpop.webp');
-            const zona = getCellValue(row, 4);
-            const alcaldia = getCellValue(row, 5);
-            const descripcion = getCellValue(row, 10);
-            const mapsUrl = getCellValue(row, 16);
+        agentes.forEach(agente => {
+            const nombre = agente.nombre;
+            const especialidad = agente.especialidad || 'Ambientalista';
+            const organizacion = agente.organizacion || 'Independiente';
+            const imgUrl = agente.imagen || '/assets/img/kpop.webp';
+            const zona = agente.zona || '';
+            const alcaldia = agente.alcaldia || '';
+            const descripcion = agente.descripcion || '';
+            const mapsUrl = agente.mapa_url || '';
 
             // Redes Sociales
-            const redes = {
-                ig: getCellValue(row, 7),
-                fb: getCellValue(row, 8),
-                web: getCellValue(row, 9),
-                x: getCellValue(row, 11),
-                li: getCellValue(row, 12),
-                wa: getCellValue(row, 15)
-            };
-
             let redesHtml = '';
-            if (redes.ig) redesHtml += `<a href="${redes.ig}" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
-            if (redes.fb) redesHtml += `<a href="${redes.fb}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>`;
-            if (redes.x) redesHtml += `<a href="${redes.x}" target="_blank" title="X"><i class="fa-brands fa-x-twitter"></i></a>`;
-            if (redes.li) redesHtml += `<a href="${redes.li}" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>`;
-            if (redes.wa) redesHtml += `<a href="https://wa.me/${redes.wa}" target="_blank" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`;
-            if (redes.web) redesHtml += `<a href="${redes.web}" target="_blank" title="Web"><i class="fa-solid fa-globe"></i></a>`;
+            if (agente.redes_ig) redesHtml += `<a href="${agente.redes_ig}" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
+            if (agente.redes_fb) redesHtml += `<a href="${agente.redes_fb}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>`;
+            if (agente.redes_x) redesHtml += `<a href="${agente.redes_x}" target="_blank" title="X"><i class="fa-brands fa-x-twitter"></i></a>`;
+            if (agente.redes_web) redesHtml += `<a href="${agente.redes_web}" target="_blank" title="Web"><i class="fa-solid fa-globe"></i></a>`;
+            if (agente.redes_wa) redesHtml += `<a href="https://wa.me/${agente.redes_wa.replace(/\D/g,'')}" target="_blank" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`;
 
             const locText = mapsUrl
                 ? `<a href="${mapsUrl}" target="_blank" class="agente-org" style="text-decoration:underline;"><i class="fa-solid fa-location-dot"></i> ${alcaldia || zona || 'Ver Mapa'}</a>`
@@ -73,7 +62,8 @@ async function initAgentes() {
             container.innerHTML += cardHtml;
         });
     } catch (error) {
-        showErrorState('agentes-container', 'Error al cargar agentes. Verifica el origen de datos.');
+        console.error('Error fetching agentes:', error);
+        showErrorState('agentes-container', 'Error al cargar agentes. Verifica tu conexión a la base de datos.');
     }
 }
 

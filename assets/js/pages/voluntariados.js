@@ -1,5 +1,5 @@
 /* assets/js/pages/voluntariados.js */
-import { fetchSheetData, getCellValue, getCellFormattedValue } from '../fetching.js';
+import { supabase } from '../supabase.js';
 import { setupNavbar, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
 
 async function initVoluntariados() {
@@ -10,26 +10,27 @@ async function initVoluntariados() {
     showLoader('voluntariados-container', 'Cargando voluntariados desde la base de datos...');
 
     try {
-        const rows = await fetchSheetData('Voluntariados');
+        const { data: voluntariados, error } = await supabase
+            .from('voluntariados')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
         container.innerHTML = '';
 
-        if (!rows || rows.length === 0) {
+        if (!voluntariados || voluntariados.length === 0) {
             showEmptyState('voluntariados-container', 'Aún no hay voluntariados registrados. ¡Vuelve pronto!');
             return;
         }
 
-        // A:Nombre_Actividad, B:Lugar, C:Fecha (date), D:Imagen_URL, E:Link_Registro, F:Maps_URL
-        rows.forEach(row => {
-            if (!row || !row.c) return;
-
-            const nombre = getCellValue(row, 0);
-            if (!nombre) return;
-
-            const lugar = getCellValue(row, 1, 'Ubicación por confirmar');
-            const fecha = getCellFormattedValue(row, 2, 'Próximamente');
-            const imgUrl = getCellValue(row, 3, '/assets/img/ajolote.webp');
-            const link = getCellValue(row, 4, '#');
-            const mapsUrl = getCellValue(row, 5);
+        voluntariados.forEach(vol => {
+            const nombre = vol.nombre;
+            const lugar = vol.ubicacion || 'Ubicación por confirmar';
+            const fecha = vol.fecha || 'Próximamente';
+            const imgUrl = vol.imagen || '/assets/img/ajolote.webp';
+            const link = vol.link || '#';
+            const mapsUrl = vol.mapa_url || ''; // Asumiendo que la columna existe o falla silenciosamente a undefined
 
             const lugarHtml = mapsUrl
                 ? `<a href="${mapsUrl}" target="_blank" style="color:#ccc; text-decoration:underline;">${lugar}</a>`
@@ -49,7 +50,8 @@ async function initVoluntariados() {
             container.innerHTML += cardHtml;
         });
     } catch (error) {
-        showErrorState('voluntariados-container', 'Hubo un error cargando los datos de voluntariados.');
+        console.error('Error fetching voluntariados:', error);
+        showErrorState('voluntariados-container', 'Hubo un error cargando los datos de voluntariados. Verifica la conexión.');
     }
 }
 

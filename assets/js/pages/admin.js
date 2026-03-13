@@ -56,13 +56,19 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSubmit.disabled = true;
 
             const tipo = document.getElementById('input-tipo').value;
-            const tabla = tipo === 'evento' ? 'eventos' : 'lugares';
+            let tabla = 'eventos';
+            if (tipo === 'lugar') tabla = 'lugares';
+            if (tipo === 'curso') tabla = 'cursos';
+            if (tipo === 'voluntariado') tabla = 'voluntariados';
+            if (tipo === 'agente') tabla = 'agentes';
             
             const nuevoRegistro = {
                 nombre: document.getElementById('input-nombre').value,
                 categoria: document.getElementById('input-categoria').value,
                 ubicacion: document.getElementById('input-ubicacion').value,
-                mapa_url: document.getElementById('input-mapa').value,
+                mapa_url: document.getElementById('input-mapa').value || null,
+                imagen: document.getElementById('input-imagen').value || '/assets/img/kpop.webp',
+                descripcion: document.getElementById('input-descripcion').value || null,
                 creado_por: currentUser.id
             };
 
@@ -86,14 +92,19 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cargarDatos() {
         try {
             // Cargar Eventos
-            const { data: eventos, count: countEventos, error: errE } = await supabase
-                .from('eventos')
-                .select('*', { count: 'exact' });
+            const { data: eventos, count: countEventos, error: errE } = await supabase.from('eventos').select('*', { count: 'exact' });
             
             // Cargar Lugares
-            const { data: lugares, count: countLugares, error: errL } = await supabase
-                .from('lugares')
-                .select('*', { count: 'exact' });
+            const { data: lugares, count: countLugares, error: errL } = await supabase.from('lugares').select('*', { count: 'exact' });
+
+            // Cargar Cursos
+            const { data: cursos, error: errC } = await supabase.from('cursos').select('*', { count: 'exact' });
+            
+            // Cargar Voluntariados
+            const { data: voluntarios, error: errV } = await supabase.from('voluntariados').select('*', { count: 'exact' });
+
+            // Cargar Agentes
+            const { data: agentes, error: errA } = await supabase.from('agentes').select('*', { count: 'exact' });
                 
             if (errE) throw errE;
             if (errL) throw errL;
@@ -105,8 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.innerHTML = '';
             
             const todos = [
-                ...(eventos || []).map(e => ({...e, tipo_str: 'Evento', color: '#e74c3c'})),
-                ...(lugares || []).map(l => ({...l, tipo_str: 'Lugar', color: '#72B04D'}))
+                ...(eventos || []).map(e => ({...e, tipo_str: 'evento', color: '#e74c3c'})),
+                ...(lugares || []).map(l => ({...l, tipo_str: 'lugar', color: '#72B04D'})),
+                ...(cursos || []).map(c => ({...c, tipo_str: 'curso', color: '#3498db'})),
+                ...(voluntarios || []).map(v => ({...v, tipo_str: 'voluntariado', color: '#f1c40f'})),
+                ...(agentes || []).map(a => ({...a, tipo_str: 'agente', color: '#9b59b6'}))
             ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
             if (todos.length === 0) {
@@ -119,9 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.innerHTML = `
                     <td><strong>${item.nombre}</strong></td>
                     <td>${item.categoria}</td>
-                    <td><span style="background: ${item.color}; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem;">${item.tipo_str}</span></td>
+                    <td><span style="background: ${item.color}; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; text-transform: capitalize;">${item.tipo_str}</span></td>
                     <td>
-                        <button class="btn btn-danger" onclick="eliminarRegistro('${item.id}', '${item.tipo_str === 'Evento' ? 'eventos' : 'lugares'}')" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-danger" onclick="eliminarRegistro('${item.id}', '${item.tipo_str === 'lugar' ? 'lugares' : item.tipo_str + 's'}')" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);

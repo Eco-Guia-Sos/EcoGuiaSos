@@ -180,8 +180,11 @@
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Tipo</label>
                     <select id="input-tipo" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                        <option value="evento">Evento / Voluntariado</option>
+                        <option value="evento">Evento</option>
                         <option value="lugar">Lugar / Huerto</option>
+                        <option value="curso">Curso / Taller</option>
+                        <option value="voluntariado">Voluntariado</option>
+                        <option value="agente">Líder Ambiental (Agente)</option>
                     </select>
                 </div>
                 <div style="margin-bottom: 15px;">
@@ -199,6 +202,14 @@
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Enlace de Google Maps (Opcional)</label>
                     <input type="url" id="input-mapa" placeholder="https://maps.app.goo.gl/..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Enlace de Imagen (Opcional)</label>
+                    <input type="url" id="input-imagen" placeholder="https://ejemplo.com/imagen.jpg" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Descripción Breve (Opcional)</label>
+                    <textarea id="input-descripcion" rows="3" placeholder="Escribe un poco sobre este evento o lugar..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                     <button type="button" id="btn-cancelar" style="padding: 10px 15px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer;">Cancelar</button>
