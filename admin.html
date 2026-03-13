@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es" class="theme-lobo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | EcoGuía SOS</title>
+    
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <meta name="theme-color" content="#34495e">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-color);
+        }
+        .admin-sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            background: rgba(15, 25, 35, 0.9);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .admin-sidebar h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .admin-menu {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .admin-menu a {
+            color: #ccc;
+            text-decoration: none;
+            display: block;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .admin-menu a:hover, .admin-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .admin-content {
+            margin-left: 250px;
+            padding: 40px;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            font-size: 2rem;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .data-table th, .data-table td {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .data-table th {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-sidebar">
+        <h2><img src="/assets/gif/EGSlg.webp" alt="Logo" width="30"> Admin Panel</h2>
+        <ul class="admin-menu">
+            <li><a href="#" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fa-solid fa-calendar-alt"></i> Eventos</a></li>
+            <li><a href="#"><i class="fa-solid fa-map-location-dot"></i> Lugares</a></li>
+        </ul>
+        
+        <div style="flex-grow: 1;"></div>
+        
+        <button id="logout-btn" class="btn-danger" style="width: 100%;">
+            <i class="fa-solid fa-power-off"></i> Cerrar Sesión
+        </button>
+    </div>
+
+    <div class="admin-content">
+        <div class="dashboard-header">
+            <div>
+                <h1>Hola, Administrador</h1>
+                <p style="color: #aaa;">Aquí puedes gestionar el contenido de EcoGuía SOS.</p>
+            </div>
+            <button class="btn btn-primary" id="btn-nuevo" disabled>+ Crear Nuevo</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card fade-in">
+                <i class="fa-solid fa-calendar-alt" style="font-size: 2rem; color: #aaa;"></i>
+                <h3 id="stat-eventos">0</h3>
+                <p>Eventos Totales</p>
+            </div>
+            <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+                <i class="fa-solid fa-map-location-dot" style="font-size: 2rem; color: #aaa;"></i>
+                <h3 id="stat-lugares">0</h3>
+                <p>Lugares Registrados</p>
+            </div>
+            <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+                <i class="fa-solid fa-users" style="font-size: 2rem; color: #aaa;"></i>
+                <h3 id="stat-usuarios">0</h3>
+                <p>Administradores</p>
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px;">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color);">Últimos Registros</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Tipo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-registros">
+                    <tr><td colspan="4" style="text-align: center;">Cargando base de datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Registro -->
+    <div id="modal-nuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: #1a2634; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid rgba(255,255,255,0.1);">
+            <h2 style="margin-bottom: 20px;">Crear Nuevo</h2>
+            <form id="form-nuevo">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Tipo</label>
+                    <select id="input-tipo" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                        <option value="evento">Evento / Voluntariado</option>
+                        <option value="lugar">Lugar / Huerto</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Nombre</label>
+                    <input type="text" id="input-nombre" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Categoría</label>
+                    <input type="text" id="input-categoria" placeholder="Ej. Taller, Parque, Huerto..." required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Ubicación (Nombre)</label>
+                    <input type="text" id="input-ubicacion" placeholder="Ej. Parque México" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Enlace de Google Maps (Opcional)</label>
+                    <input type="url" id="input-mapa" placeholder="https://maps.app.goo.gl/..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" id="btn-cancelar" style="padding: 10px 15px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 15px; border-radius: 5px;">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/admin.js"></script>
+</body>
+</html>

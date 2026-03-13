@@ -1,129 +1,46 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-colibri">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agua y Cuenca | EcoGuía SOS</title>
-    <meta name="description"
-        content="Aprende sobre la gestión del agua, cuencas hidrológicas y su importancia para la sustentabilidad.">
+    <meta name="description" content="Aprende sobre la gestión del agua, cuencas hidrológicas y su importancia para la sustentabilidad.">
 
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
-    <link rel="manifest" href="../manifest.json">
+    <!-- PWA -->
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
-    <link rel="stylesheet" href="../assets/css/global.css">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        .interior-hero {
-            padding: 120px 20px 40px 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(0, 119, 182, 0.85), rgba(0, 60, 100, 0.7)), url('../assets/img/colibri.webp') center/cover no-repeat;
-            color: white;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .interior-hero h2 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            color: #90d4ff;
-        }
-
-        .category-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: inline-block;
-            margin-bottom: 15px;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
-        }
-
-        .content-section {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .intro-text {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 40px auto;
-            color: #ccc;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .tema-card {
-            background: rgba(43, 44, 46, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            padding: 25px;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .tema-card:hover {
-            transform: translateY(-5px);
-            background: rgba(43, 44, 46, 0.8);
-            border-color: #90d4ff;
-        }
-
-        .tema-icon {
-            font-size: 2.5rem;
-            color: #90d4ff;
-            margin-bottom: 12px;
-        }
-
-        .tema-card h3 {
-            color: #90d4ff;
-            font-size: 1.2rem;
-            margin: 0 0 10px 0;
-        }
-
-        .tema-card p {
-            color: #ccc;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .tema-tag {
-            display: inline-block;
-            background: rgba(144, 212, 255, 0.15);
-            color: #90d4ff;
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-            margin-top: 10px;
-        }
-
-        .card-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
+        /* Specific overrides for Agua */
+        .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
+        .tema-card { padding: 25px; }
+        .tema-icon { font-size: 2.5rem; color: var(--primary-color); margin-bottom: 12px; }
+        .tema-card h3 { color: var(--primary-color); font-size: 1.2rem; margin: 0 0 10px 0; }
+        .tema-tag { display: inline-block; background: rgba(144, 212, 255, 0.15); color: var(--primary-color); padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 5px; margin-top: 10px; }
     </style>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
     <nav class="navbar glass-effect sticky-top">
         <div class="logo-container">
-            <a href="../index.html" class="logo-circle">
-                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
-                    style="border-radius:50%">
+            <a href="/" class="logo-circle">
+                <img src="/assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40" style="border-radius:50%">
             </a>
             <h1>EcoGuía SOS</h1>
         </div>
         <div class="hamburger-menu"><i class="fa-solid fa-bars"></i></div>
         <ul class="nav-menu" id="nav-menu-list">
-            <li><a href="../index.html">Inicio</a></li>
-            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/pages/nosotros.html">Nosotros</a></li>
             <li><a href="#">Directorio</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
@@ -132,67 +49,26 @@
 
     <header class="interior-hero">
         <span class="category-badge">🐦 Nivel Colibrí (Polinización)</span>
-        <h2>🌊 Agua y Cuenca</h2>
-        <p>Comprende la importancia del agua y las cuencas hidrológicas para la vida.</p>
+        <h2>Agua y Cuenca</h2>
+        <p>Comprende la importancia del agua y las cuencas hidrológicas.</p>
     </header>
 
     <main class="content-section">
-        <p class="intro-text">El agua es el recurso más valioso del planeta. Conocer cómo funcionan las cuencas
-            hidrológicas y cómo cuidar el agua es el primer paso para un futuro sustentable.</p>
+        <p class="intro-text">El agua es el recurso más valioso. Conocer cómo funcionan las cuencas y cómo cuidarlas es fundamental.</p>
 
         <div class="card-grid-container">
-
-            <article class="tema-card glass-effect">
+            <article class="tema-card generic-card fade-in">
                 <i class="fa-solid fa-water tema-icon"></i>
-                <h3>¿Qué es una cuenca hidrológica?</h3>
-                <p>Territorio donde toda el agua de lluvia fluye hacia un mismo punto de salida (río, lago o mar).
-                    Entender tu cuenca es entender de dónde viene tu agua.</p>
+                <h3>¿Qué es una cuenca?</h3>
+                <p>Territorio donde toda el agua fluye hacia un mismo punto. Entender tu cuenca es clave.</p>
                 <span class="tema-tag">Conceptos básicos</span>
             </article>
 
-            <article class="tema-card glass-effect">
+            <article class="tema-card generic-card fade-in">
                 <i class="fa-solid fa-faucet-drip tema-icon"></i>
-                <h3>Captación de agua de lluvia</h3>
-                <p>Sistemas que permiten recolectar y almacenar agua de lluvia para uso doméstico y de riego. Una
-                    ecotecnia accesible y de alto impacto.</p>
-                <span class="tema-tag">Ecotecnia</span>
-                <span class="tema-tag">Hogar</span>
-            </article>
-
-            <article class="tema-card glass-effect">
-                <i class="fa-solid fa-filter tema-icon"></i>
-                <h3>Filtración y purificación</h3>
-                <p>Métodos caseros y comunitarios para tratar agua: filtros de arena, biofiltros y filtros cerámicos que
-                    mejoran su calidad.</p>
-                <span class="tema-tag">Ecotecnia</span>
-                <span class="tema-tag">Salud</span>
-            </article>
-
-            <article class="tema-card glass-effect">
-                <i class="fa-solid fa-arrows-spin tema-icon"></i>
-                <h3>Reúso de aguas grises</h3>
-                <p>Reutilizar el agua de tus lavados para riego del jardín o huerto. Reduce tu consumo hasta un 30% con
-                    estas técnicas simples.</p>
-                <span class="tema-tag">Ahorro</span>
-                <span class="tema-tag">Hogar</span>
-            </article>
-
-            <article class="tema-card glass-effect">
-                <i class="fa-solid fa-mountain-sun tema-icon"></i>
-                <h3>Cuencas de la CDMX y Valle de México</h3>
-                <p>El Valle de México es una cuenca cerrada con historia de manejo hídrico milenaria, desde los aztecas
-                    hasta los retos actuales.</p>
-                <span class="tema-tag">Regional</span>
-                <span class="tema-tag">CDMX</span>
-            </article>
-
-            <article class="tema-card glass-effect">
-                <i class="fa-solid fa-hand-holding-droplet tema-icon"></i>
-                <h3>Derechos al agua</h3>
-                <p>El acceso al agua es un derecho humano reconocido en el Artículo 4° constitucional. Conoce tus
-                    derechos y cómo exigirlos responsablemente.</p>
-                <span class="tema-tag">Legal</span>
-                <span class="tema-tag">Derechos</span>
+                <h3>Captación de lluvia</h3>
+                <p>Sistemas para recolectar y almacenar agua de lluvia para diversos usos.</p>
+                <span class="tema-tag">Ecotecnia</span><span class="tema-tag">Hogar</span>
             </article>
         </div>
     </main>
@@ -203,14 +79,12 @@
         </div>
     </footer>
 
-    <script>
-        const hamburger = document.querySelector('.hamburger-menu');
-        const navMenu = document.getElementById('nav-menu-list');
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-            });
-        }
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/agua.js"></script>
+</body>
+
+</html>
+     }
     </script>
 </body>
 

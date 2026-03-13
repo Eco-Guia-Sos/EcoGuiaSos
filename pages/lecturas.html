@@ -1,156 +1,48 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-colibri">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturas y Bibliografía | EcoGuía SOS</title>
-    <meta name="description"
-        content="Artículos, guías, libros y recursos de lectura sobre sustentabilidad y medio ambiente.">
+    <meta name="description" content="Artículos, guías, libros y recursos de lectura sobre sustentabilidad y medio ambiente.">
 
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
-    <link rel="manifest" href="../manifest.json">
+    <!-- PWA -->
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
-    <link rel="stylesheet" href="../assets/css/global.css">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        .interior-hero {
-            padding: 120px 20px 40px 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(74, 107, 89, 0.9), rgba(74, 107, 89, 0.5)), url('../assets/img/colibri.webp') center/cover no-repeat;
-            color: white;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .interior-hero h2 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            color: var(--primary-color);
-        }
-
-        .category-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: inline-block;
-            margin-bottom: 15px;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
-        }
-
-        .content-section {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .intro-text {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 40px auto;
-            color: #ccc;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .libro-card {
-            background: rgba(43, 44, 46, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .libro-card:hover {
-            transform: translateY(-5px);
-            background: rgba(43, 44, 46, 0.8);
-            border-color: var(--primary-color);
-        }
-
-        .libro-content {
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-        .libro-tipo {
-            display: inline-block;
-            background: rgba(114, 176, 77, 0.2);
-            color: var(--primary-color);
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-            width: fit-content;
-        }
-
-        .libro-content h3 {
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            margin: 0 0 5px 0;
-        }
-
-        .libro-autor {
-            font-size: 0.85rem;
-            color: #aaa;
-            margin-bottom: 10px;
-        }
-
-        .libro-content p {
-            color: #ccc;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-bottom: 15px;
-        }
-
-        .btn-leer {
-            margin-top: auto;
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: var(--bg-dark);
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .btn-leer:hover {
-            background-color: white;
-        }
-
-        .card-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
+        /* Specific overrides for Lecturas */
+        .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
+        .libro-card { display: flex; flex-direction: column; }
+        .libro-content { padding: 25px; display: flex; flex-direction: column; flex-grow: 1; }
+        .libro-tipo { display: inline-block; background: rgba(114, 176, 77, 0.2); color: var(--primary-color); padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-bottom: 10px; width: fit-content; }
+        .libro-content h3 { color: var(--primary-color); font-size: 1.2rem; margin: 0 0 5px 0; }
+        .libro-autor { font-size: 0.85rem; color: #aaa; margin-bottom: 10px; }
+        .libro-content p { color: #ccc; font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; }
     </style>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
     <nav class="navbar glass-effect sticky-top">
         <div class="logo-container">
-            <a href="../index.html" class="logo-circle">
-                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
-                    style="border-radius:50%">
+            <a href="/" class="logo-circle">
+                <img src="/assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40" style="border-radius:50%">
             </a>
             <h1>EcoGuía SOS</h1>
         </div>
         <div class="hamburger-menu"><i class="fa-solid fa-bars"></i></div>
         <ul class="nav-menu" id="nav-menu-list">
-            <li><a href="../index.html">Inicio</a></li>
-            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/pages/nosotros.html">Nosotros</a></li>
             <li><a href="#">Directorio</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
@@ -159,79 +51,31 @@
 
     <header class="interior-hero">
         <span class="category-badge">🐦 Nivel Colibrí (Polinización)</span>
-        <h2>📚 Lecturas y Bibliografía</h2>
-        <p>Recursos de lectura para profundizar en la sustentabilidad y la acción ambiental.</p>
+        <h2>Lecturas y Bibliografía</h2>
+        <p>Recursos para profundizar en la acción ambiental.</p>
     </header>
 
     <main class="content-section">
-        <p class="intro-text">Libros, artículos y guías seleccionados por la comunidad para expandir tu conocimiento
-            ambiental. Desde manuales prácticos hasta lecturas filosóficas sobre nuestra relación con la naturaleza.</p>
+        <p class="intro-text">Libros y artículos seleccionados para expandir tu conocimiento.</p>
 
         <div class="card-grid-container">
-
-            <article class="libro-card glass-effect">
+            <article class="libro-card generic-card fade-in">
                 <div class="libro-content">
                     <span class="libro-tipo">📘 Libro</span>
                     <h3>Primavera Silenciosa</h3>
                     <p class="libro-autor">Rachel Carson, 1962</p>
-                    <p>El libro que inició el movimiento ambientalista moderno. Denuncia el uso indiscriminado de
-                        pesticidas y su efecto devastador en la naturaleza.</p>
-                    <a href="#" class="btn-leer">Ver recurso</a>
+                    <p>El libro que inició el movimiento ambientalista moderno.</p>
+                    <a href="#" class="btn-action-main">Ver recurso</a>
                 </div>
             </article>
 
-            <article class="libro-card glass-effect">
+            <article class="libro-card generic-card fade-in">
                 <div class="libro-content">
                     <span class="libro-tipo">📗 Guía</span>
-                    <h3>Guía Ciudadana del Agua en la CDMX</h3>
+                    <h3>Guía del Agua CDMX</h3>
                     <p class="libro-autor">SEDEMA</p>
-                    <p>Manual práctico para entender el sistema hídrico de la Ciudad de México, desde las fuentes hasta
-                        tu hogar.</p>
-                    <a href="#" class="btn-leer">Ver recurso</a>
-                </div>
-            </article>
-
-            <article class="libro-card glass-effect">
-                <div class="libro-content">
-                    <span class="libro-tipo">📘 Libro</span>
-                    <h3>La Sexta Extinción</h3>
-                    <p class="libro-autor">Elizabeth Kolbert, 2014</p>
-                    <p>Investigación sobre la actual extinción masiva de especies causada por actividades humanas.
-                        Premio Pulitzer.</p>
-                    <a href="#" class="btn-leer">Ver recurso</a>
-                </div>
-            </article>
-
-            <article class="libro-card glass-effect">
-                <div class="libro-content">
-                    <span class="libro-tipo">📄 Artículo</span>
-                    <h3>Economía Circular: Principios y Aplicaciones</h3>
-                    <p class="libro-autor">Ellen MacArthur Foundation</p>
-                    <p>Introducción al concepto de economía circular y cómo puede transformar industrias completas hacia
-                        la sustentabilidad.</p>
-                    <a href="#" class="btn-leer">Ver recurso</a>
-                </div>
-            </article>
-
-            <article class="libro-card glass-effect">
-                <div class="libro-content">
-                    <span class="libro-tipo">📘 Libro</span>
-                    <h3>Cradle to Cradle</h3>
-                    <p class="libro-autor">William McDonough & Michael Braungart</p>
-                    <p>Propone rediseñar los productos para que sus materiales sean 100% reutilizables. Una visión
-                        revolucionaria del diseño sustentable.</p>
-                    <a href="#" class="btn-leer">Ver recurso</a>
-                </div>
-            </article>
-
-            <article class="libro-card glass-effect">
-                <div class="libro-content">
-                    <span class="libro-tipo">📗 Manual</span>
-                    <h3>Cómo Hacer Composta en Casa</h3>
-                    <p class="libro-autor">FAO, 2021</p>
-                    <p>Guía paso a paso para convertir los residuos orgánicos de tu cocina en abono nutritivo para tus
-                        plantas y huerto.</p>
-                    <a href="#" class="btn-leer">Ver recurso</a>
+                    <p>Manual práctico para entender el sistema hídrico de la CDMX.</p>
+                    <a href="#" class="btn-action-main">Ver recurso</a>
                 </div>
             </article>
         </div>
@@ -243,12 +87,11 @@
         </div>
     </footer>
 
-    <script>
-        const hamburger = document.querySelector('.hamburger-menu');
-        const navMenu = document.getElementById('nav-menu-list');
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/lecturas.js"></script>
+</body>
+
+</html>
             });
         }
     </script>

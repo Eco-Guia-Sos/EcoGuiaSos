@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-colibri">
 
 <head>
     <meta charset="UTF-8">
@@ -8,123 +8,35 @@
     <meta name="description" content="Descubre ecotecnologías y soluciones sustentables para el hogar y la comunidad.">
 
     <!-- PWA -->
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
-    <link rel="manifest" href="../manifest.json">
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
 
-    <!-- CSS Global -->
-    <link rel="stylesheet" href="../assets/css/global.css">
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        .interior-hero {
-            padding: 120px 20px 40px 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(58, 87, 72, 0.9), rgba(58, 87, 72, 0.6)), url('../assets/img/ajolote.webp') center/cover no-repeat;
-            color: white;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .interior-hero h2 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            color: var(--primary-color);
-        }
-
-        .category-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: inline-block;
-            margin-bottom: 15px;
-            backdrop-filter: blur(5px);
-        }
-
-        .content-section {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .ecotecnia-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .ecotecnia-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--primary-color);
-            transform: scale(1.02);
-        }
-
-        .e-icon {
-            font-size: 3rem;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .e-title {
-            color: white;
-            font-size: 1.4rem;
-            margin: 0;
-        }
-
-        .e-desc {
-            color: #ddd;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        .e-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: auto;
-        }
-
-        .e-tag {
-            background: rgba(114, 176, 77, 0.2);
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-            padding: 4px 10px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-        }
-
-        .card-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .loader-text {
-            color: white;
-            text-align: center;
-            width: 100%;
-            padding: 40px;
-        }
+        /* Specific overrides for Ecotecnias */
+        .e-header { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .e-icon { font-size: 2.5rem; color: var(--primary-color); }
+        .e-title { color: white; font-size: 1.4rem; margin: 0; }
+        .e-desc { color: #ddd; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; }
+        .e-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+        .e-tag { background: rgba(114, 176, 77, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color); padding: 4px 10px; border-radius: 50px; font-size: 0.8rem; }
+        
+        .ecotecnia-card { padding: 25px; }
     </style>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
     <nav class="navbar glass-effect sticky-top">
         <div class="logo-container">
-            <a href="../index.html" class="logo-circle">
-                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
-                    style="border-radius:50%">
+            <a href="/" class="logo-circle">
+                <img src="/assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40" style="border-radius:50%">
             </a>
             <h1>EcoGuía SOS</h1>
         </div>
@@ -134,8 +46,8 @@
         </div>
 
         <ul class="nav-menu" id="nav-menu-list">
-            <li><a href="../index.html">Inicio</a></li>
-            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/pages/nosotros.html">Nosotros</a></li>
             <li><a href="#">Directorio</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
@@ -150,10 +62,7 @@
 
     <main class="content-section">
         <div class="card-grid-container" id="ecotecnias-container">
-            <div class="loader-text">
-                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-                <p>Cargando tecnologías sustentables...</p>
-            </div>
+            <!-- Interactivity handled by ecotecnias.js -->
         </div>
     </main>
 
@@ -163,69 +72,11 @@
         </div>
     </footer>
 
-    <script>
-        const hamburger = document.querySelector('.hamburger-menu');
-        const navMenu = document.getElementById('nav-menu-list');
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-            });
-        }
-
-        const SHEET_ID = '1D1eDZ89Jd71SyHQNX2fns8CoQlcCUrqAMprwjaOisCs';
-        const PESTANA_ECO = 'Ecotecnias';
-        const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${PESTANA_ECO}`;
-
-        async function fetchEcotecnias() {
-            const container = document.getElementById('ecotecnias-container');
-
-            try {
-                const req = await fetch(DATA_URL);
-                const res = await req.text();
-                const jsonStr = res.substring(res.indexOf("({") + 1, res.lastIndexOf("})") + 1);
-                const data = JSON.parse(jsonStr);
-
-                container.innerHTML = '';
-                const rows = data.table.rows;
-
-                if (!rows || rows.length === 0) {
-                    container.innerHTML = `<p class="loader-text">Aún no hay ecotecnias registradas.</p>`;
-                    return;
-                }
-
-                // A:Nombre, B:Categoría, C:Icono_FA, D:Descripción, E:Beneficio
-                for (let i = 0; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (!row || !row.c) continue;
-
-                    const nombre = row.c[0] && row.c[0].v ? row.c[0].v : '';
-                    if (!nombre) continue;
-
-                    const categoria = row.c[1] && row.c[1].v ? row.c[1].v : 'Ecotecnología';
-                    const icono = row.c[2] && row.c[2].v ? row.c[2].v : 'fa-seedling';
-                    const desc = row.c[3] && row.c[3].v ? row.c[3].v : '';
-                    const beneficio = row.c[4] && row.c[4].v ? row.c[4].v : '';
-
-                    const cardHtml = `
-                        <article class="ecotecnia-card fade-in">
-                            <i class="fa-solid ${icono} e-icon"></i>
-                            <h3 class="e-title">${nombre}</h3>
-                            <p class="e-desc">${desc}</p>
-                            <div class="e-tags">
-                                <span class="e-tag">${categoria}</span>
-                                ${beneficio ? `<span class="e-tag">${beneficio}</span>` : ''}
-                            </div>
-                        </article>
-                    `;
-                    container.innerHTML += cardHtml;
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                container.innerHTML = `<p class="loader-text">Error al cargar ecotecnias.</p>`;
-            }
-        }
-        document.addEventListener('DOMContentLoaded', fetchEcotecnias);
-    </script>
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/ecotecnias.js"></script>
 </body>
+
+</html>
+body>
 
 </html>

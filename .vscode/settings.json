@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "name": "EcoGuia Supabase",
+            "driver": "PostgreSQL",
+            "server": "db.fgwmondrylktuuskkstw.supabase.co",
+            "port": 5432,
+            "database": "postgres",
+            "username": "postgres",
+            "password": "EcoGuiaSos369!",
+            "connectionTimeout": 15
+        }
+    ]
+}

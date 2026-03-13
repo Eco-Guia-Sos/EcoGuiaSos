@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-lobo">
 
 <head>
     <meta charset="UTF-8">
@@ -7,145 +7,42 @@
     <title>Normativa Ambiental | EcoGuía SOS</title>
     <meta name="description" content="Consulta las leyes, normas y regulaciones ambientales vigentes en México.">
 
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
-    <link rel="manifest" href="../manifest.json">
+    <!-- PWA -->
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
-    <link rel="stylesheet" href="../assets/css/global.css">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        .interior-hero {
-            padding: 120px 20px 40px 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(106, 0, 168, 0.85), rgba(25, 25, 40, 0.9)), url('../assets/img/lobo.webp') center/cover no-repeat;
-            color: white;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .interior-hero h2 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            color: #d4a5ff;
-        }
-
-        .category-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: inline-block;
-            margin-bottom: 15px;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
-        }
-
-        .content-section {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .intro-text {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 40px auto;
-            color: #ccc;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .norma-card {
-            background: rgba(43, 44, 46, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            padding: 25px;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .norma-card:hover {
-            transform: translateY(-5px);
-            background: rgba(43, 44, 46, 0.8);
-            border-color: #d4a5ff;
-        }
-
-        .norma-icon {
-            font-size: 2rem;
-            color: #d4a5ff;
-            margin-bottom: 12px;
-        }
-
-        .norma-card h3 {
-            color: #d4a5ff;
-            font-size: 1.2rem;
-            margin: 0 0 8px 0;
-        }
-
-        .norma-card .norma-clave {
-            font-size: 0.85rem;
-            color: #aaa;
-            margin-bottom: 10px;
-        }
-
-        .norma-card p {
-            color: #ccc;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-bottom: 12px;
-        }
-
-        .norma-tag {
-            display: inline-block;
-            background: rgba(212, 165, 255, 0.15);
-            color: #d4a5ff;
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-            margin-bottom: 5px;
-        }
-
-        .btn-consultar {
-            display: inline-block;
-            background-color: #6a00a8;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            margin-top: 12px;
-        }
-
-        .btn-consultar:hover {
-            background-color: #8b2fc9;
-        }
-
-        .card-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
+        /* Specific overrides for Normativa */
+        .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
+        .norma-card { padding: 25px; transition: transform 0.3s ease, border-color 0.3s ease; }
+        .norma-icon { font-size: 2rem; color: var(--primary-color); margin-bottom: 12px; }
+        .norma-card h3 { color: var(--primary-color); font-size: 1.2rem; margin: 0 0 8px 0; }
+        .norma-card .norma-clave { font-size: 0.85rem; color: #aaa; margin-bottom: 10px; }
+        .norma-card p { color: #ccc; font-size: 0.9rem; line-height: 1.5; margin-bottom: 12px; }
+        .norma-tag { display: inline-block; background: rgba(212, 165, 255, 0.15); color: var(--primary-color); padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 5px; margin-bottom: 5px; }
     </style>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
     <nav class="navbar glass-effect sticky-top">
         <div class="logo-container">
-            <a href="../index.html" class="logo-circle">
-                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
-                    style="border-radius:50%">
+            <a href="/" class="logo-circle">
+                <img src="/assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40" style="border-radius:50%">
             </a>
             <h1>EcoGuía SOS</h1>
         </div>
         <div class="hamburger-menu"><i class="fa-solid fa-bars"></i></div>
         <ul class="nav-menu" id="nav-menu-list">
-            <li><a href="../index.html">Inicio</a></li>
-            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/pages/nosotros.html">Nosotros</a></li>
             <li><a href="#">Directorio</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
@@ -153,88 +50,40 @@
     </nav>
 
     <header class="interior-hero">
-        <span class="category-badge">🐺 Nivel Lobo (Estrategia)</span>
-        <h2>⚖️ Normativa Ambiental</h2>
+        <span class="category-badge">⚖️ Nivel Lobo (Estrategia)</span>
+        <h2>Normativa Ambiental</h2>
         <p>Consulta el marco legal y las normas que protegen nuestro medio ambiente.</p>
     </header>
 
     <main class="content-section">
-        <p class="intro-text">Conoce las principales leyes, normas oficiales mexicanas (NOM) y regulaciones
-            internacionales que dan forma a la política ambiental. Información esencial para fundamentar proyectos de
-            alto impacto.</p>
+        <p class="intro-text">Conoce las principales leyes, normas oficiales mexicanas (NOM) y regulaciones internacionales. Información esencial para fundamentar proyectos.</p>
 
         <div class="card-grid-container">
-
-            <article class="norma-card glass-effect">
+            <article class="norma-card generic-card fade-in">
                 <i class="fa-solid fa-gavel norma-icon"></i>
-                <h3>Ley General del Equilibrio Ecológico (LGEEPA)</h3>
+                <h3>LGEEPA</h3>
                 <p class="norma-clave">Publicada en 1988 • Última reforma 2024</p>
-                <p>Marco legal principal para la protección ambiental, el ordenamiento ecológico del territorio y la
-                    prevención de la contaminación.</p>
-                <span class="norma-tag">Federal</span>
-                <span class="norma-tag">Marco general</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGEEPA.pdf" class="btn-consultar"
-                    target="_blank">Consultar</a>
+                <p>Marco legal principal para la protección ambiental y el equilibrio ecológico en México.</p>
+                <span class="norma-tag">Federal</span><span class="norma-tag">Marco general</span>
+                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGEEPA.pdf" class="btn-action-main" target="_blank" style="margin-top: 12px;">Consultar</a>
             </article>
 
-            <article class="norma-card glass-effect">
+            <article class="norma-card generic-card fade-in">
                 <i class="fa-solid fa-droplet norma-icon"></i>
                 <h3>Ley de Aguas Nacionales</h3>
-                <p class="norma-clave">Publicada en 1992 • Última reforma 2024</p>
-                <p>Regula la explotación, uso o aprovechamiento de las aguas nacionales, su distribución y control, así
-                    como la preservación de su cantidad y calidad.</p>
-                <span class="norma-tag">Federal</span>
-                <span class="norma-tag">Agua</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LAN.pdf" class="btn-consultar"
-                    target="_blank">Consultar</a>
+                <p class="norma-clave">Publicada en 1992</p>
+                <p>Regula la explotación, uso y preservación de las aguas nacionales y su calidad.</p>
+                <span class="norma-tag">Federal</span><span class="norma-tag">Agua</span>
+                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LAN.pdf" class="btn-action-main" target="_blank" style="margin-top: 12px;">Consultar</a>
             </article>
 
-            <article class="norma-card glass-effect">
+            <article class="norma-card generic-card fade-in">
                 <i class="fa-solid fa-recycle norma-icon"></i>
-                <h3>Ley General para la Prevención y Gestión Integral de los Residuos (LGPGIR)</h3>
+                <h3>LGPGIR (Residuos)</h3>
                 <p class="norma-clave">Publicada en 2003</p>
-                <p>Establece las bases para prevenir la generación de residuos, asegurar su gestión integral y promover
-                    el reciclaje y la economía circular.</p>
-                <span class="norma-tag">Federal</span>
-                <span class="norma-tag">Residuos</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGPGIR.pdf" class="btn-consultar"
-                    target="_blank">Consultar</a>
-            </article>
-
-            <article class="norma-card glass-effect">
-                <i class="fa-solid fa-tree norma-icon"></i>
-                <h3>Ley General de Desarrollo Forestal Sustentable</h3>
-                <p class="norma-clave">Publicada en 2018</p>
-                <p>Regula y fomenta el manejo integral y sustentable de los recursos forestales del país, incluyendo la
-                    madera y los servicios ambientales.</p>
-                <span class="norma-tag">Federal</span>
-                <span class="norma-tag">Forestal</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGDFS.pdf" class="btn-consultar"
-                    target="_blank">Consultar</a>
-            </article>
-
-            <article class="norma-card glass-effect">
-                <i class="fa-solid fa-temperature-high norma-icon"></i>
-                <h3>Ley General de Cambio Climático</h3>
-                <p class="norma-clave">Publicada en 2012</p>
-                <p>Establece disposiciones para enfrentar los efectos adversos del cambio climático y garantizar el
-                    derecho a un medio ambiente sano.</p>
-                <span class="norma-tag">Federal</span>
-                <span class="norma-tag">Clima</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGCC.pdf" class="btn-consultar"
-                    target="_blank">Consultar</a>
-            </article>
-
-            <article class="norma-card glass-effect">
-                <i class="fa-solid fa-paw norma-icon"></i>
-                <h3>Ley General de Vida Silvestre</h3>
-                <p class="norma-clave">Publicada en 2000</p>
-                <p>Protege la conservación y aprovechamiento sustentable de la vida silvestre y su hábitat en el
-                    territorio nacional.</p>
-                <span class="norma-tag">Federal</span>
-                <span class="norma-tag">Biodiversidad</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/146_200521.pdf" class="btn-consultar"
-                    target="_blank">Consultar</a>
+                <p>Bases para la gestión integral de residuos y fomento del reciclaje en el país.</p>
+                <span class="norma-tag">Federal</span><span class="norma-tag">Residuos</span>
+                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGPGIR.pdf" class="btn-action-main" target="_blank" style="margin-top: 12px;">Consultar</a>
             </article>
         </div>
     </main>
@@ -245,14 +94,12 @@
         </div>
     </footer>
 
-    <script>
-        const hamburger = document.querySelector('.hamburger-menu');
-        const navMenu = document.getElementById('nav-menu-list');
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-            });
-        }
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/normativa.js"></script>
+</body>
+
+</html>
+    }
     </script>
 </body>
 

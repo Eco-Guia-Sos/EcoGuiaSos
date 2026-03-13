@@ -1,172 +1,40 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-lobo">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fondos y Financiamiento | EcoGuía SOS</title>
-    <meta name="description"
-        content="Descubre fuentes de financiamiento, becas y fondos para proyectos ambientales y sostenibles.">
+    <meta name="description" content="Descubre fuentes de financiamiento, becas y fondos para proyectos ambientales y sostenibles.">
 
     <!-- PWA -->
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
-    <link rel="manifest" href="../manifest.json">
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
 
-    <!-- CSS Global -->
-    <link rel="stylesheet" href="../assets/css/global.css">
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        .interior-hero {
-            padding: 120px 20px 40px 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(106, 0, 168, 0.85), rgba(106, 0, 168, 0.4)), url('../assets/img/lobo.webp') center/cover no-repeat;
-            color: white;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .interior-hero h2 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            color: #d4a5ff;
-        }
-
-        .category-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: inline-block;
-            margin-bottom: 15px;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
-        }
-
-        .content-section {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .intro-text {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 40px auto;
-            color: #ccc;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .fondo-card {
-            display: flex;
-            flex-direction: column;
-            background: rgba(43, 44, 46, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-            padding: 25px;
-        }
-
-        .fondo-card:hover {
-            transform: translateY(-5px);
-            background: rgba(43, 44, 46, 0.8);
-            border-color: #d4a5ff;
-        }
-
-        .fondo-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            color: #d4a5ff;
-        }
-
-        .fondo-card h3 {
-            color: #d4a5ff;
-            font-size: 1.3rem;
-            margin: 0 0 10px 0;
-        }
-
-        .fondo-card p {
-            color: #ccc;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-bottom: 12px;
-        }
-
-        .fondo-tag {
-            display: inline-block;
-            background: rgba(212, 165, 255, 0.15);
-            color: #d4a5ff;
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-            margin-bottom: 5px;
-        }
-
-        .btn-ver-mas {
-            margin-top: auto;
-            display: inline-block;
-            background-color: #6a00a8;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            text-align: center;
-            transition: all 0.3s ease;
-            margin-top: 15px;
-        }
-
-        .btn-ver-mas:hover {
-            background-color: #8b2fc9;
-        }
-
-        .card-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
-
-        .loader-text {
-            color: white;
-            text-align: center;
-            width: 100%;
-            padding: 40px;
-        }
-
-        .coming-soon {
-            text-align: center;
-            padding: 60px 20px;
-            color: #aaa;
-        }
-
-        .coming-soon i {
-            font-size: 4rem;
-            color: #d4a5ff;
-            margin-bottom: 20px;
-        }
-
-        .coming-soon h3 {
-            color: white;
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
+        /* Specific overrides for Fondos */
+        .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
+        .fondo-icon { font-size: 2.5rem; margin-bottom: 15px; color: var(--primary-color); }
+        .fondo-card { padding: 25px; }
+        .fondo-card h3 { color: var(--primary-color); font-size: 1.3rem; margin: 0 0 10px 0; }
+        .fondo-card p { color: #ccc; font-size: 0.9rem; line-height: 1.5; margin-bottom: 12px; }
+        .fondo-tag { display: inline-block; background: rgba(212, 165, 255, 0.15); color: var(--primary-color); padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 5px; margin-bottom: 5px; }
     </style>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
     <nav class="navbar glass-effect sticky-top">
         <div class="logo-container">
-            <a href="../index.html" class="logo-circle">
-                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
-                    style="border-radius:50%">
+            <a href="/" class="logo-circle">
+                <img src="/assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40" style="border-radius:50%">
             </a>
             <h1>EcoGuía SOS</h1>
         </div>
@@ -176,8 +44,8 @@
         </div>
 
         <ul class="nav-menu" id="nav-menu-list">
-            <li><a href="../index.html">Inicio</a></li>
-            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/pages/nosotros.html">Nosotros</a></li>
             <li><a href="#">Directorio</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
@@ -186,86 +54,36 @@
 
     <header class="interior-hero">
         <span class="category-badge">🐺 Nivel Lobo (Estrategia)</span>
-        <h2>💰 Fondos y Financiamiento</h2>
-        <p>Descubre fuentes de financiamiento, becas y fondos para impulsar proyectos ambientales.</p>
+        <h2>Fondos y Financiamiento</h2>
+        <p>Impulsa proyectos ambientales con becas y fuentes de inversión.</p>
     </header>
 
     <main class="content-section">
-        <p class="intro-text">Encuentra oportunidades de financiamiento para tus proyectos ambientales. Desde fondos
-            gubernamentales hasta becas internacionales, aquí recopilamos las convocatorias activas.</p>
+        <p class="intro-text">Encuentra oportunidades de financiamiento para tus proyectos ambientales. Desde fondos gubernamentales hasta becas internacionales.</p>
 
         <div class="card-grid-container" id="fondos-container">
-            <!-- Contenido estático de ejemplo -->
-            <article class="fondo-card glass-effect">
+            <article class="fondo-card generic-card fade-in">
                 <i class="fa-solid fa-hand-holding-dollar fondo-icon"></i>
                 <h3>Fondo Ambiental SEMARNAT</h3>
-                <p>Programa de apoyo económico para proyectos comunitarios de restauración ecológica y conservación de
-                    la biodiversidad.</p>
-                <div>
-                    <span class="fondo-tag">Gubernamental</span>
-                    <span class="fondo-tag">Nacional</span>
-                </div>
-                <a href="#" class="btn-ver-mas">Más información</a>
+                <p>Programa de apoyo económico para proyectos comunitarios de restauración ecológica y conservación.</p>
+                <div><span class="fondo-tag">Gubernamental</span><span class="fondo-tag">Nacional</span></div>
+                <a href="#" class="btn-action-main" style="margin-top: 15px;">Más información</a>
             </article>
 
-            <article class="fondo-card glass-effect">
+            <article class="fondo-card generic-card fade-in">
                 <i class="fa-solid fa-earth-americas fondo-icon"></i>
                 <h3>GEF Small Grants Programme</h3>
-                <p>Financiamiento del PNUD para proyectos comunitarios de conservación de biodiversidad, mitigación del
-                    cambio climático y gestión del agua.</p>
-                <div>
-                    <span class="fondo-tag">Internacional</span>
-                    <span class="fondo-tag">ONU</span>
-                </div>
-                <a href="#" class="btn-ver-mas">Más información</a>
+                <p>Financiamiento del PNUD para proyectos comunitarios de conservación y mitigación climática.</p>
+                <div><span class="fondo-tag">Internacional</span><span class="fondo-tag">ONU</span></div>
+                <a href="#" class="btn-action-main" style="margin-top: 15px;">Más información</a>
             </article>
 
-            <article class="fondo-card glass-effect">
+            <article class="fondo-card generic-card fade-in">
                 <i class="fa-solid fa-seedling fondo-icon"></i>
                 <h3>Fondo Mexicano para la Conservación</h3>
-                <p>Apoya iniciativas de conservación de la naturaleza en áreas naturales protegidas y comunidades
-                    rurales de México.</p>
-                <div>
-                    <span class="fondo-tag">Fundación</span>
-                    <span class="fondo-tag">Nacional</span>
-                </div>
-                <a href="#" class="btn-ver-mas">Más información</a>
-            </article>
-
-            <article class="fondo-card glass-effect">
-                <i class="fa-solid fa-building-columns fondo-icon"></i>
-                <h3>Convocatorias CONACYT/CONAHCYT</h3>
-                <p>Fondos para investigación y desarrollo tecnológico enfocados en soluciones ambientales y energías
-                    renovables.</p>
-                <div>
-                    <span class="fondo-tag">Academico</span>
-                    <span class="fondo-tag">Investigación</span>
-                </div>
-                <a href="#" class="btn-ver-mas">Más información</a>
-            </article>
-
-            <article class="fondo-card glass-effect">
-                <i class="fa-solid fa-solar-panel fondo-icon"></i>
-                <h3>Green Climate Fund</h3>
-                <p>Fondo global que apoya a países en desarrollo a responder al cambio climático con proyectos de baja
-                    emisión y resiliencia climática.</p>
-                <div>
-                    <span class="fondo-tag">Internacional</span>
-                    <span class="fondo-tag">Clima</span>
-                </div>
-                <a href="#" class="btn-ver-mas">Más información</a>
-            </article>
-
-            <article class="fondo-card glass-effect">
-                <i class="fa-solid fa-people-group fondo-icon"></i>
-                <h3>Fondos Comunitarios Locales</h3>
-                <p>Iniciativas de financiamiento cooperativo para proyectos de huertos urbanos, captación de agua y
-                    reciclaje comunitario.</p>
-                <div>
-                    <span class="fondo-tag">Comunitario</span>
-                    <span class="fondo-tag">Local</span>
-                </div>
-                <a href="#" class="btn-ver-mas">Más información</a>
+                <p>Apoya iniciativas de conservación en áreas naturales protegidas de México.</p>
+                <div><span class="fondo-tag">Fundación</span><span class="fondo-tag">Nacional</span></div>
+                <a href="#" class="btn-action-main" style="margin-top: 15px;">Más información</a>
             </article>
         </div>
     </main>
@@ -276,13 +94,12 @@
         </div>
     </footer>
 
-    <script>
-        const hamburger = document.querySelector('.hamburger-menu');
-        const navMenu = document.getElementById('nav-menu-list');
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-            });
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/fondos.js"></script>
+</body>
+
+</html>
+;
         }
     </script>
 </body>

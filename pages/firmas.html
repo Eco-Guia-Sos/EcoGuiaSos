@@ -1,172 +1,49 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-colibri">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firmas y Peticiones | EcoGuía SOS</title>
-    <meta name="description"
-        content="Apoya causas ambientales con tu firma. Peticiones activas para proteger el agua, el aire y la biodiversidad.">
+    <meta name="description" content="Apoya causas ambientales con tu firma. Peticiones activas.">
 
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
-    <link rel="manifest" href="../manifest.json">
+    <!-- PWA -->
+    <link rel="icon" href="/assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
-    <link rel="stylesheet" href="../assets/css/global.css">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
-        .interior-hero {
-            padding: 120px 20px 40px 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(42, 157, 143, 0.85), rgba(30, 80, 70, 0.8)), url('../assets/img/colibri.webp') center/cover no-repeat;
-            color: white;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .interior-hero h2 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            color: #7fffd4;
-        }
-
-        .category-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: inline-block;
-            margin-bottom: 15px;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
-        }
-
-        .content-section {
-            padding: 40px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .intro-text {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 40px auto;
-            color: #ccc;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .firma-card {
-            background: rgba(43, 44, 46, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            padding: 25px;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .firma-card:hover {
-            transform: translateY(-5px);
-            background: rgba(43, 44, 46, 0.8);
-            border-color: #7fffd4;
-        }
-
-        .firma-icon {
-            font-size: 2.5rem;
-            color: #7fffd4;
-            margin-bottom: 12px;
-        }
-
-        .firma-card h3 {
-            color: #7fffd4;
-            font-size: 1.2rem;
-            margin: 0 0 10px 0;
-        }
-
-        .firma-card p {
-            color: #ccc;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-bottom: 12px;
-        }
-
-        .firma-progress {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            height: 10px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .firma-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #2a9d8f, #7fffd4);
-            border-radius: 10px;
-            transition: width 0.5s ease;
-        }
-
-        .firma-stats {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 15px;
-        }
-
-        .firma-tag {
-            display: inline-block;
-            background: rgba(127, 255, 212, 0.15);
-            color: #7fffd4;
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-right: 5px;
-            margin-bottom: 10px;
-        }
-
-        .btn-firmar {
-            margin-top: auto;
-            display: inline-block;
-            background-color: #2a9d8f;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            text-align: center;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .btn-firmar:hover {
-            background-color: #7fffd4;
-            color: #1a1a2e;
-        }
-
-        .card-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
+        /* Specific overrides for Firmas */
+        .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
+        .firma-card { padding: 25px; display: flex; flex-direction: column; }
+        .firma-icon { font-size: 2.5rem; color: #7fffd4; margin-bottom: 12px; }
+        .firma-card h3 { color: #7fffd4; font-size: 1.2rem; margin: 0 0 10px 0; }
+        .firma-progress { background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 8px; }
+        .firma-progress-bar { height: 100%; background: linear-gradient(90deg, #2a9d8f, #7fffd4); border-radius: 10px; transition: width 0.5s ease; }
+        .firma-stats { font-size: 0.8rem; color: #aaa; margin-bottom: 15px; }
+        .firma-tag { display: inline-block; background: rgba(127, 255, 212, 0.15); color: #7fffd4; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 5px; margin-bottom: 10px; }
     </style>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
     <nav class="navbar glass-effect sticky-top">
         <div class="logo-container">
-            <a href="../index.html" class="logo-circle">
-                <img src="../assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40"
-                    style="border-radius:50%">
+            <a href="/" class="logo-circle">
+                <img src="/assets/img/kpop.webp" alt="Logo de EcoGuía SOS" width="40" height="40" style="border-radius:50%">
             </a>
             <h1>EcoGuía SOS</h1>
         </div>
         <div class="hamburger-menu"><i class="fa-solid fa-bars"></i></div>
         <ul class="nav-menu" id="nav-menu-list">
-            <li><a href="../index.html">Inicio</a></li>
-            <li><a href="nosotros.html">Nosotros</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/pages/nosotros.html">Nosotros</a></li>
             <li><a href="#">Directorio</a></li>
             <li><a href="#">Blog</a></li>
             <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
@@ -175,110 +52,34 @@
 
     <header class="interior-hero">
         <span class="category-badge">🐦 Nivel Colibrí (Polinización)</span>
-        <h2>✍️ Firmas y Peticiones</h2>
-        <p>Tu firma puede cambiar políticas. Apoya causas ambientales con un clic.</p>
+        <h2>Firmas y Peticiones</h2>
+        <p>Tu firma puede cambiar políticas.</p>
     </header>
 
     <main class="content-section">
-        <p class="intro-text">Cada firma cuenta. Aquí recopilamos peticiones activas para proteger el agua, el aire, la
-            biodiversidad y los derechos ambientales de nuestras comunidades.</p>
+        <p class="intro-text">Cada firma cuenta para proteger la biodiversidad.</p>
 
         <div class="card-grid-container">
-
-            <article class="firma-card glass-effect">
+            <article class="firma-card generic-card fade-in">
                 <i class="fa-solid fa-droplet firma-icon"></i>
                 <h3>Protejamos el Río Atoyac</h3>
-                <p>Petición para exigir el saneamiento integral del Río Atoyac, uno de los más contaminados de México,
-                    que afecta a comunidades de Puebla y Tlaxcala.</p>
+                <p>Petición para exigir el saneamiento integral del Río Atoyac.</p>
                 <div class="firma-progress">
                     <div class="firma-progress-bar" style="width: 72%"></div>
                 </div>
                 <p class="firma-stats">7,200 de 10,000 firmas</p>
-                <div>
-                    <span class="firma-tag">Agua</span>
-                    <span class="firma-tag">Salud</span>
-                </div>
-                <a href="#" class="btn-firmar"><i class="fa-solid fa-pen-nib"></i> Firmar petición</a>
+                <a href="#" class="btn-action-main"><i class="fa-solid fa-pen-nib"></i> Firmar</a>
             </article>
 
-            <article class="firma-card glass-effect">
+            <article class="firma-card generic-card fade-in">
                 <i class="fa-solid fa-tree firma-icon"></i>
-                <h3>No a la Tala en la Sierra Norte de Puebla</h3>
-                <p>Exigimos detener los permisos de tala comercial en zonas de alta biodiversidad de la Sierra Norte.
-                </p>
+                <h3>No a la Tala en Puebla</h3>
+                <p>Exigimos detener los permisos de tala en la Sierra Norte.</p>
                 <div class="firma-progress">
                     <div class="firma-progress-bar" style="width: 45%"></div>
                 </div>
                 <p class="firma-stats">4,500 de 10,000 firmas</p>
-                <div>
-                    <span class="firma-tag">Forestal</span>
-                    <span class="firma-tag">Biodiversidad</span>
-                </div>
-                <a href="#" class="btn-firmar"><i class="fa-solid fa-pen-nib"></i> Firmar petición</a>
-            </article>
-
-            <article class="firma-card glass-effect">
-                <i class="fa-solid fa-smog firma-icon"></i>
-                <h3>Aire Limpio para la Zona Metropolitana</h3>
-                <p>Que se implementen políticas más estrictas para reducir la contaminación del aire en la CDMX y su
-                    zona metropolitana.</p>
-                <div class="firma-progress">
-                    <div class="firma-progress-bar" style="width: 88%"></div>
-                </div>
-                <p class="firma-stats">8,800 de 10,000 firmas</p>
-                <div>
-                    <span class="firma-tag">Aire</span>
-                    <span class="firma-tag">CDMX</span>
-                </div>
-                <a href="#" class="btn-firmar"><i class="fa-solid fa-pen-nib"></i> Firmar petición</a>
-            </article>
-
-            <article class="firma-card glass-effect">
-                <i class="fa-solid fa-bag-shopping firma-icon"></i>
-                <h3>Prohibición de Plásticos de Un Solo Uso</h3>
-                <p>Exigir legislación que prohíba los plásticos de un solo uso en todos los comercios del país, no solo
-                    en la CDMX.</p>
-                <div class="firma-progress">
-                    <div class="firma-progress-bar" style="width: 60%"></div>
-                </div>
-                <p class="firma-stats">6,000 de 10,000 firmas</p>
-                <div>
-                    <span class="firma-tag">Residuos</span>
-                    <span class="firma-tag">Nacional</span>
-                </div>
-                <a href="#" class="btn-firmar"><i class="fa-solid fa-pen-nib"></i> Firmar petición</a>
-            </article>
-
-            <article class="firma-card glass-effect">
-                <i class="fa-solid fa-fish firma-icon"></i>
-                <h3>Salvar al Ajolote Mexicano</h3>
-                <p>Petición para que el gobierno destine más recursos a la conservación de los canales de Xochimilco,
-                    hábitat del ajolote.</p>
-                <div class="firma-progress">
-                    <div class="firma-progress-bar" style="width: 95%"></div>
-                </div>
-                <p class="firma-stats">9,500 de 10,000 firmas</p>
-                <div>
-                    <span class="firma-tag">Biodiversidad</span>
-                    <span class="firma-tag">Xochimilco</span>
-                </div>
-                <a href="#" class="btn-firmar"><i class="fa-solid fa-pen-nib"></i> Firmar petición</a>
-            </article>
-
-            <article class="firma-card glass-effect">
-                <i class="fa-solid fa-solar-panel firma-icon"></i>
-                <h3>Más Energía Solar para Comunidades Rurales</h3>
-                <p>Petición para que se subsidien paneles solares en comunidades sin acceso constante a la red
-                    eléctrica.</p>
-                <div class="firma-progress">
-                    <div class="firma-progress-bar" style="width: 30%"></div>
-                </div>
-                <p class="firma-stats">3,000 de 10,000 firmas</p>
-                <div>
-                    <span class="firma-tag">Energía</span>
-                    <span class="firma-tag">Rural</span>
-                </div>
-                <a href="#" class="btn-firmar"><i class="fa-solid fa-pen-nib"></i> Firmar petición</a>
+                <a href="#" class="btn-action-main"><i class="fa-solid fa-pen-nib"></i> Firmar</a>
             </article>
         </div>
     </main>
@@ -289,13 +90,12 @@
         </div>
     </footer>
 
-    <script>
-        const hamburger = document.querySelector('.hamburger-menu');
-        const navMenu = document.getElementById('nav-menu-list');
-        if (hamburger && navMenu) {
-            hamburger.addEventListener('click', () => {
-                navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-            });
+    <!-- JS Module -->
+    <script type="module" src="/assets/js/pages/firmas.js"></script>
+</body>
+
+</html>
+
         }
     </script>
 </body>
