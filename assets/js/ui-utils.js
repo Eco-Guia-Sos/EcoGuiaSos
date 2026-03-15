@@ -7,8 +7,12 @@ export function setupNavbar() {
     
     if (hamburger && navMenu) {
         hamburger.addEventListener('click', () => {
-            const isFlex = navMenu.style.display === 'flex';
-            navMenu.style.display = isFlex ? 'none' : 'flex';
+            navMenu.classList.toggle('active');
+            const icon = hamburger.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-xmark');
+            }
         });
     }
 }

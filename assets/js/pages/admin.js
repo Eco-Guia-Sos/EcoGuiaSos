@@ -52,35 +52,67 @@ document.addEventListener('DOMContentLoaded', () => {
         formNuevo.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btnSubmit = formNuevo.querySelector('button[type="submit"]');
-            btnSubmit.innerHTML = 'Guardando...';
+            btnSubmit.innerHTML = 'Subiendo...';
             btnSubmit.disabled = true;
 
-            const tipo = document.getElementById('input-tipo').value;
-            let tabla = 'eventos';
-            if (tipo === 'lugar') tabla = 'lugares';
-            if (tipo === 'curso') tabla = 'cursos';
-            if (tipo === 'voluntariado') tabla = 'voluntariados';
-            if (tipo === 'agente') tabla = 'agentes';
-            
-            const nuevoRegistro = {
-                nombre: document.getElementById('input-nombre').value,
-                categoria: document.getElementById('input-categoria').value,
-                ubicacion: document.getElementById('input-ubicacion').value,
-                mapa_url: document.getElementById('input-mapa').value || null,
-                imagen: document.getElementById('input-imagen').value || '/assets/img/kpop.webp',
-                descripcion: document.getElementById('input-descripcion').value || null,
-                creado_por: currentUser.id
-            };
+            const fileInput = document.getElementById('input-imagen-file');
+            const file = fileInput.files[0];
+            let imageUrl = '/assets/img/kpop.webp'; // Default
 
             try {
-                const { error } = await supabase.from(tabla).insert([nuevoRegistro]);
-                if (error) throw error;
+                // 1. Image Upload Logic
+                if (file) {
+                    const statusText = document.getElementById('upload-status');
+                    statusText.textContent = 'Subiendo imagen a Supabase Storage...';
+                    
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                    const filePath = `${fileName}`;
+
+                    const { error: uploadError } = await supabase.storage
+                        .from('imagenes_plataforma')
+                        .upload(filePath, file);
+
+                    if (uploadError) {
+                        throw new Error('Error al subir la imagen: ' + uploadError.message);
+                    }
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from('imagenes_plataforma')
+                        .getPublicUrl(filePath);
+                        
+                    imageUrl = publicUrlData.publicUrl;
+                    statusText.textContent = '¡Imagen subida!'; // Limpiar mensaje
+                    setTimeout(() => statusText.textContent = '', 3000);
+                }
+
+                // 2. Database Insert Logic
+                btnSubmit.innerHTML = 'Guardando datos...';
+                const tipo = document.getElementById('input-tipo').value;
+                let tabla = 'eventos';
+                if (tipo === 'lugar') tabla = 'lugares';
+                if (tipo === 'curso') tabla = 'cursos';
+                if (tipo === 'voluntariado') tabla = 'voluntariados';
+                if (tipo === 'agente') tabla = 'agentes';
+                
+                const nuevoRegistro = {
+                    nombre: document.getElementById('input-nombre').value,
+                    categoria: document.getElementById('input-categoria').value,
+                    ubicacion: document.getElementById('input-ubicacion').value,
+                    mapa_url: document.getElementById('input-mapa').value || null,
+                    imagen: imageUrl,
+                    descripcion: document.getElementById('input-descripcion').value || null,
+                    creado_por: currentUser.id
+                };
+
+                const { error: dbError } = await supabase.from(tabla).insert([nuevoRegistro]);
+                if (dbError) throw dbError;
                 
                 modalNuevo.style.display = 'none';
                 formNuevo.reset();
                 cargarDatos(); // Refresh table
             } catch (error) {
-                console.error('Error insertando registro:', error);
+                console.error('Error procesando registro:', error);
                 alert('No se pudo guardar el registro: ' + error.message);
             } finally {
                 btnSubmit.innerHTML = 'Guardar';

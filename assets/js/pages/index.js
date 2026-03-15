@@ -1,6 +1,5 @@
-/* assets/js/pages/index.js */
 import { setupNavbar } from '../ui-utils.js';
-import { fetchSheetData, getCellValue } from '../fetching.js';
+import { supabase } from '../supabase.js';
 
 let todosLosProyectos = [];
 let filtroActual = 'evento';
@@ -64,7 +63,6 @@ function initIndex() {
     }
 }
 
-import { supabase } from '../supabase.js';
 
 async function cargarDatosDeGoogleSheets() {
     try {

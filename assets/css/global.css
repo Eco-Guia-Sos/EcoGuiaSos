@@ -1,4 +1,4 @@
-﻿/* ==========================================================
+/* ==========================================================
    GLOBAL.CSS - Variables, Web Fonts y Reseteo Base
    ========================================================== */
 
@@ -123,4 +123,156 @@ a {
 
 .pill-radius {
     border-radius: 50px;
+}
+
+/* ==========================================================
+   UNIFIED NAVBAR STYLES
+   ========================================================== */
+.main-nav {
+    position: sticky;
+    top: 0;
+    z-index: 2000;
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+    background: var(--tarjeta-bg-dark);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--tarjeta-border-dark);
+}
+
+.nav-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.nav-brand-logo {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.nav-brand h1 {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 20px;
+    align-items: center;
+}
+
+.nav-menu a {
+    text-decoration: none;
+    color: var(--color-texto);
+    font-weight: 500;
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.nav-menu a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-eco);
+}
+
+.nav-btn-highlight {
+    background: var(--color-eco) !important;
+    color: white !important;
+    padding: 8px 20px !important;
+    border-radius: 50px !important;
+}
+
+.nav-btn-highlight:hover {
+    background: var(--color-eco-hover) !important;
+    box-shadow: 0 0 15px rgba(114, 176, 77, 0.4);
+}
+
+.nav-how-to-btn {
+    background: var(--color-sos) !important;
+    color: #333 !important;
+    padding: 8px 16px !important;
+    border-radius: 50px !important;
+    font-weight: 700 !important;
+}
+
+.hamburger-menu {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+}
+
+/* Responsive Menu */
+@media (max-width: 992px) {
+    .hamburger-menu {
+        display: block;
+    }
+
+    .nav-menu {
+        position: fixed;
+        top: 80px;
+        left: 0;
+        width: 100%;
+        height: 0;
+        overflow: hidden;
+        flex-direction: column;
+        background: rgba(10, 14, 18, 0.98);
+        backdrop-filter: blur(20px);
+        transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        gap: 0;
+        padding: 0;
+    }
+
+    .nav-menu.active {
+        height: calc(100vh - 80px);
+        padding: 2rem 0;
+    }
+
+    .nav-menu li {
+        width: 100%;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+
+    .nav-menu.active li {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .nav-menu.active li:nth-child(1) { transition-delay: 0.1s; }
+    .nav-menu.active li:nth-child(2) { transition-delay: 0.15s; }
+    .nav-menu.active li:nth-child(3) { transition-delay: 0.2s; }
+    .nav-menu.active li:nth-child(4) { transition-delay: 0.25s; }
+    .nav-menu.active li:nth-child(5) { transition-delay: 0.3s; }
+
+    .nav-menu a {
+        display: block;
+        padding: 20px;
+        font-size: 1.2rem;
+        border-radius: 0;
+    }
 }

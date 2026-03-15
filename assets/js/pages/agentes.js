@@ -26,7 +26,7 @@ async function initAgentes() {
 
         agentes.forEach(agente => {
             const nombre = agente.nombre;
-            const especialidad = agente.especialidad || 'Ambientalista';
+            const especialidad = agente.categoria || agente.especialidad || 'Ambientalista';
             const organizacion = agente.organizacion || 'Independiente';
             const imgUrl = agente.imagen || '/assets/img/kpop.webp';
             const zona = agente.zona || '';

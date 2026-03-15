@@ -4,6 +4,9 @@
 CREATE TABLE IF NOT EXISTS public.cursos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre TEXT NOT NULL,
+    categoria TEXT,
+    ubicacion TEXT,
+    mapa_url TEXT,
     organiza TEXT,
     fecha TEXT,
     modalidad TEXT,
@@ -18,9 +21,11 @@ CREATE TABLE IF NOT EXISTS public.cursos (
 CREATE TABLE IF NOT EXISTS public.voluntariados (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre TEXT NOT NULL,
+    categoria TEXT,
+    ubicacion TEXT,
+    mapa_url TEXT,
     organiza TEXT,
     fecha TEXT,
-    ubicacion TEXT,
     descripcion TEXT,
     imagen TEXT,
     link TEXT,
@@ -32,7 +37,9 @@ CREATE TABLE IF NOT EXISTS public.voluntariados (
 CREATE TABLE IF NOT EXISTS public.agentes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre TEXT NOT NULL,
+    categoria TEXT,
     especialidad TEXT,
+    ubicacion TEXT,
     organizacion TEXT,
     zona TEXT,
     alcaldia TEXT,
@@ -67,3 +74,20 @@ CREATE POLICY "Admin_Agentes" ON public.agentes FOR ALL TO authenticated USING (
 ALTER TABLE public.cursos DROP CONSTRAINT IF EXISTS cursos_creado_por_fkey;
 ALTER TABLE public.voluntariados DROP CONSTRAINT IF EXISTS voluntariados_creado_por_fkey;
 ALTER TABLE public.agentes DROP CONSTRAINT IF EXISTS agentes_creado_por_fkey;
+
+-- Tabla de Ecotecnias
+CREATE TABLE IF NOT EXISTS public.ecotecnias (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre TEXT NOT NULL,
+    categoria TEXT,
+    icono TEXT DEFAULT 'fa-seedling',
+    descripcion TEXT,
+    beneficio TEXT,
+    creado_por UUID REFERENCES public.usuarios(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.ecotecnias ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Permitir lectura publica ecotecnias" ON public.ecotecnias FOR SELECT USING (true);
+CREATE POLICY "Admin_Ecotecnias" ON public.ecotecnias FOR ALL TO authenticated USING (true) WITH CHECK (true);
+ALTER TABLE public.ecotecnias DROP CONSTRAINT IF EXISTS ecotecnias_creado_por_fkey;

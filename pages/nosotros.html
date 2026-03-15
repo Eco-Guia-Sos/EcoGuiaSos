@@ -26,17 +26,25 @@
     <!-- FONDO DE PARTÍCULAS (CONSTELACIÓN) -->
     <div id="particles-js"></div>
 
-    <!-- NAVEGACIÓN SUPERIOR -->
-    <nav class="nav-top">
-        <div class="nav-content">
-            <a href="/" class="nav-logo">
-                <img src="/assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" onerror="this.style.display='none';">
-                <span class="nav-text-logo">EcoGuía SOS</span>
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <img src="/assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
             </a>
 
-            <a href="/" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Regresar al Inicio
-            </a>
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="/">Inicio</a></li>
+                <li><a href="/pages/nosotros.html" class="active">Nosotros</a></li>
+                <li><a href="/como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="/admin.html">Admin</a></li>
+                <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
+            </ul>
         </div>
     </nav>
 
