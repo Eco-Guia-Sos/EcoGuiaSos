@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
 
             // Login exitoso, redirigir al panel
-            window.location.href = '/admin.html';
+            window.location.href = './admin.html';
         } catch (error) {
             console.error('Error de login:', error.message);
             errorAlert.textContent = 'Correo o contraseña incorrectos.';
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function verificarSesion() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-            window.location.href = '/admin.html'; // Si ya está logueado, mandarlo al admin
+            window.location.href = './admin.html'; // Si ya está logueado, mandarlo al admin
         }
     }
 });

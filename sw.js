@@ -1,21 +1,14 @@
-const CACHE_NAME = 'ecoguiasos-v3';
+const CACHE_NAME = 'ecoguiasos-v2';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/pages/nosotros.html',
-    '/pages/agentes.html',
-    '/pages/voluntariados.html',
-    '/pages/cursos.html',
-    '/pages/ecotecnias.html',
-    '/pages/fondos.html',
-    '/pages/normativa.html',
-    '/pages/agua.html',
-    '/pages/lecturas.html',
-    '/pages/documentales.html',
-    '/pages/firmas.html',
-    '/assets/css/global.css',
-    '/assets/css/interior-pages.css',
-    '/assets/gif/EGSlg.webp'
+    './',
+    './index.html',
+    './Efectos.html',
+    './pages/nosotros.html',
+    './assets/css/global.css',
+    './assets/css/style.css',
+    './assets/css/nosotros.css',
+    './assets/js/script.js',
+    './assets/gif/EGSlg.webp'
 ];
 
 // Instalar el Service Worker y almacenar en caché los recursos básicos

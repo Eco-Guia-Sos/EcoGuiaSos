@@ -1,0 +1,25 @@
+{
+  "name": "EcoGuía SOS",
+  "short_name": "EcoGuía",
+  "description": "Plataforma tecnológica para la acción climática en México.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#72B04D",
+  "icons": [
+    {
+      "src": "./assets/gif/EGSlg.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/gif/EGSlg.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "lang": "es-MX"
+}

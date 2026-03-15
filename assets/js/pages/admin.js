@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             await supabase.auth.signOut();
-            window.location.href = '/login.html';
+            window.location.href = './login.html';
         });
     }
 
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error || !session) {
-            window.location.href = '/login.html';
+            window.location.href = './login.html';
             return;
         }
 
