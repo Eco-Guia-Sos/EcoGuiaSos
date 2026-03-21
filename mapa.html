@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoGuía SOS - Cerca de mí</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: var(--background-dark);
+        }
+
+        #map-container {
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Float UI */
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+
+        .map-overlay > * {
+            pointer-events: auto;
+        }
+
+        .search-bar {
+            background: rgba(15, 20, 25, 0.85);
+            -webkit-backdrop-filter: blur(15px);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            color: white;
+            flex: 1;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .map-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(15, 20, 25, 0.85);
+            -webkit-backdrop-filter: blur(15px);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .map-btn:hover {
+            background: var(--color-eco);
+            transform: scale(1.05);
+        }
+
+        .map-btn.active {
+            background: var(--color-eco);
+        }
+
+        /* MapLibre Popup Styling */
+        .maplibregl-popup-content {
+            background: rgba(15, 25, 35, 0.95) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            backdrop-filter: blur(12px) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 16px !important;
+            padding: 15px !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4) !important;
+        }
+
+        .maplibregl-popup-tip {
+            border-top-color: rgba(15, 25, 35, 0.95) !important;
+        }
+
+        .popup-card {
+            min-width: 180px;
+        }
+
+        .popup-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
+            color: var(--color-eco);
+        }
+
+        .popup-card p {
+            font-size: 0.85rem;
+            margin: 0 0 12px 0;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .popup-btn {
+            background: var(--color-eco);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            width: 100%;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .popup-btn:hover {
+            background: var(--color-eco-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Mobile specific */
+        @media (max-width: 480px) {
+            .search-bar {
+                width: calc(100vw - 40px);
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme">
+
+    <div class="map-overlay">
+        <a href="/index.html" class="map-btn" title="Volver al inicio">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        
+        <div class="search-bar">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--color-eco);"></i>
+            <input type="text" id="map-search" placeholder="Buscar iniciativas ecológicas...">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div class="map-btn" id="locate-btn" title="Mi ubicación">
+                <i class="fa-solid fa-location-crosshairs"></i>
+            </div>
+            <div class="map-btn" id="filter-btn" title="Filtrar">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+        </div>
+    </div>
+
+    <div id="map-container"></div>
+
+    <!-- MapLibre GL JS -->
+    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+    <script type="module" src="/assets/js/pages/mapa.js"></script>
+</body>
+</html>

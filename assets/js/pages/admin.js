@@ -98,7 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nuevoRegistro = {
                     nombre: document.getElementById('input-nombre').value,
                     categoria: document.getElementById('input-categoria').value,
-                    ubicacion: document.getElementById('input-ubicacion').value,
+                    ubicacion_nombre: document.getElementById('input-ubicacion').value,
+                    ubicacion: {
+                        lat: parseFloat(document.getElementById('input-lat').value) || null,
+                        lng: parseFloat(document.getElementById('input-lng').value) || null
+                    },
                     mapa_url: document.getElementById('input-mapa').value || null,
                     imagen: imageUrl,
                     descripcion: document.getElementById('input-descripcion').value || null,
@@ -165,9 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.innerHTML = `
                     <td><strong>${item.nombre}</strong></td>
                     <td>${item.categoria}</td>
-                    <td><span style="background: ${item.color}; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; text-transform: capitalize;">${item.tipo_str}</span></td>
+                    <td><span class="badge" style="background: ${item.color}33; color: ${item.color}; border: 1px solid ${item.color}66;">${item.tipo_str}</span></td>
                     <td>
-                        <button class="btn btn-danger" onclick="eliminarRegistro('${item.id}', '${item.tipo_str === 'lugar' ? 'lugares' : item.tipo_str + 's'}')" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn-admin btn-danger-admin" onclick="eliminarRegistro('${item.id}', '${item.tipo_str === 'lugar' ? 'lugares' : item.tipo_str + 's'}')" style="padding: 8px 12px;">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);

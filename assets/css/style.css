@@ -37,7 +37,7 @@ html {
     position: relative;
     height: auto;
     min-height: 70vh;
-    padding: 3rem 2rem;
+    padding: 0 2rem; /* Reducido según sugerencia del usuario */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -65,18 +65,122 @@ html {
     width: 100%;
 }
 
+/* CAROUSEL SWIPER */
+.hero-carousel {
+    width: 100%;
+    height: 380px;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.3);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
 .hero-logo {
     width: 100%;
-    max-width: 700px;
+    max-width: 600px;
     height: auto;
+    object-fit: contain;
+}
+
+/* CUSTOM SLIDES FOR EVENTS */
+.custom-slide {
+    background-color: #111;
+}
+
+.slide-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.5;
+    z-index: 0;
+}
+
+.slide-content-overlay {
+    position: relative;
+    z-index: 1;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.slide-badge {
+    background: #D4AF37;
+    color: #111;
+    padding: 5px 15px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+}
+
+.slide-content-overlay h2 {
+    font-size: 2.2rem;
+    margin: 0 0 1rem 0;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.slide-content-overlay p {
+    font-size: 1.1rem;
     margin-bottom: 1.5rem;
+    max-width: 600px;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+}
+
+.swiper-pagination-bullet {
+    background-color: #fff !important;
+    opacity: 0.5;
+}
+
+.swiper-pagination-bullet-active {
+    opacity: 1;
+    background-color: #72B04D !important;
+    transform: scale(1.2);
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+    color: white !important;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
 /* Barra de Búsqueda */
+.search-bar-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 1.5rem auto;
+}
+
+/* Removido el margin-top negativo en móvil ya que ahora los niveles están arriba */
+@media (max-width: 768px) {
+    .search-bar-row {
+        margin-top: 0; 
+    }
+}
+
 .search-bar-container {
     position: relative;
     width: 100%;
-    margin-bottom: 1.5rem;
 }
 
 .search-bar-container input {
@@ -138,6 +242,403 @@ html {
 
 .btn .fa-solid {
     margin-right: 0.5rem;
+}
+
+/* --- Nuevos Controles de Búsqueda (v2 Stack) --- */
+.toggle-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: -1rem; /* Ajustado según sugerencia del usuario */
+}
+
+.action-buttons-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons-row .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1.8rem;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.action-buttons-row .btn-secondary {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: #444;
+}
+
+.action-buttons-row .btn-secondary:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+.shimmer-extra {
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer-extra::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transform: rotate(45deg);
+    animation: shimmer-btn 3s infinite;
+}
+
+@keyframes shimmer-btn {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* --- Ajuste Level Buttons en Hero (v3) --- */
+.level-buttons-container.main-levels {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    z-index: 10;
+    position: relative;
+    width: 100%;
+    padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+    .level-buttons-container.main-levels {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem;
+    }
+    
+    .level-buttons-container.main-levels .btn-wrapper {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+.level-buttons-container.main-levels .level-btn-group {
+    display: flex;
+    align-items: stretch; /* Para que el separador sea de altura completa */
+    padding: 0; /* Controlado por hijos */
+    font-size: 0.95rem;
+    min-width: 240px;
+    border-radius: 6px; /* Más rectangular */
+    overflow: hidden;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.level-buttons-container.main-levels .level-btn-link {
+    flex: 1;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: white !important;
+    text-decoration: none;
+}
+
+.level-buttons-container.main-levels .mobile-info-toggle {
+    width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.1); /* Sutil separador visual */
+    border-left: 1px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.level-buttons-container.main-levels .mobile-info-toggle:hover {
+    background: rgba(0,0,0,0.2);
+}
+
+.level-buttons-container.main-levels .mobile-info-toggle i {
+    color: white;
+    font-size: 1rem;
+}
+
+/* --- Panel de Búsqueda Avanzada --- */
+.advanced-search-panel {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.advanced-search-panel.hidden {
+    display: none;
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.search-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.search-col h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #666;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+    border-bottom: 2px solid #72B04D;
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+/* Col 1: Iconos */
+.category-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.icon-filter-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border: 1px solid #eee;
+    padding: 1rem 0.5rem;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.icon-filter-btn i {
+    font-size: 1.3rem;
+    color: #444;
+}
+
+.icon-filter-btn span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #666;
+}
+
+.icon-filter-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #72B04D;
+}
+
+.icon-filter-btn.active {
+    background: #1a1e23;
+    border-color: #1a1e23;
+}
+
+.icon-filter-btn.active i, 
+.icon-filter-btn.active span {
+    color: white;
+}
+
+/* Col 2: Ubicación */
+.location-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.radio-option, .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #444;
+    cursor: pointer;
+}
+
+.autocomplete-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+#panel-location-input {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+#panel-location-input:focus {
+    border-color: #72B04D;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(114, 176, 77, 0.2);
+}
+
+/* Col 3: Fechas */
+.date-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.date-pill {
+    padding: 0.7rem 1.2rem;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.date-pill:hover {
+    background: #f9f9f9;
+}
+
+.date-pill.active {
+    background: #72B04D;
+    color: white;
+    border-color: #72B04D;
+    box-shadow: 0 4px 10px rgba(114, 176, 77, 0.3);
+}
+
+/* Col 4: Horarios */
+.time-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Footer del Panel */
+.search-panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    padding-top: 1.5rem;
+}
+
+.btn-clear {
+    background: none;
+    border: none;
+    color: #999;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s;
+}
+
+.btn-clear:hover {
+    color: #b71c1c;
+}
+
+/* Botón Switch Premium */
+.premium-switch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.premium-switch .label-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #444;
+}
+
+.premium-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.premium-switch .slider {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+    cursor: pointer;
+}
+
+.premium-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+.premium-switch input:checked + .slider {
+    background-color: #72B04D;
+}
+
+.premium-switch input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .search-panel-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .search-panel-grid {
+        grid-template-columns: 1fr;
+    }
+    .advanced-search-panel {
+        padding: 1.5rem;
+    }
 }
 
 /* BOTONES DE NIVEL (ESTILO HÍBRIDO) */
@@ -287,6 +788,13 @@ html {
     transition: background-color 0.2s;
 }
 
+.tooltip-list ul li a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+}
+
 .tooltip-list ul li:hover {
     background-color: #f5f5f5;
 }
@@ -363,97 +871,243 @@ html {
 }
 
 /* =========================================================
-   DISEÑO TARJETAS: GRID DE 3 COLUMNAS CON ESTILO HORIZONTAL
+   FILTROS POR ICONOS (MATES.MX STYLE)
+   ========================================================= */
+.category-filters-scroll {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-bottom: 0; /* Ajustado según sugerencia del usuario */
+    padding-bottom: 1rem;
+}
+.category-filters-scroll::-webkit-scrollbar {
+    display: none;
+}
+.category-filters {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem;
+    min-width: max-content;
+    justify-content: center;
+}
+.cat-filter {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 50px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.cat-filter:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+.cat-filter.active {
+    background-color: #1a1e23;
+    color: white;
+    border-color: #1a1e23;
+}
+
+/* --- Proximity & Distance Styles --- */
+.proximity-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    background: rgba(114, 176, 77, 0.1);
+    border: 1px solid #72B04D;
+    color: #72B04D;
+    padding: 10px 20px;
+    border-radius: 50px;
+    margin: 0 auto 2rem;
+    width: fit-content;
+    font-weight: 700;
+}
+
+.btn-clear-proximity {
+    background: #72B04D;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-clear-proximity:hover {
+    transform: scale(1.1);
+    background: #5a8d3d;
+}
+
+.dist-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 2;
+}
+
+.user-marker {
+    background-color: #0077b6;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 0 15px rgba(0, 119, 182, 0.6);
+    border: 3px solid white;
+    animation: marker-pulse 2s infinite;
+}
+
+@keyframes marker-pulse {
+    0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.4); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 119, 182, 0); }
+    100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 119, 182, 0); }
+}
+
+/* =========================================================
+   DISEÑO TARJETAS: CARTELERA CDMX (Dark Mode) + MATES.MX
    ========================================================= */
 
 .card-grid-container {
     display: grid;
-    /* 3 columnas iguales */
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 3rem;
+    gap: 2rem;
+    margin-bottom: 4rem;
 }
 
 .card {
-    /* Flex Horizontal: Imagen Izq | Texto Der */
     display: flex;
-    flex-direction: row;
-    background-color: #2a3d34;
+    flex-direction: column;
+    background-color: #1a1e23; /* Dark Mode Cartelera */
     color: white;
-    border-radius: 16px;
+    border-radius: 24px; /* Super rounded corners */
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    /* Altura compacta para caber en grid */
-    height: 160px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease; /* React-bits fluid animation */
+    height: auto;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255,255,255,0.15);
 }
 
 .card-image {
-    /* Imagen ocupa el 40% de la tarjeta pequeña */
-    width: 40%;
-    height: 100%;
-    overflow: hidden;
-    flex-shrink: 0;
+    width: 100%;
+    height: 200px;
     position: relative;
+    overflow: hidden;
 }
 
 .card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform 0.6s ease;
 }
 
 .card:hover .card-image img {
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
 .card-content {
-    flex-grow: 1;
-    padding: 1rem;
-    /* Padding reducido para que quepa */
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    width: 60%;
-    /* Asegura el texto */
+    justify-content: flex-start;
+    flex-grow: 1; /* Pushes location to bottom if flex-direction is column */
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
 .card-category {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     font-weight: 800;
     text-transform: uppercase;
     color: #a0d8b3;
-    margin-bottom: 0.3rem;
     letter-spacing: 0.5px;
+    background: rgba(160, 216, 179, 0.1);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
 }
 
-.card-title {
-    font-size: 1.1rem;
-    /* Título ajustado */
-    font-weight: 700;
-    margin: 0 0 0.4rem 0;
-    line-height: 1.2;
-    /* Limitar a 3 líneas por si el título es largo */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.card-location {
-    font-size: 0.85rem;
-    color: #ddd;
-    margin: 0;
+/* MATES.MX STATUS DOT */
+.card-status {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #ccc;
+    background-color: rgba(255,255,255,0.1);
+    padding: 0.3rem 0.8rem;
+    border-radius: 50px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #4CAF50; /* Active Green */
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.8);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+.card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    line-height: 1.3;
+}
+
+.card-location {
+    font-size: 0.95rem;
+    color: #aaa;
+    margin: auto 0 0 0; /* Pushes to bottom */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 1rem;
 }
 
 /* SECCIÓN MAPA DESPLEGABLE */
@@ -493,6 +1147,55 @@ html {
 
 #mapa-desplegable.activo {
     height: 500px;
+}
+
+/* --- Home Mini-Map Section (MapLibre) --- */
+.home-map-section {
+    padding: 4rem 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.home-map-section .section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.home-map-section .section-header h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #1a1e23;
+}
+
+.mini-map-container {
+    position: relative;
+    width: 100%;
+    height: 450px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+#mini-map {
+    width: 100%;
+    height: 100%;
+}
+
+.map-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: center;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.map-overlay .btn {
+    pointer-events: auto;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 
