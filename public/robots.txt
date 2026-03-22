@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ecoguiasos-43hg.vercel.app/sitemap.xml
