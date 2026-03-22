@@ -8,33 +8,38 @@
     <meta name="description" content="EcoGuía SOS - Plataforma tecnológica para la acción climática en México. Directorio de proyectos sustentables.">
     
     <!-- apple-touch-icon -->
-    <link rel="apple-touch-icon" href="/ecoguiasos/assets/EGSlg-BX1MF8qp.webp">
-    <link rel="icon" href="/ecoguiasos/assets/EGSlg-BX1MF8qp.webp" type="image/gif">
-    <link rel="manifest" href="/ecoguiasos/assets/manifest-OdvUYxj-.json">
+    <link rel="apple-touch-icon" href="/assets/EGSlg-BX1MF8qp.webp">
+    <link rel="icon" href="/assets/EGSlg-BX1MF8qp.webp" type="image/gif">
+    <link rel="manifest" href="/assets/manifest-OdvUYxj-.json">
     <meta name="theme-color" content="#72B04D">
 
-    <!-- CSS Modules -->
+    <!-- CSS Modules -->
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script type="module" crossorigin src="/ecoguiasos/assets/main-BWV4wUuU.js"></script>
-  <link rel="modulepreload" crossorigin href="/ecoguiasos/assets/ui-utils-NbjfHPK5.js">
-  <link rel="modulepreload" crossorigin href="/ecoguiasos/assets/supabase-DHz-HILY.js">
-  <link rel="stylesheet" crossorigin href="/ecoguiasos/assets/ui-utils-BgiSHdWf.css">
-  <link rel="stylesheet" crossorigin href="/ecoguiasos/assets/main-BaQgP-1U.css">
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <!-- MapLibre GL -->
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+  <script type="module" crossorigin src="/assets/main-B2C-iSUm.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/ui-utils-NbjfHPK5.js">
+  <link rel="modulepreload" crossorigin href="/assets/supabase-DHz-HILY.js">
+  <link rel="stylesheet" crossorigin href="/assets/ui-utils-BgiSHdWf.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-D5tvte4b.css">
 </head>
 
 <body>
 
     <!-- PANTALLA DE CARGA -->
     <div id="loader">
-        <img src="/ecoguiasos/assets/EGSBOOK-ceZSiMIs.webp" alt="Cargando EcoGuía SOS...">
+        <img src="/assets/EGSBOOK-ceZSiMIs.webp" alt="Cargando EcoGuía SOS...">
     </div>
 
     <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
     <nav class="main-nav">
         <div class="nav-container">
-            <a href="/" class="nav-brand">
-                <img src="/ecoguiasos/assets/EGSlg-BX1MF8qp.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+            <a href="./index.html" class="nav-brand">
+                <img src="/assets/EGSlg-BX1MF8qp.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
                 <h1>EcoGuía SOS</h1>
             </a>
 
@@ -43,10 +48,10 @@
             </button>
 
             <ul class="nav-menu" id="nav-menu-list">
-                <li><a href="/" class="active">Inicio</a></li>
-                <li><a href="/pages/nosotros.html">Nosotros</a></li>
-                <li><a href="/como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
-                <li><a href="/admin.html">Admin</a></li>
+                <li><a href="./index.html" class="active">Inicio</a></li>
+                <li><a href="./pages/nosotros.html">Nosotros</a></li>
+                <li><a href="./como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="./admin.html">Admin</a></li>
                 <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
             </ul>
         </div>
@@ -55,27 +60,35 @@
     <!-- HERO PRINCIPAL -->
     <header class="hero-section" id="particles-js">
         <div class="hero-content">
-            <img src="/ecoguiasos/assets/EGSlg_2-D3XJoEVv.webp" alt="Logo animado de EcoGuía SOS" class="hero-logo" loading="lazy">
-
-            <!-- Barra de Búsqueda -->
-            <div class="search-bar-container">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="buscador-input" placeholder="Busca un proyecto, actor o tema...">
+            <!-- CARRUSEL PRINCIPAL -->
+            <div class="swiper hero-carousel">
+                <div class="swiper-wrapper">
+                    <!-- Slide 1: Logo Original -->
+                    <div class="swiper-slide">
+                        <img src="/assets/EGSlg_2-D3XJoEVv.webp" alt="Logo animado de EcoGuía SOS" class="hero-logo" loading="lazy">
+                    </div>
+                    <!-- Slide 2: Ejemplo Evento -->
+                    <div class="swiper-slide custom-slide">
+                        <div class="slide-content-overlay">
+                            <span class="slide-badge">DESTACADO</span>
+                            <h2>Fondo Semilla 2026</h2>
+                            <p>Aplica hoy para recibir financiamiento para tu proyecto ecoturístico.</p>
+                            <button class="btn btn-primary shimmer-btn">Ver Detalles</button>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=1000" alt="Fondo Ecologico" class="slide-bg">
+                    </div>
+                </div>
+                <!-- Controles -->
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
             </div>
 
-            <div class="action-buttons">
-                <button class="btn btn-secondary">Búsqueda Avanzada</button>
-                <button class="btn btn-primary">
-                    <i class="fa-solid fa-location-dot"></i>
-                    Eventos cerca de mí
-                </button>
-            </div>
-
-            <!-- BOTONES DE NIVELES -->
-            <div class="level-buttons-container">
+            <!-- 1. BOTONES DE NIVELES (MOVIDO AL HERO) -->
+            <div class="level-buttons-container main-levels">
                 <!-- COLIBRÍ -->
                 <div class="btn-wrapper">
-                    <div class="level-btn-group level-btn-colibri glass-effect pill-radius">
+                    <div class="level-btn-group level-btn-colibri glass-effect">
                         <a href="#seccion-colibri" class="level-btn-link">
                             <i class="fa-solid fa-dove"></i> Colibrí (Polinización)
                         </a>
@@ -85,18 +98,17 @@
                     </div>
                     <div class="tooltip-list">
                         <ul>
-                            <li><a href="/pages/cursos.html">🎓 Cursos</a></li>
-                            <li><a href="/pages/ecotecnias.html">💡 Ecotecnias</a></li>
-                            <li><a href="/pages/agua.html">🌊 Agua y cuenca</a></li>
-                            <li><a href="/pages/lecturas.html">📚 Lecturas</a></li>
-                            <li><a href="/pages/documentales.html">🎬 Documentales</a></li>
+                            <li><a href="./pages/cursos.html">🎓 Cursos</a></li>
+                            <li><a href="./pages/ecotecnias.html">💡 Ecotecnias</a></li>
+                            <li><a href="./pages/agua.html">🌊 Agua</a></li>
+                            <li><a href="./pages/lecturas.html">📚 Lecturas</a></li>
                         </ul>
                     </div>
                 </div>
 
                 <!-- AJOLOTE -->
                 <div class="btn-wrapper">
-                    <div class="level-btn-group level-btn-ajolote glass-effect pill-radius">
+                    <div class="level-btn-group level-btn-ajolote glass-effect">
                         <a href="#seccion-ajolote" class="level-btn-link">
                             <i class="fa-solid fa-frog"></i> Ajolote (Regeneración)
                         </a>
@@ -106,16 +118,15 @@
                     </div>
                     <div class="tooltip-list">
                         <ul>
-                            <li><a href="/pages/agentes.html">👥 Agentes de cambio</a></li>
-                            <li><a href="#">📣 Convocatorias</a></li>
-                            <li><a href="/pages/voluntariados.html">🤝 Voluntariados</a></li>
+                            <li><a href="./pages/agentes.html">👥 Agentes</a></li>
+                            <li><a href="./pages/voluntariados.html">🤝 Ayuda</a></li>
                         </ul>
                     </div>
                 </div>
 
                 <!-- LOBO -->
                 <div class="btn-wrapper">
-                    <div class="level-btn-group level-btn-lobo glass-effect pill-radius">
+                    <div class="level-btn-group level-btn-lobo glass-effect">
                         <a href="#seccion-lobo" class="level-btn-link">
                             <i class="fa-solid fa-dog"></i> Lobo (Estrategia)
                         </a>
@@ -125,8 +136,8 @@
                     </div>
                     <div class="tooltip-list">
                         <ul>
-                            <li><a href="/pages/fondos.html">💰 Fondos</a></li>
-                            <li><a href="/pages/normativa.html">⚖️ Normativa</a></li>
+                            <li><a href="./pages/fondos.html">💰 Fondos</a></li>
+                            <li><a href="./pages/normativa.html">⚖️ Normativa</a></li>
                         </ul>
                     </div>
                 </div>
@@ -135,27 +146,123 @@
     </header>
 
     <main class="content-section">
-        <div class="toggle-container">
-            <span class="toggle-label active" data-filter="evento">Eventos</span>
-            <div class="toggle-switch">
-                <div class="toggle-handle"></div>
+        <!-- 0. BARRA DE BÚSQUEDA (TOP) -->
+        <div class="search-bar-row">
+            <div class="search-bar-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="buscador-input" placeholder="Buscar proyectos o lugares..." autocomplete="off">
             </div>
-            <span class="toggle-label" data-filter="lugar">Lugares</span>
+        </div>
+
+
+        <!-- 2. FILTROS POR CATEGORÍA ESTILO MATES.MX -->
+        <div class="category-filters-scroll">
+            <div class="category-filters">
+                <button class="cat-filter active" data-cat="all">🌍 Todo</button>
+                <button class="cat-filter" data-cat="Taller">🎨 Talleres</button>
+                <button class="cat-filter" data-cat="Voluntariado">🌱 Voluntariados</button>
+                <button class="cat-filter" data-cat="Parque">🌳 Parques</button>
+                <button class="cat-filter" data-cat="Huerto">🌿 Huertos</button>
+                <button class="cat-filter" data-cat="General">📍 General</button>
+            </div>
+        </div>
+
+        <!-- 3. INTERRUPTOR DE EVENTOS/LUGARES (CENTRED) -->
+        <div class="toggle-row">
+            <div class="toggle-container">
+                <span class="toggle-label active" data-filter="evento">Eventos</span>
+                <div class="toggle-switch">
+                    <div class="toggle-handle"></div>
+                </div>
+                <span class="toggle-label" data-filter="lugar">Lugares</span>
+            </div>
+        </div>
+
+        <!-- 4. BOTONES DE ACCIÓN (SEARCH & NEAR ME) -->
+        <div class="action-buttons-row">
+            <button class="btn btn-secondary glass-effect" id="btn-busqueda-avanzada">
+                <i class="fa-solid fa-sliders"></i> Búsqueda Avanzada
+            </button>
+            <a href="/mapa.html" class="btn btn-primary shimmer-extra" id="btn-cerca-de-mi">
+                <i class="fa-solid fa-location-crosshairs"></i> Cerca de mí
+            </a>
+        </div>
+
+        <!-- PANEL DE BÚSQUEDA AVANZADA -->
+        <div id="advanced-search-panel" class="advanced-search-panel glass-effect hidden">
+            <div class="search-panel-grid">
+                <!-- Col 1: Tipo -->
+                <div class="search-col">
+                    <h3>¿Qué buscas?</h3>
+                    <div class="category-icon-grid">
+                        <button class="icon-filter-btn" data-cat="all" title="Todo"><i class="fa-solid fa-globe"></i></button>
+                        <button class="icon-filter-btn" data-cat="Taller" title="Talleres"><i class="fa-solid fa-palette"></i></button>
+                        <button class="icon-filter-btn" data-cat="Voluntariado" title="Ayuda"><i class="fa-solid fa-seedling"></i></button>
+                        <button class="icon-filter-btn" data-cat="Charla" title="Charlas"><i class="fa-solid fa-comments"></i></button>
+                        <button class="icon-filter-btn" data-cat="Cine" title="Cine"><i class="fa-solid fa-film"></i></button>
+                        <button class="icon-filter-btn" data-cat="Exposición" title="Expos"><i class="fa-solid fa-image"></i></button>
+                    </div>
+                </div>
+                <!-- Col 2: Ubicación -->
+                <div class="search-col">
+                    <h3>¿Dónde?</h3>
+                    <div class="location-filter-group">
+                        <label class="radio-option"><input type="radio" name="location-filter" value="all" checked><span>Todo</span></label>
+                        <label class="radio-option"><input type="radio" name="location-filter" value="nearby"><span>Cerca</span></label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" id="panel-location-input" placeholder="Dirección..." disabled>
+                        </div>
+                    </div>
+                </div>
+                <!-- Col 3: Fecha -->
+                <div class="search-col">
+                    <h3>¿Cuándo?</h3>
+                    <div class="date-filter-group">
+                        <button class="date-pill active" data-date="all">Todas</button>
+                        <button class="date-pill" data-date="today">Hoy</button>
+                        <button class="date-pill" data-date="tomorrow">Mañana</button>
+                    </div>
+                </div>
+                <!-- Col 4: Hora -->
+                <div class="search-col">
+                    <h3>Horario</h3>
+                    <div class="time-filter-group">
+                        <label class="checkbox-option"><input type="checkbox" name="time-filter" value="morning"><span>Mañana</span></label>
+                        <label class="checkbox-option"><input type="checkbox" name="time-filter" value="afternoon"><span>Tarde</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="search-panel-footer">
+                <button class="btn-clear" id="btn-reset-filters"><i class="fa-solid fa-rotate-left"></i></button>
+                <div class="footer-actions">
+                    <label class="premium-switch">
+                        <input type="checkbox" id="switch-gratis">
+                        <span class="slider"></span>
+                        <span class="label-text">Gratis</span>
+                    </label>
+                </div>
+            </div>
         </div>
 
         <div class="card-grid-container" id="contenedor-tarjetas">
             <p class="txt-loading">Cargando proyectos...</p>
         </div>
 
-        <div class="map-section-wrapper">
-            <button id="btn-toggle-mapa" class="btn-full-width">
-                <i class="fa-solid fa-map-location-dot"></i> Mostrar Mapa de Actores
-            </button>
-
-            <div id="mapa-desplegable" class="mapa-oculto">
-                <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1ucypWovpoEYMy6hrTsYjBGLT_NDP-TY&ehbc=2E312F" width="640" height="480"></iframe>
+        <!-- Mini-Map Section (MapCN Style) -->
+        <section class="home-map-section fade-in">
+            <div class="section-header">
+                <h2><i class="fa-solid fa-map-location-dot"></i> Exploración Cercana</h2>
+                <p>Descubre iniciativas y eventos ambientales en tiempo real.</p>
             </div>
-        </div>
+            <div class="mini-map-container">
+                <div id="mini-map"></div>
+                <div class="map-overlay">
+                    <a href="/mapa.html" class="btn btn-primary">
+                        <i class="fa-solid fa-expand"></i> Ver pantalla completa
+                    </a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <section id="seccion-colibri" class="nivel-section">
@@ -164,23 +271,23 @@
             <h2><i class="fa-solid fa-dove"></i> Colibrí (Polinización)</h2>
             <p class="nivel-description">Poliniza tu mente con conocimiento y pequeñas acciones que generan vida.</p>
             <div class="nivel-btn-grid">
-                <a href="/pages/cursos.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/cursos.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">🎓 Cursos</span>
                     <p class="nivel-btn-desc">Explora talleres y capacitación sostenible.</p>
                 </a>
-                <a href="/pages/ecotecnias.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/ecotecnias.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">💡 Ecotecnias</span>
                     <p class="nivel-btn-desc">Tecnologías para el hogar sustentable.</p>
                 </a>
-                <a href="/pages/firmas.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/firmas.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">✍️ Firmas</span>
                     <p class="nivel-btn-desc">Apoya causas ambientales importantes.</p>
                 </a>
-                <a href="/pages/lecturas.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/lecturas.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">📚 Lecturas</span>
                     <p class="nivel-btn-desc">Guías y artículos recomendados.</p>
                 </a>
-                <a href="/pages/documentales.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/documentales.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">🎬 Documentales</span>
                     <p class="nivel-btn-desc">Vídeos educativos seleccionados.</p>
                 </a>
@@ -197,7 +304,7 @@
             <h2><i class="fa-solid fa-frog"></i> Ajolote (Regeneración)</h2>
             <p class="nivel-description">Regenera el tejido social y ambiental actuando en comunidad.</p>
             <div class="nivel-btn-grid">
-                <a href="/pages/agentes.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/agentes.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">👥 Agentes de cambio</span>
                     <p class="nivel-btn-desc">Conoce a quienes lideran el cambio.</p>
                 </a>
@@ -205,7 +312,7 @@
                     <span class="nivel-btn-title">📣 Convocatorias</span>
                     <p class="nivel-btn-desc">Oportunidades para tus proyectos.</p>
                 </a>
-                <a href="/pages/voluntariados.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/voluntariados.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">🤝 Voluntariados</span>
                     <p class="nivel-btn-desc">Eventos y jornadas cerca de ti.</p>
                 </a>
@@ -222,11 +329,11 @@
             <h2><i class="fa-solid fa-dog"></i> Lobo (Estrategia)</h2>
             <p class="nivel-description">Lidera con estructura, fondos y legalidad.</p>
             <div class="nivel-btn-grid">
-                <a href="/pages/fondos.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/fondos.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">💰 Fondos</span>
                     <p class="nivel-btn-desc">Financiamiento para proyectos.</p>
                 </a>
-                <a href="/pages/normativa.html" class="nivel-btn-item glass-effect">
+                <a href="./pages/normativa.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">⚖️ Normativa</span>
                     <p class="nivel-btn-desc">Leyes y normativas ambientales.</p>
                 </a>
@@ -262,15 +369,9 @@
 
     <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
     <!-- JS Module -->
-</body>
-
-</html>
-le.log('Error al registrar Service Worker:', err));
-            });
-        }
-    </script>
 </body>
 
 </html>
