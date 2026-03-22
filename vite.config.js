@@ -3,9 +3,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(({ command }) => {
   return {
-    // Solo aplica el base path en producción (construcción de GitHub Pages)
-    // En desarrollo local (npm run dev), usa la raíz '/'
-    base: command === 'build' ? '/ecoguiasos/' : '/',
+    // Para Vercel y la mayoría de despliegues modernos, la raíz '/' es lo ideal.
+    base: '/',
     build: {
       rollupOptions: {
         input: {
