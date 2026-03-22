@@ -1,6 +1,7 @@
 import { setupNavbar } from '../ui-utils.js';
 import { supabase } from '../supabase.js';
 import { initAIAssistant } from '../ai-assistant.js';
+import { loadGoogleMaps } from '../maps-loader.js';
 
 let todosLosProyectos = [];
 let filtroActual = 'evento';
@@ -95,8 +96,16 @@ function initIndex() {
             activarProximidad();
         });
     }
-
-    initGoogleAutocomplete();
+    
+    // Lazy load Google Maps for Autocomplete
+    loadGoogleMaps().then(() => {
+        initGoogleAutocomplete();
+        // Re-run advanced search setup if panel is already initialized or needs it
+        const locationInput = document.getElementById('panel-location-input');
+        if (locationInput && !panelAutocomplete) {
+            initPanelAutocomplete(locationInput);
+        }
+    }).catch(err => console.error("Could not initialize Google Places:", err));
 
     // Service Worker Registration
     if ('serviceWorker' in navigator) {
@@ -606,26 +615,33 @@ function setupAdvancedSearch() {
         });
     });
 
-    // Init Autocomplete for Panel
-    if (window.google && locationInput) {
-        panelAutocomplete = new google.maps.places.Autocomplete(locationInput, {
-            componentRestrictions: { country: "mx" },
-            fields: ["geometry", "name"]
-        });
-        panelAutocomplete.addListener("place_changed", () => {
-            const place = panelAutocomplete.getPlace();
-            if (place.geometry) {
-                userCoords = {
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng(),
-                    name: place.name
-                };
-                proximidadActiva = true;
-                filtrarYRenderizar();
-            }
-        });
+    // Init Autocomplete for Panel (Wrapped in function for lazy loading if needed)
+    if (locationInput) {
+        if (window.google) {
+            initPanelAutocomplete(locationInput);
+        }
     }
+}
 
+function initPanelAutocomplete(locationInput) {
+    if (!window.google || !locationInput) return;
+    
+    panelAutocomplete = new google.maps.places.Autocomplete(locationInput, {
+        componentRestrictions: { country: "mx" },
+        fields: ["geometry", "name"]
+    });
+    panelAutocomplete.addListener("place_changed", () => {
+        const place = panelAutocomplete.getPlace();
+        if (place.geometry) {
+            userCoords = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                name: place.name
+            };
+            proximidadActiva = true;
+            filtrarYRenderizar();
+        }
+    });
     // Col 3: Fechas
     const datePills = panel.querySelectorAll('.date-pill');
     datePills.forEach(pill => {

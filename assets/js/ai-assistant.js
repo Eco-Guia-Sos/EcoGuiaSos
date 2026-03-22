@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Configuración de la API (Uso de la clave proporcionada por el usuario)
-const API_KEY = "AIzaSyDXvxe07HXUTp98gJr38JF3TCHXKSaT8T4";
+// Configuración de la API (Uso de variables de entorno)
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY, { apiVersion: "v1" });
 
 const SYSTEM_PROMPT = `
