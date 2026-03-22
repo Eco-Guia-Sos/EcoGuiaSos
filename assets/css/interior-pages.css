@@ -114,3 +114,74 @@
 .theme-colibri .btn-action-main:hover { background-color: white; }
 .theme-ajolote .btn-action-main:hover { background-color: white; color: #ff85a1; }
 .theme-lobo .btn-action-main:hover { background-color: #8b2fc9; }
+
+/* Sub-navigation Menu */
+.level-subnav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    padding: 0 10px;
+}
+
+.subnav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.subnav-link i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.subnav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.subnav-link:hover i {
+    transform: scale(1.2);
+}
+
+.subnav-link.active {
+    background: white;
+    color: var(--bg-dark);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    transform: translateY(-2px);
+}
+
+.theme-ajolote .subnav-link.active {
+    background-color: #ff85a1;
+    color: white;
+}
+
+.theme-lobo .subnav-link.active {
+    background-color: #6a00a8;
+    color: white;
+}
+
+/* Responsivo para sub-nav */
+@media (max-width: 768px) {
+    .level-subnav {
+        gap: 10px;
+    }
+    .subnav-link {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+}
