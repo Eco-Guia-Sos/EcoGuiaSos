@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecoguiasos-v2';
+const CACHE_NAME = 'ecoguiasos-v3';
 const urlsToCache = [
     './',
     './index.html',

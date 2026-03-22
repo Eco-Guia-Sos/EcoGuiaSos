@@ -2,7 +2,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Configuración de la API (Uso de variables de entorno)
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(API_KEY, { apiVersion: "v1" });
+
+if (!API_KEY) {
+    console.warn("VITE_GEMINI_API_KEY no encontrada. El chat de IA no funcionará hasta que se configure en Vercel.");
+}
+
+const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY, { apiVersion: "v1" }) : null;
 
 const SYSTEM_PROMPT = `
 Eres el Asistente Inteligente de EcoGuía SOS, una plataforma dedicada a promover la sustentabilidad y eventos ecológicos en la Ciudad de México.
