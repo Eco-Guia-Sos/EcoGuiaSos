@@ -124,6 +124,12 @@ body.admin-body {
     border-bottom: 1px solid var(--color-admin-border);
 }
 
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 0 20px 0 70px; /* Espacio para el botón hamburguesa */
+    }
+}
+
 .admin-header h1 {
     font-size: 1.4rem;
     margin: 0;
@@ -307,9 +313,51 @@ body.admin-body {
     }
 }
 
+/* Botón hamburguesa para abrir sidebar en móvil (oculto por defecto en desktop) */
+.sidebar-toggle-btn {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 1200;
+    width: 42px;
+    height: 42px;
+    background: var(--color-accent-green);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1.1rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(114, 176, 77, 0.4);
+    transition: background 0.2s, transform 0.1s;
+}
+
+.sidebar-toggle-btn:hover {
+    background: #5a8e3d;
+    transform: scale(1.05);
+}
+
+/* Overlay oscuro que cubre el contenido cuando el sidebar está abierto */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1050;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
 @media (max-width: 768px) {
     .admin-sidebar {
         transform: translateX(-100%);
+        z-index: 1100;
+    }
+    .admin-sidebar.open {
+        transform: translateX(0);
     }
     .admin-main-wrapper {
         margin-left: 0;
@@ -321,4 +369,36 @@ body.admin-body {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+    /* Botón hamburguesa visible en móvil */
+    .sidebar-toggle-btn {
+        display: flex;
+    }
+    /* Overlay oscuro detrás del sidebar */
+    .sidebar-overlay {
+        display: block;
+    }
+    .sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+    }
+}
+
+/* ========== UTILS & PHASES ========== */
+.menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 15px 12px;
+}
+
+.nav-back-admin {
+    color: var(--color-texto-secundario) !important;
+}
+
+.nav-back-admin:hover {
+    color: var(--color-eco) !important;
+    background: rgba(114, 176, 77, 0.05) !important;
+}
+
+.btn-full-width {
+    width: 100%;
 }

@@ -1,8 +1,9 @@
 /* assets/js/pages/nosotros.js */
-import { setupNavbar } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
 
 function initNosotros() {
     setupNavbar();
+    setupAuthObserver();
     
     if (typeof particlesJS !== 'undefined') {
         particlesJS("particles-js", {

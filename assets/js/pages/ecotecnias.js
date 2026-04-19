@@ -1,9 +1,10 @@
 /* assets/js/pages/ecotecnias.js */
 import { supabase } from '../supabase.js';
-import { setupNavbar, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
 
 async function initEcotecnias() {
     setupNavbar();
+    setupAuthObserver();
     const container = document.getElementById('ecotecnias-container');
     if (!container) return;
 

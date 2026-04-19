@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="theme-ajolote">
+<html lang="es" class="theme-ajolote dark-theme">
 
 <head>
     <meta charset="UTF-8">
@@ -20,7 +20,17 @@
 
     <style>
         /* Specific overrides for Agentes */
-        .agente-card { padding: 30px 20px; align-items: center; text-align: center; }
+        .agente-card { 
+            padding: 30px 20px; 
+            align-items: center; 
+            text-align: center; 
+            background: var(--tarjeta-bg-dark);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--tarjeta-border-dark);
+            box-shadow: var(--shadow-strong);
+            border-radius: 20px;
+        }
         .agente-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color); margin-bottom: 15px; }
         .agente-card h3 { margin: 0 0 5px 0; color: white; font-size: 1.3rem; }
         .agente-especialidad { color: var(--primary-color); font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
@@ -32,7 +42,7 @@
     </style>
 </head>
 
-<body>
+<body class="dark-theme">
 
     <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
     <nav class="main-nav">
@@ -47,23 +57,31 @@
             </button>
 
             <ul class="nav-menu" id="nav-menu-list">
-                <li><a href="../index.html">Inicio</a></li>
-                <li><a href="../pages/nosotros.html">Nosotros</a></li>
+                <li><a href="../index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="../pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
                 <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
-                <li><a href="../admin.html">Admin</a></li>
-                <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
             </ul>
         </div>
     </nav>
 
     <header class="interior-hero">
-        <span class="category-badge">🦎 Nivel Ajolote (Intermedio)</span>
-        <h2>Agentes de Cambio</h2>
-        <p>Conoce, apoya y colabora con las personas detrás del impacto social.</p>
-        <nav class="level-subnav fade-in">
-            <a href="agentes.html" class="subnav-link active"><i class="fa-solid fa-users"></i> Agentes</a>
-            <a href="voluntariados.html" class="subnav-link"><i class="fa-solid fa-handshake-angle"></i> Voluntariados</a>
-        </nav>
+        <div class="hero-glass-panel">
+            <span class="category-badge">🦎 Ajolote</span>
+            <h2>Agentes de Cambio</h2>
+            <p>Conoce, apoya y colabora con las personas detrás del impacto social.</p>
+        </div>
+        
+        <div class="subnav-scroll-wrapper fade-in">
+            <div class="scroll-arrow left"><i class="fa-solid fa-chevron-left"></i></div>
+            <nav class="level-subnav">
+                <a href="agentes.html" class="subnav-link active"><i class="fa-solid fa-users"></i> Agentes</a>
+                <a href="voluntariados.html" class="subnav-link"><i class="fa-solid fa-hands-helping"></i> Voluntariados</a>
+                <a href="convocatoria.html" class="subnav-link"><i class="fa-solid fa-bullhorn"></i> Convocatoria</a>
+            </nav>
+            <div class="scroll-arrow right"><i class="fa-solid fa-chevron-right"></i></div>
+        </div>
     </header>
 
     <main class="content-section">
@@ -72,9 +90,26 @@
         </div>
     </main>
 
-    <footer>
-        <div style="text-align: center; padding: 20px; color: #888;">
-            <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+    <!-- FOOTER INTERIOR (ÍNDICE VERDE) -->
+    <footer class="footer-interior">
+        <div class="footer-interior-content">
+            <div class="footer-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo" class="footer-mini-logo">
+                <span class="footer-title">EcoGuía SOS</span>
+            </div>
+            
+            <div class="footer-contact-info">
+                <p>Generando Redes Para el Futuro</p>
+                <a href="mailto:contacto@ecogaiasos.com">contacto@ecogaiasos.com</a>
+            </div>
+
+            <div class="footer-social-minimal">
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-legal">
+            &copy; 2025 EcoGuía SOS. Todos los derechos reservados.
         </div>
     </footer>
 

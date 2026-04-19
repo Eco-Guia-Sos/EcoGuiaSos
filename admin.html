@@ -12,10 +12,20 @@
     <link rel="stylesheet" href="./assets/css/global.css">
     <link rel="stylesheet" href="./assets/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- MapLibre GL CSS -->
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
 </head>
-<body class="admin-body">
+<body class="admin-body dark-theme">
 
-    <aside class="admin-sidebar">
+    <!-- Botón hamburguesa (solo visible en móvil) -->
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Abrir menú">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <!-- Overlay para cerrar sidebar en móvil -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="admin-sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <img src="./assets/gif/EGSlg.webp" alt="EcoGuía Logo">
             <h2>Admin Panel</h2>
@@ -27,11 +37,13 @@
                 <li><a href="#"><i class="fa-solid fa-calendar-alt"></i> <span>Eventos</span></a></li>
                 <li><a href="#"><i class="fa-solid fa-map-location-dot"></i> <span>Lugares</span></a></li>
                 <li><a href="#"><i class="fa-solid fa-users"></i> <span>Usuarios</span></a></li>
+                <li class="menu-divider"></li>
+                <li><a href="./index.html" class="nav-back-admin"><i class="fa-solid fa-house"></i> <span>Ir a Inicio</span></a></li>
             </ul>
         </nav>
         
         <div class="sidebar-footer">
-            <button id="logout-btn" class="btn-admin btn-danger-admin" style="width: 100%;">
+            <button id="logout-btn" class="btn-admin btn-danger-admin btn-full-width">
                 <i class="fa-solid fa-power-off"></i> <span>Cerrar Sesión</span>
             </button>
         </div>
@@ -40,8 +52,8 @@
     <div class="admin-main-wrapper">
         <header class="admin-header">
             <div class="header-titles">
-                <h1>Hola, Administrador</h1>
-                <p class="txt-eco" style="font-size: 0.9rem;">Gestión de contenido EcoGuía SOS</p>
+                <h1>Hola, <span id="admin-user-display">Administrador</span></h1>
+                <p class="admin-subtitle">Gestión de contenido EcoGuía SOS</p>
             </div>
             <button class="btn-admin btn-primary-admin" id="btn-nuevo" disabled>
                 <i class="fa-solid fa-plus"></i> Crear Nuevo
@@ -106,34 +118,98 @@
         </main>
     </div>
 
-    <!-- Modal Nuevo Registro -->
-    <div id="modal-nuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-        <div style="background: #1a2634; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid rgba(255,255,255,0.1);">
+    <!-- ============================================================ -->
+    <!-- Modal: Crear Nuevo Registro                                  -->
+    <!-- ============================================================ -->
+    <div id="modal-nuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto;">
+        <div style="background: #1a2634; padding: 30px; border-radius: 12px; width: 100%; max-width: 520px; border: 1px solid rgba(255,255,255,0.1); margin: auto;">
             <h2 style="margin-bottom: 20px;">Crear Nuevo</h2>
             <form id="form-nuevo">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Tipo</label>
-                    <select id="input-tipo" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                        <option value="evento">Evento</option>
-                        <option value="lugar">Lugar / Huerto</option>
-                        <option value="curso">Curso / Taller</option>
-                        <option value="voluntariado">Voluntariado</option>
-                        <option value="agente">Líder Ambiental (Agente)</option>
-                    </select>
+
+                <!-- 1. TIPO DE PROYECTO (Ahora hasta arriba) -->
+                <div style="margin-bottom: 25px; padding: 15px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                    <label style="display: block; margin-bottom: 12px; font-weight: bold; color: var(--color-eco); font-size: 0.95rem;">¿Qué vas a registrar?</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="button" class="btn-categoria active" data-cat="evento" style="padding: 12px; border-radius: 8px; border: none; background: var(--color-eco); color: white; cursor: pointer; transition: 0.3s; font-weight: 600;"><i class="fa-solid fa-calendar-star"></i> Evento</button>
+                        <button type="button" class="btn-categoria" data-cat="lugar" style="padding: 12px; border-radius: 8px; border: none; background: rgba(0,0,0,0.3); color: white; cursor: pointer; transition: 0.3s; font-weight: 600;"><i class="fa-solid fa-shop"></i> Lugar Permanente</button>
+                    </div>
                 </div>
+
+                <!-- Tipo Invisible (Guardado interno) -->
+                <input type="hidden" id="input-tipo" value="evento">
+
+                <!-- Nombre -->
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Nombre</label>
-                    <input type="text" id="input-nombre" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                    <input type="text" id="input-nombre" required placeholder="Ej. Huerto Roma Verde" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
                 </div>
+
+                <!-- Categoría / Tipo de Espacio -->
                 <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Categoría</label>
-                    <input type="text" id="input-categoria" placeholder="Ej. Taller, Parque, Huerto..." required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                    <label id="label-categoria" style="display: block; margin-bottom: 5px;">Categoría</label>
+                    
+                    <!-- Dropdown para eventos -->
+                    <div id="container-categoria-evento">
+                        <select id="input-categoria" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                            <option value="" disabled selected>-- Selecciona --</option>
+                            <optgroup label="🌱 Naturaleza">
+                                <option value="Huerto Urbano">Huerto Urbano</option>
+                                <option value="Limpieza">Jornada de Limpieza</option>
+                                <option value="Reforestación">Reforestación</option>
+                            </optgroup>
+                            <optgroup label="🎓 Educación">
+                                <option value="Taller">Taller</option>
+                                <option value="Curso">Curso</option>
+                                <option value="Conferencia">Conferencia</option>
+                            </optgroup>
+                            <optgroup label="🤝 Comunidad">
+                                <option value="Festival">Festival</option>
+                                <option value="Bazar">Bazar / Mercado</option>
+                                <option value="Voluntariado">Voluntariado</option>
+                            </optgroup>
+                            <!-- Solo visible para ADMINS — el JS oculta/muestra este grupo -->
+                            <optgroup label="⚙️ Solo Admin" id="optgroup-admin" style="display:none;">
+                                <option value="Líder Ambiental">Líder Ambiental / Agente</option>
+                                <option value="Institución">Institución Oficial</option>
+                                <option value="Normativa">Normativa / Legal</option>
+                                <option value="Fondo">Fondo / Financiamiento</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Texto libre para lugares -->
+                    <div id="container-categoria-lugar" style="display: none;">
+                        <input type="text" id="input-categoria-libre" placeholder="Ej. Huerto Urbano, Espacio Cultural..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                    </div>
                 </div>
+
+                <!-- Ubicación -->
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Ubicación (Nombre/Dirección)</label>
-                    <input type="text" id="input-ubicacion" placeholder="Ej. Parque México" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                    <input type="text" id="input-ubicacion" placeholder="Ej. Jalapa 234, Roma Sur, CDMX" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+
+                <!-- 🔑 EXTRACTOR DE COORDENADAS DESDE GOOGLE MAPS -->
+                <div style="margin-bottom: 12px; padding: 12px 14px; background: rgba(0,119,182,0.12); border: 1px solid rgba(91,194,247,0.35); border-radius: 8px;">
+                    <label style="display: block; margin-bottom: 6px; font-size: 0.83rem; color: #5bc2f7;">
+                        <i class="fa-brands fa-google"></i> Pega un link de Google Maps para extraer coordenadas automáticamente:
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="input-gmaps-extract"
+                            placeholder="https://maps.app.goo.gl/... o maps.google.com/..."
+                            style="flex:1; padding: 9px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; font-size: 0.85rem;">
+                        <button type="button" id="btn-extract-coords"
+                            style="padding: 9px 14px; background: rgba(0,119,182,0.7); border: none; color: white; border-radius: 5px; cursor: pointer; font-size: 0.85rem; white-space: nowrap;">
+                            <i class="fa-solid fa-crosshairs"></i> Extraer
+                        </button>
+                    </div>
+                    <small id="extract-status" style="display:block; margin-top:5px; font-size:0.78rem; color: #888;">
+                        💡 En Google Maps: busca el lugar → "Compartir" → copia el link.
+                    </small>
+                </div>
+
+                <!-- Latitud / Longitud -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
                     <div>
                         <label style="display: block; margin-bottom: 5px;">Latitud</label>
                         <input type="number" id="input-lat" step="any" placeholder="19.4326" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
@@ -143,19 +219,114 @@
                         <input type="number" id="input-lng" step="any" placeholder="-99.1332" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
                     </div>
                 </div>
+
+                <!-- GPS Helper -->
+                <button type="button" id="btn-gps-helper" style="width: 100%; padding: 8px; margin-bottom: 15px; background: rgba(114,176,77,0.2); border: 1px solid var(--color-eco); color: var(--color-eco); border-radius: 5px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación actual (GPS)
+                </button>
+
+                <!-- Mini Map Picker -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: #888;">O haz clic en el mapa para colocar el pin exacto:</label>
+                    <div id="map-picker" style="width: 100%; height: 200px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #000;"></div>
+                </div>
+
+                <!-- Link Google Maps (para botón "Cómo llegar") -->
                 <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Enlace de Google Maps (Opcional)</label>
+                    <label style="display: block; margin-bottom: 5px;">Link de Google Maps (Opcional, para botón "Cómo llegar")</label>
                     <input type="url" id="input-mapa" placeholder="https://maps.app.goo.gl/..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
                 </div>
+
+                <!-- Imagen -->
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Imagen (Opcional)</label>
                     <input type="file" id="input-imagen-file" accept="image/*" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
                     <small id="upload-status" style="display:block; margin-top:5px; color:#f39c12;"></small>
                 </div>
+
+                <!-- SELECCIÓN DE SEDE (Solo para eventos) -->
+                <div id="section-sede" style="margin-bottom: 20px; padding: 15px; background: rgba(91,194,247,0.05); border-radius: 8px; border: 1px solid rgba(91,194,247,0.15);">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #5bc2f7;"><i class="fa-solid fa-map-location-dot"></i> ¿Tiene una Sede Fija?</label>
+                    <select id="input-lugar-id" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                        <option value="">No (Sujeto a cambios técnicos)</option>
+                    </select>
+                </div>
+
+
+
+                <!-- FECHAS Y HORARIOS (Dinámico) -->
+                <div id="section-fechas" style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--color-eco);"><i class="fa-regular fa-calendar-check"></i> Inicio</label>
+                        <input type="datetime-local" id="input-fecha-inicio" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--color-eco);"><i class="fa-regular fa-calendar-xmark"></i> Fin</label>
+                        <input type="datetime-local" id="input-fecha-fin" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
+                    </div>
+                </div>
+
+                <!-- Descripción -->
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">Descripción Breve (Opcional)</label>
                     <textarea id="input-descripcion" rows="3" placeholder="Escribe un poco sobre este evento o lugar..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
+
+                <!-- Redes Sociales / Web (Estilo Premium: Pulsar para añadir) -->
+                <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <label style="display: block; margin-bottom: 15px; font-weight: 700; color: #fff; font-size: 0.9rem;">
+                        Redes Sociales (Pulsar para añadir)
+                    </label>
+                    
+                    <!-- Icon Dashboard (Estilo: Se prenden al pulsar) -->
+                    <div style="display: flex; gap: 12px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button type="button" class="btn-sn-toggle sn-off" data-sn="fb" data-color="#1877F2" title="Facebook" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-facebook"></i></button>
+                        <button type="button" class="btn-sn-toggle sn-off" data-sn="ig" data-color="linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" title="Instagram" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-instagram"></i></button>
+                        <button type="button" class="btn-sn-toggle sn-off" data-sn="wa" data-color="#25D366" title="WhatsApp" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button type="button" class="btn-sn-toggle sn-off" data-sn="x" data-color="#000" title="X (Twitter)" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-x-twitter"></i></button>
+                        <button type="button" class="btn-sn-toggle sn-off" data-sn="yt" data-color="#FF0000" title="YouTube" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-youtube"></i></button>
+                        <div style="width: 2px; height: 30px; background: rgba(255,255,255,0.1); margin: auto 5px;"></div>
+                        <button type="button" class="btn-sn-toggle sn-off" data-sn="web" data-color="#34495e" title="Sitio Web o Forms" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-solid fa-globe"></i></button>
+                    </div>
+
+                    <!-- Hidden Inputs Container -->
+                    <div id="sn-inputs-container" style="display: grid; gap: 12px;">
+                        <div id="input-group-fb" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
+                            <i class="fa-brands fa-facebook" style="width: 25px; color: #1877F2; font-size: 1.4rem;"></i>
+                            <input type="url" id="input-fb" placeholder="URL o usuario de facebook" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        </div>
+                        <div id="input-group-ig" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
+                            <i class="fa-brands fa-instagram" style="width: 25px; color: #E4405F; font-size: 1.4rem;"></i>
+                            <input type="url" id="input-ig" placeholder="URL o usuario de instagram" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        </div>
+                        <div id="input-group-wa" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
+                            <i class="fa-brands fa-whatsapp" style="width: 25px; color: #25D366; font-size: 1.4rem;"></i>
+                            <input type="url" id="input-wa" placeholder="URL o usuario de whatsapp" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        </div>
+                        <div id="input-group-x" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
+                            <i class="fa-brands fa-x-twitter" style="width: 25px; color: #fff; font-size: 1.4rem;"></i>
+                            <input type="url" id="input-x" placeholder="URL o usuario de x-twitter" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        </div>
+                        <div id="input-group-yt" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
+                            <i class="fa-brands fa-youtube" style="width: 25px; color: #FF0000; font-size: 1.4rem;"></i>
+                            <input type="url" id="input-yt" placeholder="URL o usuario de youtube" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        </div>
+                        <div id="input-group-web" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
+                            <i class="fa-solid fa-globe" style="width: 25px; color: #5bc2f7; font-size: 1.4rem;"></i>
+                            <input type="url" id="input-web" placeholder="Link al sitio web oficial" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enlace de Forms/Registro (Solo para eventos) -->
+                <div id="section-registro" style="margin-bottom: 25px; padding: 15px; background: rgba(155,34,56,0.08); border: 1px solid rgba(155,34,56,0.3); border-radius: 12px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #ff6b81;">
+                        <i class="fa-solid fa-clipboard-list"></i> Enlace de Registro (Google Forms, etc.)
+                    </label>
+                    <input type="url" id="input-reg-link" placeholder="https://forms.gle/..." style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
+                </div>
+
+                <!-- Acciones -->
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                     <button type="button" id="btn-cancelar" style="padding: 10px 15px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer;">Cancelar</button>
                     <button type="submit" class="btn btn-primary" style="padding: 10px 15px; border-radius: 5px;">Guardar</button>
@@ -164,7 +335,8 @@
         </div>
     </div>
 
-    <!-- JS Module -->
+    <!-- Scripts -->
+    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
     <script type="module" src="./assets/js/pages/admin.js"></script>
 </body>
 </html>

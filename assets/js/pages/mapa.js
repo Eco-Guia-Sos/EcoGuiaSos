@@ -13,82 +13,75 @@ document.addEventListener('DOMContentLoaded', () => {
 function initMap() {
     map = new maplibregl.Map({
         container: 'map-container',
-        // Estilo oscuro tipo MapCN/Shadcn
-        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        // Estilo SATELITAL (ArcGIS World Imagery)
+        style: {
+            'version': 8,
+            'sources': {
+                'raster-tiles': {
+                    'type': 'raster',
+                    'tiles': [
+                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                    ],
+                    'tileSize': 256,
+                    'attribution': 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                }
+            },
+            'layers': [
+                {
+                    'id': 'simple-tiles',
+                    'type': 'raster',
+                    'source': 'raster-tiles',
+                    'minzoom': 0,
+                    'maxzoom': 22
+                }
+            ]
+        },
         center: defaultLocation,
         zoom: 11,
         antialias: true
     });
 
     map.on('load', () => {
-        loadMarkers();
+        refreshMarkers(); // Usar la misma función centralizada.
+        // Auto-locate on start
+        setTimeout(() => {
+            const locateBtn = document.getElementById('locate-btn');
+            if (locateBtn) locateBtn.click();
+        }, 1000);
     });
 
     // Add navigation controls (zoom, orientation)
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 }
 
-async function loadMarkers() {
-    try {
-        const { data: lugares, error: e1 } = await supabase.from('lugares').select('*');
-        const { data: eventos, error: e2 } = await supabase.from('eventos').select('*');
+let markers = [];
 
-        if (e1 || e2) throw e1 || e2;
+async function refreshMarkers(filterText = '') {
+    // Clear existing markers from DOM/Map
+    markers.forEach(m => m.remove());
+    markers = [];
+
+    try {
+        const { data: lugares } = await supabase.from('lugares').select('*');
+        const { data: eventos } = await supabase.from('eventos').select('*');
 
         const allData = [
             ...(lugares || []).map(l => ({ ...l, tipo: 'lugar' })),
             ...(eventos || []).map(e => ({ ...e, tipo: 'evento' }))
-        ];
+        ].filter(item => 
+            item.nombre.toLowerCase().includes(filterText.toLowerCase()) ||
+            (item.categoria && item.categoria.toLowerCase().includes(filterText.toLowerCase()))
+        );
 
-        allData.forEach(item => {
-            if (item.ubicacion && item.ubicacion.lat && item.ubicacion.lng) {
-                addMarker(item);
+        allData.forEach((item, index) => {
+            if (item.lat && item.lng) {
+                const m = addMarker(item, index + 1);
+                markers.push(m);
             }
         });
-
     } catch (err) {
-        console.error('Error cargando marcadores:', err);
+        console.error(err);
     }
-}
-
-function addMarker(item) {
-    const isEvento = item.tipo === 'evento';
-    const markerColor = isEvento ? '#ff4757' : '#2ed573';
-    
-    // Create a custom DOM element for the marker
-    const el = document.createElement('div');
-    el.className = 'custom-marker';
-    el.style.backgroundColor = markerColor;
-    el.style.width = '14px';
-    el.style.height = '14px';
-    el.style.borderRadius = '50%';
-    el.style.border = '2px solid rgba(255,255,255,0.8)';
-    el.style.boxShadow = `0 0 15px ${markerColor}`;
-    el.style.cursor = 'pointer';
-
-    // Popup logic with "MapCN" style
-    const popupHtml = `
-        <div class="popup-card">
-            <span class="badge" style="background: ${markerColor}22; color: ${markerColor}; margin-bottom: 8px; display: inline-block;">
-                ${item.tipo.toUpperCase()}
-            </span>
-            <h3>${item.nombre}</h3>
-            <p>${item.categoria || 'Sin categoría'}</p>
-            <div style="display: flex; gap: 8px; margin-top: 10px;">
-                <button class="popup-btn" onclick="window.location.href='/pages/${item.tipo}s.html?id=${item.id}'">
-                    Ver más
-                </button>
-            </div>
-        </div>
-    `;
-
-    const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
-        .setHTML(popupHtml);
-
-    new maplibregl.Marker(el)
-        .setLngLat([item.ubicacion.lng, item.ubicacion.lat])
-        .setPopup(popup)
-        .addTo(map);
 }
 
 function setupControls() {
@@ -135,80 +128,71 @@ function setupControls() {
     });
 
     const searchInput = document.getElementById('map-search');
-    let markers = [];
 
-    async function refreshMarkers(filterText = '') {
-        // Clear existing markers from DOM/Map
-        markers.forEach(m => m.remove());
-        markers = [];
-
-        try {
-            const { data: lugares } = await supabase.from('lugares').select('*');
-            const { data: eventos } = await supabase.from('eventos').select('*');
-
-            const allData = [
-                ...(lugares || []).map(l => ({ ...l, tipo: 'lugar' })),
-                ...(eventos || []).map(e => ({ ...e, tipo: 'evento' }))
-            ].filter(item => 
-                item.nombre.toLowerCase().includes(filterText.toLowerCase()) ||
-                (item.categoria && item.categoria.toLowerCase().includes(filterText.toLowerCase()))
-            );
-
-            allData.forEach(item => {
-                if (item.ubicacion && typeof item.ubicacion === 'object' && item.ubicacion.lat && item.ubicacion.lng) {
-                    const m = addMarker(item);
-                    markers.push(m);
-                }
-            });
-        } catch (err) {
-            console.error(err);
-        }
-    }
+    // La función refreshMarkers se movió al scope global
 
     searchInput.addEventListener('input', (e) => {
         const text = e.target.value;
         refreshMarkers(text);
     });
 
-    // Initial load through this logic
-    refreshMarkers();
+    // Carga inicial manejada en map.on('load')
 }
 
-function addMarker(item) {
+function addMarker(item, index) {
     const isEvento = item.tipo === 'evento';
-    const markerColor = isEvento ? '#ff4757' : '#2ed573';
     
     const el = document.createElement('div');
-    el.className = 'custom-marker';
-    // ... same style as before ...
-    el.style.backgroundColor = markerColor;
-    el.style.width = '14px';
-    el.style.height = '14px';
-    el.style.borderRadius = '50%';
-    el.style.border = '2px solid rgba(255,255,255,0.8)';
-    el.style.boxShadow = `0 0 15px ${markerColor}`;
-    el.style.cursor = 'pointer';
+    el.className = `numbered-marker ${isEvento ? 'type-evento' : ''}`;
+    el.innerHTML = `<span>${index}</span>`;
 
-    const popupHtml = `
-        <div class="popup-card">
-            <span class="badge" style="background: ${markerColor}22; color: ${markerColor}; margin-bottom: 8px; display: inline-block;">
-                ${item.tipo.toUpperCase()}
-            </span>
-            <h3>${item.nombre}</h3>
-            <p>${item.categoria || 'Sin categoría'}</p>
-            <div style="display: flex; gap: 8px; margin-top: 10px;">
-                <button class="popup-btn" onclick="window.location.href='/pages/${item.tipo}s.html?id=${item.id}'">
-                    Ver más
-                </button>
-            </div>
-        </div>
-    `;
-
-    const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
-        .setHTML(popupHtml);
-
-    return new maplibregl.Marker(el)
-        .setLngLat([item.ubicacion.lng, item.ubicacion.lat])
-        .setPopup(popup)
+    const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([item.lng, item.lat])
         .addTo(map);
+
+    // Evento Click para abrir Panel Lateral
+    el.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evitar que el clic se pase al mapa o cierre algo
+        
+        // Animación suave al marcador
+        map.flyTo({
+            center: [item.lng, item.lat],
+            zoom: 16,
+            essential: true,
+            offset: [0, 0] // Puedes ajustar si quieres que no quede justo al centro
+        });
+
+        // Actualizar datos del Panel Lateral
+        const panel = document.getElementById('event-detail-panel');
+        const img = document.getElementById('side-panel-img');
+        const badge = document.getElementById('side-panel-badge');
+        const title = document.getElementById('side-panel-title');
+        const category = document.getElementById('side-panel-category');
+        const location = document.getElementById('side-panel-location');
+        const link = document.getElementById('side-panel-link');
+
+        if(panel) {
+            img.src = item.imagen || '/assets/img/kpop.webp';
+            badge.innerText = item.tipo.toUpperCase();
+            title.innerText = item.nombre;
+            category.innerText = item.categoria || 'Sin categoría';
+            location.innerText = item.ubicacion_texto || item.direccion || 'Ubicación seleccionada';
+            link.href = `/pages/${item.tipo}s.html?id=${item.id}`;
+            
+            panel.classList.remove('hidden');
+        }
+    });
+
+    return marker;
 }
+
+// Configurar botón para cerrar el Panel
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.getElementById('close-side-panel');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            const panel = document.getElementById('event-detail-panel');
+            if(panel) panel.classList.add('hidden');
+        });
+    }
+});

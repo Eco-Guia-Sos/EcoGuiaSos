@@ -1,0 +1,311 @@
+/* assets/css/auth.css */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px 0; /* Add padding for small screens */
+    overflow-y: auto; /* Allow scrolling if container is tall */
+}
+
+#particles-js {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.auth-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
+.auth-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-top: 10px;
+}
+
+.back-link {
+    display: block;
+    color: var(--color-texto-secundario);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+}
+
+.auth-container {
+    padding: 2rem;
+    width: 100%;
+    border-radius: 24px;
+    background: rgba(30, 40, 45, 0.7);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 95vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-eco) transparent;
+}
+
+/* Scrollbar styling for the glass container */
+.auth-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.auth-container::-webkit-scrollbar-thumb {
+    background: rgba(114, 176, 77, 0.5);
+    border-radius: 10px;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    color: var(--color-texto-secundario);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: var(--font-heading);
+}
+
+.auth-tab.active {
+    color: var(--color-eco);
+    border-bottom: 2px solid var(--color-eco);
+}
+
+.auth-form {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-form h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-form p {
+    color: var(--color-texto-secundario);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    margin-bottom: 1.2rem;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: var(--font-body);
+}
+
+.input-wrapper input:focus {
+    outline: none;
+    border-color: var(--color-eco);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 10px rgba(114, 176, 77, 0.2);
+}
+
+.auth-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 12px;
+}
+
+.auth-message {
+    margin-top: 1.5rem;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+    text-align: center;
+}
+
+.auth-message.success {
+    display: block;
+    background: rgba(114, 176, 77, 0.1);
+    color: var(--color-eco);
+    border: 1px solid var(--color-eco);
+}
+
+.auth-message.error {
+    display: block;
+    background: rgba(231, 76, 60, 0.1);
+    color: #ffd2d2;
+    border: 1px solid #e74c3c;
+}
+
+/* 11. New Actor Form Styles */
+.auth-textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: inherit;
+    min-height: 100px;
+    resize: vertical;
+    transition: all 0.3s;
+}
+
+.auth-textarea:focus {
+    outline: none;
+    border-color: var(--color-eco);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* 12. Social Selector Styles */
+.social-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
+    min-height: 64px;
+    align-items: center;
+}
+
+.social-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.social-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.social-btn.active {
+    background: var(--color-eco);
+    border-color: var(--color-eco);
+    box-shadow: 0 0 15px rgba(114, 176, 77, 0.3);
+}
+
+/* Colores de marca por red */
+.social-btn.facebook.active { background: #1877F2; border-color: #1877F2; }
+.social-btn.instagram.active { background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); border-color: transparent; }
+.social-btn.whatsapp.active { background: #25D366; border-color: #25D366; }
+.social-btn.x-twitter.active { background: #000000; border-color: #333; }
+.social-btn.youtube.active { background: #FF0000; border-color: #FF0000; }
+
+.social-inputs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.social-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.social-input-group label {
+    margin-bottom: 0 !important;
+    width: 30px;
+    text-align: center;
+    font-size: 1.1rem !important;
+}
+
+.social-input-group input {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 0.85rem;
+}
+
+.social-input-group input:focus {
+    outline: none;
+    border-color: var(--color-eco);
+}
+
+.required-badge {
+    color: #ff6b6b;
+    font-size: 0.7rem;
+    margin-left: 5px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+

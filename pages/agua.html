@@ -18,17 +18,9 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <style>
-        /* Specific overrides for Agua */
-        .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
-        .tema-card { padding: 25px; }
-        .tema-icon { font-size: 2.5rem; color: var(--primary-color); margin-bottom: 12px; }
-        .tema-card h3 { color: var(--primary-color); font-size: 1.2rem; margin: 0 0 10px 0; }
-        .tema-tag { display: inline-block; background: rgba(144, 212, 255, 0.15); color: var(--primary-color); padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 5px; margin-top: 10px; }
-    </style>
 </head>
 
-<body>
+<body class="dark-theme">
 
     <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
     <nav class="main-nav">
@@ -43,52 +35,85 @@
             </button>
 
             <ul class="nav-menu" id="nav-menu-list">
-                <li><a href="../index.html">Inicio</a></li>
-                <li><a href="../pages/nosotros.html">Nosotros</a></li>
+                <li><a href="../index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="../pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
                 <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
-                <li><a href="../admin.html">Admin</a></li>
-                <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
             </ul>
         </div>
     </nav>
 
     <header class="interior-hero">
-        <span class="category-badge">🐦 Nivel Colibrí (Polinización)</span>
-        <h2>Agua y Cuenca</h2>
-        <p>Comprende la importancia del agua y las cuencas hidrológicas.</p>
-        <nav class="level-subnav fade-in">
-            <a href="cursos.html" class="subnav-link"><i class="fa-solid fa-graduation-cap"></i> Cursos</a>
-            <a href="ecotecnias.html" class="subnav-link"><i class="fa-solid fa-lightbulb"></i> Ecotecnias</a>
-            <a href="agua.html" class="subnav-link active"><i class="fa-solid fa-water"></i> Agua</a>
-            <a href="lecturas.html" class="subnav-link"><i class="fa-solid fa-book"></i> Lecturas</a>
-            <a href="documentales.html" class="subnav-link"><i class="fa-solid fa-video"></i> Documentales</a>
-            <a href="firmas.html" class="subnav-link"><i class="fa-solid fa-file-signature"></i> Firmas</a>
-        </nav>
+        <div class="hero-glass-panel">
+            <span class="category-badge">🐦 Colibrí</span>
+            <h2>Agua y Cuenca</h2>
+            <p>Comprende la importancia del agua y las cuencas hidrológicas.</p>
+        </div>
+        
+        <div class="subnav-scroll-wrapper fade-in">
+            <div class="scroll-arrow left"><i class="fa-solid fa-chevron-left"></i></div>
+            <nav class="level-subnav">
+                <a href="cursos.html" class="subnav-link"><i class="fa-solid fa-graduation-cap"></i> Cursos</a>
+                <a href="ecotecnias.html" class="subnav-link"><i class="fa-solid fa-lightbulb"></i> Ecotecnias</a>
+                <a href="agua.html" class="subnav-link active"><i class="fa-solid fa-water"></i> Agua</a>
+                <a href="lecturas.html" class="subnav-link"><i class="fa-solid fa-book"></i> Lecturas</a>
+                <a href="documentales.html" class="subnav-link"><i class="fa-solid fa-video"></i> Documentales</a>
+                <a href="firmas.html" class="subnav-link"><i class="fa-solid fa-file-signature"></i> Firmas</a>
+            </nav>
+            <div class="scroll-arrow right"><i class="fa-solid fa-chevron-right"></i></div>
+        </div>
     </header>
 
     <main class="content-section">
         <p class="intro-text">El agua es el recurso más valioso. Conocer cómo funcionan las cuencas y cómo cuidarlas es fundamental.</p>
 
         <div class="card-grid-container">
-            <article class="tema-card generic-card fade-in">
-                <i class="fa-solid fa-water tema-icon"></i>
+            <article class="glass-card fade-in">
+                <div class="card-icon-ring">
+                    <i class="fa-solid fa-water"></i>
+                </div>
                 <h3>¿Qué es una cuenca?</h3>
                 <p>Territorio donde toda el agua fluye hacia un mismo punto. Entender tu cuenca es clave.</p>
-                <span class="tema-tag">Conceptos básicos</span>
+                <div class="card-tags">
+                    <span class="glow-badge glow-eco">Conceptos básicos</span>
+                </div>
             </article>
 
-            <article class="tema-card generic-card fade-in">
-                <i class="fa-solid fa-faucet-drip tema-icon"></i>
+            <article class="glass-card fade-in">
+                <div class="card-icon-ring">
+                    <i class="fa-solid fa-faucet-drip"></i>
+                </div>
                 <h3>Captación de lluvia</h3>
                 <p>Sistemas para recolectar y almacenar agua de lluvia para diversos usos.</p>
-                <span class="tema-tag">Ecotecnia</span><span class="tema-tag">Hogar</span>
+                <div class="card-tags">
+                    <span class="glow-badge glow-eco">Ecotecnia</span>
+                    <span class="glow-badge glow-eco">Hogar</span>
+                </div>
             </article>
         </div>
     </main>
 
-    <footer>
-        <div style="text-align: center; padding: 20px; color: #888;">
-            <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+    <!-- FOOTER INTERIOR (ÍNDICE VERDE) -->
+    <footer class="footer-interior">
+        <div class="footer-interior-content">
+            <div class="footer-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo" class="footer-mini-logo">
+                <span class="footer-title">EcoGuía SOS</span>
+            </div>
+            
+            <div class="footer-contact-info">
+                <p>Generando Redes Para el Futuro</p>
+                <a href="mailto:contacto@ecogaiasos.com">contacto@ecogaiasos.com</a>
+            </div>
+
+            <div class="footer-social-minimal">
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-legal">
+            &copy; 2025 EcoGuía SOS. Todos los derechos reservados.
         </div>
     </footer>
 

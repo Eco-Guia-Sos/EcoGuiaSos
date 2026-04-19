@@ -1,9 +1,10 @@
 /* assets/js/pages/cursos.js */
 import { supabase } from '../supabase.js';
-import { setupNavbar, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
 
 async function initCursos() {
     setupNavbar();
+    setupAuthObserver();
     const container = document.getElementById('cursos-container');
     if (!container) return;
 

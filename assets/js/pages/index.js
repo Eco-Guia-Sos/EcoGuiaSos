@@ -1,34 +1,68 @@
-import { setupNavbar } from '../ui-utils.js';
-import { supabase } from '../supabase.js';
+import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { supabase, supabaseUrl, supabaseKey } from '../supabase.js';
+import { setupFAB } from '../components/fab-menu.js';
 import { initAIAssistant } from '../ai-assistant.js';
-import { loadGoogleMaps } from '../maps-loader.js';
 
 let todosLosProyectos = [];
 let filtroActual = 'evento';
 let subFiltroActual = 'all';
 let proximidadActiva = false;
 let userCoords = null;
-let googleAutocomplete = null;
-let panelAutocomplete = null;
-const RADIO_KM = 10;
+const RADIO_KM = 100; // Increased to 100km for better mock visibility
+
+// Paginación
+let maxRendered = 9;
 
 // Estado de Búsqueda Avanzada
 let filtrosAvanzados = {
     categoria: 'all',
-    ubicacion: 'all', // all, nearby, address
-    direccion: null,
+    ubicacion: 'all', 
     distancia: 10,
-    fechas: 'all', // all, today, tomorrow, weekend
-    horarios: [], // morning, afternoon, night
-    soloGratis: false
+    fechas: 'all', 
+    fechaExacta: null,
+    soloGratis: false,
+    ninos: false,
+    mascotas: false
 };
 
 function initIndex() {
-    setupNavbar();
-    setupAdvancedSearch();
-    initAIAssistant();
+    console.log('[Inicio] 🚀 Inicializando página...');
     
-    // Loader Handling
+    // 1. Critical Initialization (Auth/Navbar first)
+    try {
+        setupNavbar();
+        setupAuthObserver();
+
+        // 🟡 IMPORTANTE: Esperar a que la Auth esté lista antes de cargar datos
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                console.log(`[Inicio] Auth listo (${event}), cargando datos de Supabase...`);
+                cargarDatosDeSupabase();
+                
+                // AUTO-UBICACIÓN: Si hay sesión, guardar ubicación silenciosamente para búsqueda avanzada.
+                // Ya no aplicamos el filtro activo para mostrar todos los eventos.
+                if (session && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
+                    console.log('[Inicio] Usuario autenticado, obteniendo ubicación silenciosa...');
+                    setTimeout(() => obtenerUbicacionSilenciosa(), 1500); 
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error("EcoGuía: Error inicializando Navbar/Auth:", e);
+    }
+
+    // 2. Secondary Components
+    try {
+        setupFAB();
+        setupHomeMapaToggle();
+        setupAdvancedSearch();
+        initAIAssistant();
+    } catch (e) {
+        console.error("EcoGuía: Error inicializando componentes secundarios:", e);
+    }
+    
+    // 3. System Loaders
     const loader = document.getElementById('loader');
     if (loader) {
         setTimeout(() => {
@@ -37,14 +71,16 @@ function initIndex() {
         }, 800);
     }
 
+    // 4. Background Processes
     iniciarParticulas();
     iniciarCarrusel();
-    cargarDatosDeGoogleSheets();
-    setupMapaToggle();
+    
+    // cargarDatosDeSupabase(); // Se movió al observador de Auth arriba
+
     setupMobileTooltips();
     iniciarMiniMapa();
 
-    // Event Listeners
+    // 5. Global Search Support
     const buscadorInput = document.getElementById('buscador-input');
     if (buscadorInput) {
         buscadorInput.addEventListener('input', filtrarYRenderizar);
@@ -56,6 +92,7 @@ function initIndex() {
     if (toggleSwitch && labels.length >= 2) {
         toggleSwitch.addEventListener('click', () => {
             toggleSwitch.classList.toggle('active');
+            maxRendered = 9; // Reiniciar paginación al cambiar tab
             if (toggleSwitch.classList.contains('active')) {
                 labels[0].classList.remove('active'); // Eventos OFF
                 labels[1].classList.add('active');    // Lugares ON
@@ -76,37 +113,10 @@ function initIndex() {
         });
     }
 
-    // Category Filters
-    const catFilters = document.querySelectorAll('.cat-filter');
-    if (catFilters.length > 0) {
-        catFilters.forEach(btn => {
-            btn.addEventListener('click', () => {
-                catFilters.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                subFiltroActual = btn.getAttribute('data-cat');
-                filtrarYRenderizar();
-            });
-        });
-    }
+    /* Los filtros de categoría ahora se gestionan dentro de setupAdvancedSearch */
 
-    const btnCercaDeMi = document.querySelector('.action-buttons .btn-primary');
-    if (btnCercaDeMi) {
-        btnCercaDeMi.addEventListener('click', (e) => {
-            e.preventDefault();
-            activarProximidad();
-        });
-    }
+    // El botón cerca de mí fue movido al panel de búsqueda avanzada.
     
-    // Lazy load Google Maps for Autocomplete
-    loadGoogleMaps().then(() => {
-        initGoogleAutocomplete();
-        // Re-run advanced search setup if panel is already initialized or needs it
-        const locationInput = document.getElementById('panel-location-input');
-        if (locationInput && !panelAutocomplete) {
-            initPanelAutocomplete(locationInput);
-        }
-    }).catch(err => console.error("Could not initialize Google Places:", err));
-
     // Service Worker Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -117,48 +127,96 @@ function initIndex() {
     }
 }
 
-
-async function cargarDatosDeGoogleSheets() {
+async function fetchRawSupabaseTable(table) {
+    // Buscar el token en localStorage para saltarnos el "bloqueo" de supabase-js
+    let token = null;
     try {
-        // Fetch from Supabase instead of Google Sheets
-        const { data: eventosData, error: errE } = await supabase.from('eventos').select('*');
-        const { data: lugaresData, error: errL } = await supabase.from('lugares').select('*');
+        let projectId = '';
+        if (supabaseUrl) projectId = new URL(supabaseUrl).hostname.split('.')[0];
+        
+        const rawStorage = localStorage.getItem('ecoguia-auth-token') 
+                        || localStorage.getItem(`sb-${projectId}-auth-token`);
+                        
+        if (rawStorage) {
+            token = JSON.parse(rawStorage).access_token;
+        }
+    } catch(e) { console.warn('[Datos] Error extrayendo token crudo:', e); }
 
-        if (errE) throw errE;
-        if (errL) throw errL;
+    const headers = {
+        'apikey': supabaseKey,
+        'Content-Type': 'application/json'
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        // Map them to the internal structure
-        const eventos = (eventosData || []).map(row => parseSupabaseRow(row, 'evento'));
-        const lugares = (lugaresData || []).map(row => parseSupabaseRow(row, 'lugar'));
+    const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    return await res.json();
+}
 
-        todosLosProyectos = [...eventos, ...lugares];
+async function cargarDatosDeSupabase() {
+    console.log('[Datos] 🔄 Iniciando carga desde Supabase (Petición directa/Fetch)...');
+    
+    try {
+        const eventosData = await fetchRawSupabaseTable('eventos?select=*');
+        console.log('[Datos] 🟢 Eventos respondieron (Directo)');
 
-        if (todosLosProyectos.length === 0) {
-            console.warn("No hay datos en Supabase, mostrando fallback de demostración.");
-            cargarFallback();
-        } else {
-            filtrarYRenderizar();
+        const lugaresData = await fetchRawSupabaseTable('lugares?select=*,eventos(count)');
+        console.log('[Datos] 🟢 Lugares respondieron (Directo)');
+
+        // --- NUEVO: Cargar perfiles por separado para evitar errores de join ---
+        let profilesMap = {};
+        const allRows = [...(eventosData || []), ...(lugaresData || [])];
+        const ownerIds = [...new Set(allRows.map(r => r.owner_id).filter(id => id))];
+
+        if (ownerIds.length > 0) {
+            try {
+                // Filtramos perfiles por los IDs que necesitamos
+                const filter = `id=in.(${ownerIds.join(',')})`;
+                const pData = await fetchRawSupabaseTable(`perfiles?${filter}&select=id,nombre_completo`);
+                if (pData) {
+                    pData.forEach(p => { profilesMap[p.id] = p.nombre_completo; });
+                }
+            } catch (pErr) {
+                console.warn('[Datos] ⚠️ No se pudieron obtener los nombres de los actores:', pErr);
+            }
         }
 
+        const eventos = (eventosData || []).map(row => {
+            const p = parseSupabaseRow(row, 'evento');
+            if (p && row.owner_id) p.actor_nombre = profilesMap[row.owner_id] || null;
+            return p;
+        }).filter(x => x);
+
+        const lugares = (lugaresData || []).map(row => {
+            const p = parseSupabaseRow(row, 'lugar');
+            if (p && row.owner_id) p.actor_nombre = profilesMap[row.owner_id] || null;
+            return p;
+        }).filter(x => x);
+
+        console.log('[Datos] ✅ Parseados — Eventos:', eventos.length, '| Lugares:', lugares.length);
+
+        todosLosProyectos = [...eventos, ...lugares];
+        filtrarYRenderizar();
     } catch (error) {
-        console.error("Error cargando datos desde Supabase:", error);
-        cargarFallback();
+        console.error("[Datos] ❌ Error cargando datos desde Supabase (Fetch directo):", error);
+        // Intentar limpiar cargadores si falla
+        const gL = document.getElementById('grid-lugares');
+        const gE = document.getElementById('grid-eventos');
+        if(gL) gL.innerHTML = '<p class="error">Error al conectar con la base de datos.</p>';
+        if(gE) gE.innerHTML = '<p class="error">Error al conectar con la base de datos.</p>';
     }
 }
 
-function cargarFallback() {
-    todosLosProyectos = [
-        { nombre: "Taller de Composta", categoria: "Taller", ubicacion: "Parque México", imagen: "/assets/img/kpop.webp", tipo: "evento" },
-        { nombre: "Limpieza del Río", categoria: "Voluntariado", ubicacion: "Los Dinamos", imagen: "/assets/img/ajolote.webp", tipo: "evento" },
-        { nombre: "Huerto Roma Verde", categoria: "Huerto", ubicacion: "Roma Sur", imagen: "/assets/img/kpop.webp", tipo: "lugar" },
-        { nombre: "Viveros de Coyoacán", categoria: "Parque", ubicacion: "Coyoacán", imagen: "/assets/img/colibri.webp", tipo: "lugar" }
-    ];
-    filtrarYRenderizar();
-}
+// Fallback removed as requested by user to start real content dev
 
 function parseSupabaseRow(row, tipo) {
     if (!row.nombre) return null;
-
+    
+    let conteo = 0;
+    if (tipo === 'lugar' && row.eventos && row.eventos.length > 0) {
+        conteo = row.eventos[0].count || 0;
+    }
+    
     return {
         id: row.id,
         nombre: row.nombre,
@@ -168,13 +226,16 @@ function parseSupabaseRow(row, tipo) {
         imagen: row.imagen || '/assets/img/kpop.webp',
         descripcion: row.descripcion || 'Sin descripción.',
         tipo: tipo,
-        coordenadas: row.ubicacion && typeof row.ubicacion === 'object' ? row.ubicacion : null
+        coordenadas: (row.lat && row.lng) ? { lat: row.lat, lng: row.lng } : null,
+        conteo_eventos: conteo,
+        fecha: row.fecha_inicio || row.fecha || row.created_at, // Fallback para que fechas tengan algo
+        es_gratuito: row.es_gratuito,
+        pet_friendly: row.pet_friendly,
+        apto_ninos: row.apto_ninos,
+        owner_id: row.owner_id
     };
 }
 
-/**
- * Sincroniza el mini-mapa con los resultados filtrados
- */
 let miniMapHandle = null;
 let currentMarkers = [];
 
@@ -190,17 +251,13 @@ async function iniciarMiniMapa() {
             zoom: 10,
             scrollZoom: false
         });
-
         miniMapHandle.addControl(new maplibregl.NavigationControl(), 'top-right');
-        
-        // Carga inicial
         const checkData = setInterval(() => {
             if (todosLosProyectos.length > 0) {
                 clearInterval(checkData);
                 actualizarMiniMapaConFiltros(todosLosProyectos.filter(p => p.tipo === filtroActual));
             }
         }, 500);
-
     } catch (err) {
         console.error("Error initializing mini-map:", err);
     }
@@ -208,69 +265,87 @@ async function iniciarMiniMapa() {
 
 function actualizarMiniMapaConFiltros(datos) {
     if (!miniMapHandle) return;
-
-    // Limpiar marcadores anteriores
     currentMarkers.forEach(m => m.remove());
     currentMarkers = [];
-
     const bounds = new maplibregl.LngLatBounds();
     let hasCoords = false;
 
-    // Agregar marcador de usuario si está activo
     if (proximidadActiva && userCoords) {
         const el = document.createElement('div');
         el.className = 'user-marker';
         el.innerHTML = '<i class="fa-solid fa-street-view"></i>';
         
-        new maplibregl.Marker({ element: el })
+        const popupHtml = `
+            <div style="text-align: center; color: #007bff; padding: 2px;">
+                <h4 style="margin: 0; font-weight: 700; font-size: 14px; letter-spacing: -0.3px;">📍 Tú estás aquí</h4>
+                <p style="margin: 3px 0 0; font-size: 11px; color: #666;">Punto de inicio de búsqueda</p>
+            </div>
+        `;
+
+        const userMarker = new maplibregl.Marker({ element: el })
             .setLngLat([userCoords.lng, userCoords.lat])
+            .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(popupHtml))
             .addTo(miniMapHandle);
+            
+        userMarker.togglePopup(); // ¡Abre el globito de texto automáticamente!
         
+        currentMarkers.push(userMarker); // ¡Añadido para que sea persistente!
         bounds.extend([userCoords.lng, userCoords.lat]);
         hasCoords = true;
     }
 
-    datos.forEach(p => {
+    datos.forEach((p, index) => {
         if (p.coordenadas && p.coordenadas.lat && p.coordenadas.lng) {
-            const color = p.tipo === 'evento' ? '#b71c1c' : '#72B04D';
-            
-            const marker = new maplibregl.Marker({ color: color })
+            const isEvento = p.tipo === 'evento';
+            const el = document.createElement('div');
+            el.className = `numbered-marker ${isEvento ? 'type-evento' : ''}`;
+            el.innerHTML = `<span>${index + 1}</span>`;
+
+            const marker = new maplibregl.Marker({ element: el })
                 .setLngLat([p.coordenadas.lng, p.coordenadas.lat])
-                .setPopup(new maplibregl.Popup({ offset: 25 })
-                    .setHTML(`
-                        <div style="color: #333; padding: 5px;">
-                            <b style="color: ${color}">${p.nombre}</b><br>
-                            <small>${p.categoria}</small>
-                            ${p.distancia_calculada ? `<br><small>A ${p.distancia_calculada.toFixed(1)} km</small>` : ''}
-                        </div>
-                    `))
                 .addTo(miniMapHandle);
-            
+                
+            // Click en marcador de inicio -> Abrir Panel de Información en el home
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                miniMapHandle.flyTo({
+                    center: [p.coordenadas.lng, p.coordenadas.lat],
+                    zoom: 16,
+                    essential: true
+                });
+
+                const panel = document.getElementById('home-event-detail-panel');
+                if(panel) {
+                    document.getElementById('home-side-panel-img').src = p.imagen || '/assets/img/kpop.webp';
+                    document.getElementById('home-side-panel-badge').innerText = p.tipo.toUpperCase();
+                    document.getElementById('home-side-panel-title').innerText = p.nombre;
+                    document.getElementById('home-side-panel-location').innerText = p.ubicacion || 'Ubicación seleccionada';
+                    const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
+                    document.getElementById('home-side-panel-link').href = `/pages/${detailPage}?id=${p.id}`;
+                    panel.classList.remove('hidden');
+                }
+            });
+
             currentMarkers.push(marker);
             bounds.extend([p.coordenadas.lng, p.coordenadas.lat]);
             hasCoords = true;
         }
     });
 
-    if (hasCoords) {
-        miniMapHandle.fitBounds(bounds, { padding: 50, maxZoom: 15 });
-    }
+    if (hasCoords) miniMapHandle.fitBounds(bounds, { padding: 50, maxZoom: 15 });
 }
 
 function filtrarYRenderizar() {
     const buscadorInput = document.getElementById('buscador-input');
     const textoBuscador = buscadorInput ? buscadorInput.value.toLowerCase() : '';
-    
-    // 1. Filtro base (Evento / Lugar)
     let datosFiltrados = todosLosProyectos.filter(p => p.tipo === filtroActual);
 
-    // 2. Filtro de Categoría (Prioriza el avanzado si no es 'all')
-    const catFinal = filtrosAvanzados.categoria !== 'all' ? filtrosAvanzados.categoria : subFiltroActual;
+    const catFinal = filtrosAvanzados.categoria;
     if (catFinal !== 'all') {
         datosFiltrados = datosFiltrados.filter(p => p.categoria === catFinal);
     }
 
-    // 3. Filtro de Texto
     if (textoBuscador) {
         datosFiltrados = datosFiltrados.filter(p =>
             p.nombre.toLowerCase().includes(textoBuscador) ||
@@ -279,7 +354,7 @@ function filtrarYRenderizar() {
         );
     }
 
-    // 4. Filtro de Proximidad (GPS o Dirección del Panel)
+    // Filtro por Proximidad (GPS + Slider)
     if (proximidadActiva && userCoords) {
         datosFiltrados = datosFiltrados.filter(p => {
             if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) return false;
@@ -290,231 +365,221 @@ function filtrarYRenderizar() {
         datosFiltrados.sort((a, b) => a.distancia_calculada - b.distancia_calculada);
     }
 
-    // 5. Filtro de Fechas (Placeholder - requiere campo fecha en DB)
-    if (filtrosAvanzados.fechas !== 'all') {
-        // Por ahora simulamos que si tiene fecha coincide (para mostrar que el filtro "funciona" visualmente)
-        // En prod: datosFiltrados = datosFiltrados.filter(p => filterByDate(p.fecha, filtrosAvanzados.fechas));
+    // Filtro por Fecha (Píldoras y Calendario)
+    if (filtrosAvanzados.fechaExacta) {
+        datosFiltrados = datosFiltrados.filter(p => p.fecha === filtrosAvanzados.fechaExacta);
+    } else if (filtrosAvanzados.fechas !== 'all') {
+        const hoy = new Date();
+        datosFiltrados = datosFiltrados.filter(p => {
+            if (!p.fecha) return true; // Si no tiene fecha, mostrar siempre (parques, etc)
+            const fechaE = new Date(p.fecha);
+            if (filtrosAvanzados.fechas === 'today') return fechaE.toDateString() === hoy.toDateString();
+            if (filtrosAvanzados.fechas === 'tomorrow') {
+                const manana = new Date(hoy);
+                manana.setDate(hoy.getDate() + 1);
+                return fechaE.toDateString() === manana.toDateString();
+            }
+            if (filtrosAvanzados.fechas === 'weekend') {
+                const dia = fechaE.getDay();
+                return dia === 0 || dia === 6; // Domingo o Sábado
+            }
+            return true;
+        });
     }
 
-    // 6. Filtro de Horarios
-    if (filtrosAvanzados.horarios.length > 0) {
-        // En prod: datosFiltrados = datosFiltrados.filter(p => filtrosAvanzados.horarios.includes(p.jornada));
-    }
-
-    // 7. Filtro Solo Gratuitos
+    // Filtros de Audiencia y Preferencias
     if (filtrosAvanzados.soloGratis) {
         datosFiltrados = datosFiltrados.filter(p => p.es_gratuito === true || p.es_gratuito === undefined);
     }
+    if (filtrosAvanzados.mascotas) {
+        datosFiltrados = datosFiltrados.filter(p => p.pet_friendly === true);
+    }
+    if (filtrosAvanzados.ninos) {
+        datosFiltrados = datosFiltrados.filter(p => p.apto_ninos === true);
+    }
 
-    renderCards(datosFiltrados);
-    actualizarMiniMapaConFiltros(datosFiltrados);
+    // Aplicar paginación (mostrar solo maxRendered)
+    const datosPaginados = datosFiltrados.slice(0, maxRendered);
+
+    renderCards(datosPaginados);
+    actualizarMiniMapaConFiltros(datosFiltrados); // El mapa muestra todos
     renderizarControlFiltros();
+    renderizarBotonCargarMas(datosFiltrados.length);
 }
 
-/**
- * Calcula la distancia entre dos puntos (Fórmula de Haversine)
- */
+function renderizarBotonCargarMas(totalFiltrados) {
+    const contenedor = document.getElementById('contenedor-tarjetas');
+    let btnContainer = document.getElementById('btn-cargar-mas-container');
+    
+    if (totalFiltrados > maxRendered) {
+        if (!btnContainer) {
+            btnContainer = document.createElement('div');
+            btnContainer.id = 'btn-cargar-mas-container';
+            btnContainer.style.cssText = 'text-align: center; margin-top: 30px; width: 100%; display: flex; justify-content: center;';
+            
+            const btn = document.createElement('button');
+            btn.className = 'btn-primary';
+            btn.innerHTML = '<i class="fa-solid fa-plus"></i> Cargar más';
+            btn.onclick = () => {
+                maxRendered += 9;
+                filtrarYRenderizar();
+            };
+            
+            btnContainer.appendChild(btn);
+            contenedor.parentNode.insertBefore(btnContainer, contenedor.nextSibling);
+        }
+    } else {
+        if (btnContainer) btnContainer.remove();
+    }
+}
+
 function calcularDistancia(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radio de la Tierra en km
+    const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
 }
 
 async function activarProximidad() {
-    if (!navigator.geolocation) {
-        alert("Tu navegador no soporta geolocalización.");
-        return;
-    }
-
+    if (!navigator.geolocation) return alert("Tu navegador no soporta geolocalización.");
     const loader = document.getElementById('loader');
-    if (loader) {
-        loader.style.display = 'flex';
-        loader.style.opacity = '1';
-    }
-
+    if (loader) { loader.style.display = 'flex'; loader.style.opacity = '1'; }
     navigator.geolocation.getCurrentPosition(
         (position) => {
-            userCoords = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                isGPS: true
-            };
+            userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
             proximidadActiva = true;
-            if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => { loader.style.display = 'none'; }, 500);
-            }
+            if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
             filtrarYRenderizar();
         },
         (error) => {
-            console.error("Error obteniendo ubicación:", error);
-            alert("No pudimos obtener tu ubicación. Por favor, revisa tus permisos.");
-            if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => { loader.style.display = 'none'; }, 500);
-            }
+            alert("No pudimos obtener tu ubicación.");
+            if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
         }
     );
 }
 
-/**
- * Inicializa Google Places Autocomplete en el buscador
- */
-function initGoogleAutocomplete() {
-    const input = document.getElementById('buscador-input');
-    if (!input || !window.google) return;
-
-    googleAutocomplete = new google.maps.places.Autocomplete(input, {
-        componentRestrictions: { country: "mx" },
-        fields: ["geometry", "name", "formatted_address"],
-        types: ["geocode", "establishment"]
-    });
-
-    googleAutocomplete.addListener("place_changed", () => {
-        const place = googleAutocomplete.getPlace();
-        if (!place.geometry || !place.geometry.location) {
-            console.log("No se encontraron detalles para: '" + place.name + "'");
-            return;
+async function obtenerUbicacionSilenciosa() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
+            // NO encendemos proximidadActiva aquí para no filtrar el catálogo entero.
+            // Solo lo guardamos por si el usuario usa la búsqueda avanzada después.
+        },
+        (error) => {
+            console.log("Ubicación silenciosa falló o fue denegada:", error);
         }
-
-        userCoords = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng()
-        };
-        proximidadActiva = true;
-        
-        // Limpiar el texto de búsqueda para que no interfiera con el filtro de texto
-        // e indicar que estamos buscando cerca de esa dirección
-        input.value = ""; 
-        input.placeholder = `Cerca de: ${place.name || 'dirección seleccionada'}`;
-        
-        filtrarYRenderizar();
-    });
+    );
 }
 
-function renderizarControlFiltros() {
-    const contenedor = document.querySelector('.content-section');
-    let control = document.getElementById('proximity-filter-chip');
-    
-    if (!proximidadActiva) {
-        if (control) control.remove();
-        return;
-    }
+function getNivelClass(categoria) {
+    const cat = (categoria || '').toLowerCase();
+    const colibri = ['agua', 'cursos', 'ecotecnias', 'lecturas', 'documentales', 'educación', 'naturaleza', 'ecología'];
+    const ajolote = ['agentes', 'voluntariados', 'comunidad', 'social', 'convocatorias'];
+    const lobo = ['fondos', 'normativa', 'legal', 'estrategia', 'finanzas'];
 
-    if (!control) {
-        control = document.createElement('div');
-        control.id = 'proximity-filter-chip';
-        control.className = 'proximity-chip active fade-in';
-        contenedor.insertBefore(control, contenedor.querySelector('.toggle-container'));
-    }
-
-    const label = (userCoords && userCoords.isGPS) ? 'Mi ubicación' : 'Dirección seleccionada';
-
-    control.innerHTML = `
-        <span class="chip-label"><i class="fa-solid fa-location-dot"></i> ${label} (10km)</span>
-        <button class="btn-clear-proximity" title="Quitar filtro">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    `;
-
-    control.querySelector('.btn-clear-proximity').addEventListener('click', () => {
-        proximidadActiva = false;
-        const input = document.getElementById('buscador-input');
-        if (input) {
-            input.placeholder = "Buscar proyectos o lugares...";
-        }
-        filtrarYRenderizar();
-    });
+    if (colibri.some(c => cat.includes(c))) return 'card-colibri';
+    if (ajolote.some(c => cat.includes(c))) return 'card-ajolote';
+    if (lobo.some(c => cat.includes(c))) return 'card-lobo';
+    return 'card-general';
 }
 
 function renderCards(data) {
     const contenedor = document.getElementById('contenedor-tarjetas');
     if (!contenedor) return;
-    
     contenedor.innerHTML = '';
-
     if (data.length === 0) {
-        contenedor.innerHTML = '<p class="txt-loading">No se encontraron resultados para tu búsqueda.</p>';
+        contenedor.innerHTML = '<p class="txt-loading">No se encontraron resultados.</p>';
         return;
     }
-
     data.forEach(p => {
-        const ubiHtml = p.mapa_url 
-            ? `<a href="${p.mapa_url}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;"><i class="fa-solid fa-location-dot"></i> ${p.ubicacion}</a>`
-            : `<i class="fa-solid fa-location-dot"></i> ${p.ubicacion}`;
+        const nivelClass = getNivelClass(p.categoria);
+        const distLabel = p.distancia_calculada ? `<span class="dist-badge">a ${p.distancia_calculada.toFixed(1)} km</span>` : '';
+        const eventosBadge = (p.tipo === 'lugar') ? `<span class="dist-badge" style="background: rgba(91,194,247,0.2); color: #5bc2f7; border: 1px solid #5bc2f7; top: 10px; left: 10px; right: auto; transform: none;"><i class="fa-solid fa-calendar-star"></i> ${p.conteo_eventos || 0} evento(s)</span>` : '';
+        const actorBadge = p.actor_nombre ? `<div class="actor-badge" title="Publicado por: ${p.actor_nombre}"><i class="fa-solid fa-user-pen"></i><span>${p.actor_nombre}</span></div>` : '';
 
-        const statusHtml = `<div class="card-status"><span class="status-dot"></span> <span class="status-lbl">Abierto</span></div>`;
-        const emoji = p.tipo === 'evento' ? '📅 ' : '📍 ';
-        const distLabel = p.distancia_calculada 
-            ? `<span class="dist-badge"><i class="fa-solid fa-person-walking"></i> a ${p.distancia_calculada.toFixed(1)} km</span>` 
-            : '';
+        // Determinar archivo de detalles correcto
+        const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
 
         const html = `
-            <article class="card fade-in">
+            <article class="card fade-in ${nivelClass}" data-owner="${p.owner_id || ''}" onclick="window.location.href='/pages/${detailPage}?id=${p.id}'" style="cursor: pointer;">
                 <div class="card-image">
-                    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'" loading="lazy">
+                    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
                     ${distLabel}
+                    ${eventosBadge}
+                    ${actorBadge}
+                    <div class="card-actions-overlay"></div>
                 </div>
                 <div class="card-content">
-                    <div class="card-header">
-                        <span class="card-category">${emoji}${p.categoria}</span>
-                        ${statusHtml}
-                    </div>
+                    <div class="card-header"><span class="card-category">${p.categoria}</span></div>
                     <h3 class="card-title">${p.nombre}</h3>
-                    <p class="card-location">
-                        ${ubiHtml}
-                    </p>
                 </div>
             </article>`;
         contenedor.innerHTML += html;
     });
+    checkCardPermissions();
 }
 
-function setupMapaToggle() {
-    const btn = document.getElementById('btn-toggle-mapa');
-    const mapaDiv = document.getElementById('mapa-desplegable');
-    // Elements might be missing after the interactive map refactor
-    if (!btn || !mapaDiv) return;
-
-    btn.addEventListener('click', () => {
-        mapaDiv.classList.toggle('activo');
-        if (mapaDiv.classList.contains('activo')) {
-            btn.innerHTML = '<i class="fa-solid fa-map-location-dot"></i> Ocultar Mapa';
-        } else {
-            btn.innerHTML = '<i class="fa-solid fa-map-location-dot"></i> Mostrar Mapa';
+async function checkCardPermissions() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+    const isAdmin = profile?.role === 'admin';
+    const isActor = profile?.role === 'actor';
+    document.querySelectorAll('.card').forEach(card => {
+        const ownerId = card.getAttribute('data-owner');
+        if (isAdmin || (isActor && ownerId === session.user.id)) {
+            const overlay = card.querySelector('.card-actions-overlay');
+            if (overlay) overlay.innerHTML = `<button class="btn-icon-glass"><i class="fa-solid fa-pen"></i></button>`;
         }
     });
+}
+
+function setupHomeMapaToggle() {
+    const btn = document.getElementById('btn-toggle-mapa-home');
+    const wrapper = document.getElementById('mapa-home-wrapper');
+    const closePanelBtn = document.getElementById('close-home-side-panel');
+
+    if (!btn || !wrapper) return;
+
+    btn.addEventListener('click', () => {
+        const isHidden = wrapper.classList.contains('hidden-map');
+        
+        if (isHidden) {
+            wrapper.classList.remove('hidden-map');
+            btn.innerText = 'Ocultar mapa';
+            // Forzar recálculo del mapa
+            setTimeout(() => {
+                if (miniMapHandle) miniMapHandle.resize();
+            }, 300);
+        } else {
+            wrapper.classList.add('hidden-map');
+            btn.innerText = 'Ver mapa';
+        }
+    });
+
+    if (closePanelBtn) {
+        closePanelBtn.addEventListener('click', () => {
+            document.getElementById('home-event-detail-panel')?.classList.add('hidden');
+        });
+    }
 }
 
 function setupMobileTooltips() {
     const toggles = document.querySelectorAll('.mobile-info-toggle');
-
     toggles.forEach(toggle => {
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            const parentWrapper = toggle.closest('.btn-wrapper');
-            const tooltip = parentWrapper ? parentWrapper.querySelector('.tooltip-list') : null;
-
+            const tooltip = toggle.closest('.btn-wrapper')?.querySelector('.tooltip-list');
             if (tooltip) {
-                document.querySelectorAll('.tooltip-list').forEach(el => {
-                    if (el !== tooltip) el.classList.remove('activo');
-                });
+                document.querySelectorAll('.tooltip-list').forEach(el => { if (el !== tooltip) el.classList.remove('activo'); });
                 tooltip.classList.toggle('activo');
             }
         });
     });
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.btn-wrapper')) {
-            document.querySelectorAll('.tooltip-list').forEach(el => el.classList.remove('activo'));
-        }
-    });
+    document.addEventListener('click', () => document.querySelectorAll('.tooltip-list').forEach(el => el.classList.remove('activo')));
 }
 
 function iniciarParticulas() {
@@ -524,15 +589,12 @@ function iniciarParticulas() {
                 "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
                 "color": { "value": ["#72B04D", "#0077b6", "#FFD700", "#E74C3C"] },
                 "shape": { "type": "circle" },
-                "opacity": { "value": 0.6, "random": true, "anim": { "enable": true, "speed": 0.5, "opacity_min": 0, "sync": false } },
+                "opacity": { "value": 0.6, "random": true },
                 "size": { "value": 8, "random": true },
                 "line_linked": { "enable": true, "distance": 180, "color": "#cccccc", "opacity": 0.4, "width": 1 },
-                "move": { "enable": true, "speed": 3.5, "direction": "out", "random": true, "straight": false, "out_mode": "out", "bounce": false }
+                "move": { "enable": true, "speed": 3.5, "direction": "out", "random": true, "out_mode": "out" }
             },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": { "onhover": { "enable": false }, "onclick": { "enable": false }, "resize": true }
-            },
+            "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false }, "onclick": { "enable": false }, "resize": true } },
             "retina_detect": true
         });
     }
@@ -540,24 +602,15 @@ function iniciarParticulas() {
 
 function iniciarCarrusel() {
     if (typeof Swiper !== 'undefined') {
-        new Swiper('.hero-carousel', {
-            loop: true,
-            autoplay: {
-                delay: 5000,
-                disableOnInteraction: false,
-            },
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true,
-            },
+        new Swiper('.hero-carousel', { 
+            loop: true, 
+            autoplay: { delay: 5000 }, 
+            pagination: { el: '.swiper-pagination', clickable: true }, 
             navigation: {
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
             },
-            effect: 'fade',
-            fadeEffect: {
-                crossFade: true
-            }
+            effect: 'fade' 
         });
     }
 }
@@ -565,167 +618,182 @@ function iniciarCarrusel() {
 function setupAdvancedSearch() {
     const btnToggle = document.getElementById('btn-busqueda-avanzada');
     const panel = document.getElementById('advanced-search-panel');
-    const btnReset = document.getElementById('btn-reset-filters');
-    
     if (!btnToggle || !panel) return;
 
-    // Toggle Panel
     btnToggle.addEventListener('click', () => {
         panel.classList.toggle('hidden');
         btnToggle.classList.toggle('active');
+        if (!panel.classList.contains('hidden')) {
+            actualizarConteoResultados();
+        }
     });
 
-    // Col 1: Categories
-    const iconBtns = panel.querySelectorAll('.icon-filter-btn');
-    iconBtns.forEach(btn => {
+    // Categorías (Píldoras)
+    panel.querySelectorAll('.cat-pill').forEach(btn => {
         btn.addEventListener('click', () => {
-            iconBtns.forEach(b => b.classList.remove('active'));
+            panel.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             filtrosAvanzados.categoria = btn.getAttribute('data-cat');
-            
-            // Sincronizar con los filtros rápidos
-            const catFilters = document.querySelectorAll('.cat-filter');
-            catFilters.forEach(b => {
-                b.classList.remove('active');
-                if (b.getAttribute('data-cat') === filtrosAvanzados.categoria) b.classList.add('active');
-            });
-            subFiltroActual = filtrosAvanzados.categoria;
-
-            filtrarYRenderizar();
+            actualizarConteoResultados();
         });
     });
 
-    // Col 2: Location
-    const locationRadios = panel.querySelectorAll('input[name="location-filter"]');
-    const locationInput = document.getElementById('panel-location-input');
+    // Ubicación (Píldoras + Slider)
+    const distanceBox = document.getElementById('distance-slider-container');
+    const distanceSlider = document.getElementById('distance-slider');
+    const distanceValue = document.getElementById('distance-value');
 
-    locationRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            filtrosAvanzados.ubicacion = radio.value;
-            locationInput.disabled = (radio.value !== 'address');
+    panel.querySelectorAll('.loc-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            panel.querySelectorAll('.loc-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const locType = btn.getAttribute('data-loc');
+            filtrosAvanzados.ubicacion = locType;
             
-            if (radio.value === 'all') {
+            if (locType === 'nearby') {
+                distanceBox.classList.remove('hidden');
+                activarProximidad();
+            } else {
+                distanceBox.classList.add('hidden');
                 proximidadActiva = false;
                 userCoords = null;
-            } else if (radio.value === 'nearby') {
-                activarProximidad();
             }
-            
-            filtrarYRenderizar();
+            actualizarConteoResultados();
         });
     });
 
-    // Init Autocomplete for Panel (Wrapped in function for lazy loading if needed)
-    if (locationInput) {
-        if (window.google) {
-            initPanelAutocomplete(locationInput);
-        }
+    if (distanceSlider) {
+        distanceSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            distanceValue.innerText = val;
+            filtrosAvanzados.distancia = parseInt(val);
+            actualizarConteoResultados();
+        });
     }
-}
 
-function initPanelAutocomplete(locationInput) {
-    if (!window.google || !locationInput) return;
-    
-    panelAutocomplete = new google.maps.places.Autocomplete(locationInput, {
-        componentRestrictions: { country: "mx" },
-        fields: ["geometry", "name"]
-    });
-    panelAutocomplete.addListener("place_changed", () => {
-        const place = panelAutocomplete.getPlace();
-        if (place.geometry) {
-            userCoords = {
-                lat: place.geometry.location.lat(),
-                lng: place.geometry.location.lng(),
-                name: place.name
-            };
-            proximidadActiva = true;
-            filtrarYRenderizar();
-        }
-    });
-    // Col 3: Fechas
-    const datePills = panel.querySelectorAll('.date-pill');
-    datePills.forEach(pill => {
+    // Fechas (Píldoras + Calendario)
+    const calendarInput = document.getElementById('calendar-input');
+    panel.querySelectorAll('.date-pill').forEach(pill => {
         pill.addEventListener('click', () => {
-            datePills.forEach(p => p.classList.remove('active'));
+            panel.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
             filtrosAvanzados.fechas = pill.getAttribute('data-date');
-            filtrarYRenderizar();
+            filtrosAvanzados.fechaExacta = null;
+            if (calendarInput) calendarInput.value = '';
+            actualizarConteoResultados();
         });
     });
 
-    // Col 4: Horarios
-    const timeChecks = panel.querySelectorAll('input[name="time-filter"]');
-    timeChecks.forEach(check => {
-        check.addEventListener('change', () => {
-            if (check.checked) {
-                filtrosAvanzados.horarios.push(check.value);
-            } else {
-                filtrosAvanzados.horarios = filtrosAvanzados.horarios.filter(h => h !== check.value);
+    if (calendarInput) {
+        calendarInput.addEventListener('change', (e) => {
+            filtrosAvanzados.fechaExacta = e.target.value;
+            panel.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active'));
+            actualizarConteoResultados();
+        });
+    }
+
+    // Audiencia (Chips)
+    document.getElementById('filter-pets')?.addEventListener('change', (e) => {
+        filtrosAvanzados.mascotas = e.target.checked;
+        actualizarConteoResultados();
+    });
+    document.getElementById('filter-kids')?.addEventListener('change', (e) => {
+        filtrosAvanzados.ninos = e.target.checked;
+        actualizarConteoResultados();
+    });
+    document.getElementById('switch-gratis')?.addEventListener('change', (e) => {
+        filtrosAvanzados.soloGratis = e.target.checked;
+        actualizarConteoResultados();
+    });
+
+    // Botones de Acción
+    document.getElementById('btn-apply-filters')?.addEventListener('click', () => {
+        panel.classList.add('hidden');
+        btnToggle.classList.remove('active');
+        filtrarYRenderizar();
+    });
+
+    document.getElementById('btn-reset-filters')?.addEventListener('click', resetFiltros);
+}
+
+function actualizarConteoResultados() {
+    // Esta función solo cuenta, no renderiza las tarjetas para evitar lag mientras se mueven sliders
+    let filtrados = todosLosProyectos.filter(p => p.tipo === filtroActual);
+    
+    if (filtrosAvanzados.categoria !== 'all') {
+        filtrados = filtrados.filter(p => p.categoria === filtrosAvanzados.categoria);
+    }
+
+    if (proximidadActiva && userCoords) {
+        filtrados = filtrados.filter(p => {
+            if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) return false;
+            const dist = calcularDistancia(userCoords.lat, userCoords.lng, p.coordenadas.lat, p.coordenadas.lng);
+            return dist <= filtrosAvanzados.distancia;
+        });
+    }
+
+    // Fechas
+    if (filtrosAvanzados.fechaExacta) {
+        filtrados = filtrados.filter(p => p.fecha === filtrosAvanzados.fechaExacta);
+    } else if (filtrosAvanzados.fechas !== 'all') {
+        const hoy = new Date();
+        filtrados = filtrados.filter(p => {
+            if (!p.fecha) return true;
+            const fechaE = new Date(p.fecha);
+            if (filtrosAvanzados.fechas === 'today') return fechaE.toDateString() === hoy.toDateString();
+            if (filtrosAvanzados.fechas === 'tomorrow') {
+                const manana = new Date(hoy);
+                manana.setDate(hoy.getDate() + 1);
+                return fechaE.toDateString() === manana.toDateString();
             }
-            filtrarYRenderizar();
-        });
-    });
-
-    // Solo Gratis
-    const switchGratis = document.getElementById('switch-gratis');
-    if (switchGratis) {
-        switchGratis.addEventListener('change', () => {
-            filtrosAvanzados.soloGratis = switchGratis.checked;
-            filtrarYRenderizar();
+            if (filtrosAvanzados.fechas === 'weekend') {
+                const dia = fechaE.getDay();
+                return dia === 0 || dia === 6;
+            }
+            return true;
         });
     }
 
-    // Reset
-    const btnResetPanel = document.getElementById('btn-reset-filters');
-    if (btnResetPanel) {
-        btnResetPanel.addEventListener('click', resetFiltros);
+    // Audiencia / Preferencias
+    if (filtrosAvanzados.soloGratis) {
+        filtrados = filtrados.filter(p => p.es_gratuito === true || p.es_gratuito === undefined);
     }
+    if (filtrosAvanzados.mascotas) {
+        filtrados = filtrados.filter(p => p.pet_friendly === true);
+    }
+    if (filtrosAvanzados.ninos) {
+        filtrados = filtrados.filter(p => p.apto_ninos === true);
+    }
+
+    const countSpan = document.getElementById('results-count');
+    if (countSpan) countSpan.innerText = filtrados.length;
 }
 
 function resetFiltros() {
-    filtrosAvanzados = {
-        categoria: 'all',
-        ubicacion: 'all',
-        direccion: null,
-        distancia: 10,
-        fechas: 'all',
-        horarios: [],
-        soloGratis: false
+    filtrosAvanzados = { 
+        categoria: 'all', ubicacion: 'all', distancia: 10, 
+        fechas: 'all', fechaExacta: null, soloGratis: false, 
+        ninos: false, mascotas: false 
     };
-
-    // UI Reset
+    
     const panel = document.getElementById('advanced-search-panel');
     if (panel) {
-        panel.querySelectorAll('.icon-filter-btn').forEach(b => b.classList.remove('active'));
-        const btnAll = panel.querySelector('.icon-filter-btn[data-cat="all"]');
-        if (btnAll) btnAll.classList.add('active');
-        
-        panel.querySelectorAll('input[name="location-filter"]').forEach(r => r.checked = (r.value === 'all'));
-        
-        const locInput = document.getElementById('panel-location-input');
-        if (locInput) {
-            locInput.value = "";
-            locInput.disabled = true;
-        }
-
-        panel.querySelectorAll('.date-pill').forEach(b => b.classList.remove('active'));
-        const dateAll = panel.querySelector('.date-pill[data-date="all"]');
-        if (dateAll) dateAll.classList.add('active');
-        
-        panel.querySelectorAll('input[name="time-filter"]').forEach(c => c.checked = false);
-        
-        const swGratis = document.getElementById('switch-gratis');
-        if (swGratis) swGratis.checked = false;
+        panel.querySelectorAll('.cat-pill, .loc-pill, .date-pill').forEach(b => {
+            b.classList.remove('active');
+            if (b.getAttribute('data-cat') === 'all' || b.getAttribute('data-loc') === 'all' || b.getAttribute('data-date') === 'all') {
+                b.classList.add('active');
+            }
+        });
+        document.getElementById('distance-slider-container')?.classList.add('hidden');
+        document.getElementById('calendar-input').value = '';
+        document.getElementById('filter-pets').checked = false;
+        document.getElementById('filter-kids').checked = false;
+        document.getElementById('switch-gratis').checked = false;
     }
-
-    // Reset filtros rápidos también
-    const catFilters = document.querySelectorAll('.cat-filter');
-    catFilters.forEach(b => b.classList.remove('active'));
-    if (catFilters[0]) catFilters[0].classList.add('active');
-    subFiltroActual = 'all';
-
+    
     proximidadActiva = false;
     userCoords = null;
+    maxRendered = 9;
     filtrarYRenderizar();
 }
 

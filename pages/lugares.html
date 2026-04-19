@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles - EcoGuía SOS</title>
+    
+    <!-- Librerías Externas -->
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Estilos EcoGuía SOS -->
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/detalles.css">
+</head>
+<body class="dark-theme lugares-page">
+    <!-- Navbar (Cargado por ui-utils.js) -->
+    <nav class="navbar glass-effect" id="main-nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
+            </a>
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="../index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="../pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
+                <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- LOADING SHIMMER -->
+    <div id="detail-loader" class="full-screen-loader">
+        <div class="spinner"></div>
+    </div>
+
+    <main id="detail-main-content" class="hidden">
+        <!-- 1. HERO SECTION (Estilo CDMX) -->
+        <header class="detail-hero">
+            <div class="hero-bg-blur" id="hero-bg-blur"></div>
+            <div class="hero-container container">
+                <div class="hero-poster">
+                    <img id="detail-poster" src="" alt="Poster">
+                    <span id="detail-type-badge" class="badge-pill type-badge"></span>
+                </div>
+                <div class="hero-info">
+                    <h1 id="detail-title">Cargando...</h1>
+                    <div class="hero-meta">
+                        <div class="meta-item">
+                            <i class="fa-solid fa-tag"></i>
+                            <span id="detail-category">Categoría</span>
+                        </div>
+                        <div class="meta-item highlight">
+                            <i class="fa-solid fa-clock"></i>
+                            <span id="detail-time-status">Hoy disponible</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. CONTENT GRID -->
+        <div class="content-wrapper container">
+            <article class="main-content">
+                <!-- Sección 4: Información General -->
+                <section class="info-section">
+                    <h2 class="section-title"><i class="fa-solid fa-circle-info"></i> Acerca de</h2>
+                    <div id="detail-description" class="description-text">
+                        <!-- Se llena vía JS -->
+                    </div>
+                </section>
+
+                <section id="sub-events-section" class="info-section" style="display: none; margin-top: 40px;">
+                    <h3 class="section-title" style="font-size: 1.2rem; color: #5bc2f7; margin-bottom: 20px;"><i class="fa-solid fa-calendar-star"></i> Próximos Eventos Aquí</h3>
+                    <div id="detail-sub-events" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
+                        <!-- Mini cards llenadas por JS -->
+                    </div>
+                </section>
+
+                <section class="info-section">
+                    <h2 class="section-title"><i class="fa-solid fa-calendar-days"></i> Horarios y Disponibilidad</h2>
+                    <div class="schedule-grid" id="detail-schedule">
+                        <div class="schedule-card">
+                            <p class="label">Horario</p>
+                            <p class="value" id="detail-hours">Consulte el recinto</p>
+                        </div>
+                    </div>
+                </section>
+            </article>
+
+            <!-- 3. SIDEBAR (Sticky on Desktop) -->
+            <aside class="side-panel">
+                <div class="sticky-card glass-effect">
+                    <div class="sidebar-map-container">
+                        <div id="detail-mini-map"></div>
+                    </div>
+                    
+                    <div class="sidebar-info">
+                        <div class="location-box">
+                            <p class="location-label">UBICACIÓN</p>
+                            <h4 id="detail-location-name">Nombre del lugar</h4>
+                            <p id="detail-address" class="location-address"></p>
+                        </div>
+
+                        <div class="action-buttons">
+                            <a href="#" id="btn-google-maps" target="_blank" class="btn btn-secondary full-width">
+                                <i class="fa-solid fa-map-location-dot"></i> Cómo llegar
+                            </a>
+                            <button id="btn-share" class="btn btn-outline full-width">
+                                <i class="fa-solid fa-share-nodes"></i> Compartir
+                            </button>
+                            <button id="btn-favorite" class="btn btn-outline full-width" style="display: none;">
+                                <i class="fa-regular fa-bookmark"></i> Guardar en Favoritos
+                            </button>
+                            <button id="btn-sumate" class="btn btn-primary full-width shimmer-extra">
+                                <i class="fa-solid fa-hand-holding-heart"></i> Súmate ahora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- UI MOBILE: Bottom Action Bar -->
+    <div class="mobile-action-bar">
+        <button id="mobile-btn-map" class="btn-circular"><i class="fa-solid fa-location-dot"></i></button>
+        <button id="mobile-btn-share" class="btn-circular"><i class="fa-solid fa-share-nodes"></i></button>
+        <button id="mobile-btn-favorite" class="btn-circular" style="display: none;"><i class="fa-regular fa-bookmark"></i></button>
+        <button id="mobile-btn-sumate" class="btn btn-primary flex-grow">Súmate</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+    <script type="module" src="../assets/js/pages/detalles.js"></script>
+</body>
+</html>

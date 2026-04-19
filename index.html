@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="./assets/css/global.css">
     <link rel="stylesheet" href="./assets/css/style.css">
     <link rel="stylesheet" href="./assets/css/ai-chat.css">
+    <link rel="stylesheet" href="./assets/css/fab.css">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Swiper CSS -->
@@ -46,11 +47,11 @@
             </button>
 
             <ul class="nav-menu" id="nav-menu-list">
-                <li><a href="./index.html" class="active">Inicio</a></li>
-                <li><a href="./pages/nosotros.html">Nosotros</a></li>
+                <li><a href="./index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="./pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
                 <li><a href="./como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
-                <li><a href="./admin.html">Admin</a></li>
-                <li><a href="#" class="nav-btn-highlight">Súmate</a></li>
+                <li><a href="./auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="./auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
             </ul>
         </div>
     </nav>
@@ -100,6 +101,7 @@
                             <li><a href="./pages/ecotecnias.html">💡 Ecotecnias</a></li>
                             <li><a href="./pages/agua.html">🌊 Agua</a></li>
                             <li><a href="./pages/lecturas.html">📚 Lecturas</a></li>
+                            <li><a href="./pages/documentales.html">🎥 Documentales</a></li>
                         </ul>
                     </div>
                 </div>
@@ -117,6 +119,7 @@
                     <div class="tooltip-list">
                         <ul>
                             <li><a href="./pages/agentes.html">👥 Agentes</a></li>
+                            <li><a href="./pages/convocatoria.html">📣 Convocatorias</a></li>
                             <li><a href="./pages/voluntariados.html">🤝 Ayuda</a></li>
                         </ul>
                     </div>
@@ -153,17 +156,7 @@
         </div>
 
 
-        <!-- 2. FILTROS POR CATEGORÍA ESTILO MATES.MX -->
-        <div class="category-filters-scroll">
-            <div class="category-filters">
-                <button class="cat-filter active" data-cat="all">🌍 Todo</button>
-                <button class="cat-filter" data-cat="Taller">🎨 Talleres</button>
-                <button class="cat-filter" data-cat="Voluntariado">🌱 Voluntariados</button>
-                <button class="cat-filter" data-cat="Parque">🌳 Parques</button>
-                <button class="cat-filter" data-cat="Huerto">🌿 Huertos</button>
-                <button class="cat-filter" data-cat="General">📍 General</button>
-            </div>
-        </div>
+        <!-- Los filtros de categoría ahora están dentro del panel de Búsqueda Avanzada -->
 
         <!-- 3. INTERRUPTOR DE EVENTOS/LUGARES (CENTRED) -->
         <div class="toggle-row">
@@ -181,64 +174,91 @@
             <button class="btn btn-secondary glass-effect" id="btn-busqueda-avanzada">
                 <i class="fa-solid fa-sliders"></i> Búsqueda Avanzada
             </button>
-            <a href="/mapa.html" class="btn btn-primary shimmer-extra" id="btn-cerca-de-mi">
-                <i class="fa-solid fa-location-crosshairs"></i> Cerca de mí
-            </a>
+            <div class="main-map-actions">
+                <button type="button" class="btn-pill-map" id="btn-toggle-mapa-home">
+                    Ver mapa
+                </button>
+            </div>
         </div>
 
-        <!-- PANEL DE BÚSQUEDA AVANZADA -->
+        <!-- PANEL DE BÚSQUEDA AVANZADA (Bottom Sheet / Modal) -->
         <div id="advanced-search-panel" class="advanced-search-panel glass-effect hidden">
+            <div class="search-panel-header-mobile">
+                <div class="drag-handle"></div>
+                <h3>Filtros Avanzados</h3>
+            </div>
+            
             <div class="search-panel-grid">
-                <!-- Col 1: Tipo -->
+                <!-- Col 1: Categorías -->
                 <div class="search-col">
                     <h3>¿Qué buscas?</h3>
-                    <div class="category-icon-grid">
-                        <button class="icon-filter-btn" data-cat="all" title="Todo"><i class="fa-solid fa-globe"></i></button>
-                        <button class="icon-filter-btn" data-cat="Taller" title="Talleres"><i class="fa-solid fa-palette"></i></button>
-                        <button class="icon-filter-btn" data-cat="Voluntariado" title="Ayuda"><i class="fa-solid fa-seedling"></i></button>
-                        <button class="icon-filter-btn" data-cat="Charla" title="Charlas"><i class="fa-solid fa-comments"></i></button>
-                        <button class="icon-filter-btn" data-cat="Cine" title="Cine"><i class="fa-solid fa-film"></i></button>
-                        <button class="icon-filter-btn" data-cat="Exposición" title="Expos"><i class="fa-solid fa-image"></i></button>
+                    <div class="category-pills-grid">
+                        <button class="cat-pill active" data-cat="all">🌍 Todo</button>
+                        <button class="cat-pill" data-cat="Taller">🎨 Talleres</button>
+                        <button class="cat-pill" data-cat="Voluntariado">🌱 Voluntarios</button>
+                        <button class="cat-pill" data-cat="Parque">🌳 Parques</button>
+                        <button class="cat-pill" data-cat="Huerto">🌿 Huertos</button>
+                        <button class="cat-pill" data-cat="General">📍 General</button>
                     </div>
                 </div>
+
                 <!-- Col 2: Ubicación -->
                 <div class="search-col">
                     <h3>¿Dónde?</h3>
-                    <div class="location-filter-group">
-                        <label class="radio-option"><input type="radio" name="location-filter" value="all" checked><span>Todo</span></label>
-                        <label class="radio-option"><input type="radio" name="location-filter" value="nearby"><span>Cerca</span></label>
-                        <div class="autocomplete-wrapper">
-                            <input type="text" id="panel-location-input" placeholder="Dirección..." disabled>
+                    <div class="location-options">
+                        <button class="loc-pill active" data-loc="all">📍 Todo</button>
+                        <button class="loc-pill" data-loc="nearby">🎯 Cerca de mí</button>
+                    </div>
+                    <div id="distance-slider-container" class="distance-slider-box hidden">
+                        <div class="slider-header">
+                            <span>Radio: <strong id="distance-value">10</strong> km</span>
                         </div>
+                        <input type="range" id="distance-slider" min="1" max="50" value="10" class="custom-slider">
                     </div>
                 </div>
+
                 <!-- Col 3: Fecha -->
                 <div class="search-col">
                     <h3>¿Cuándo?</h3>
-                    <div class="date-filter-group">
-                        <button class="date-pill active" data-date="all">Todas</button>
+                    <div class="date-pills-grid">
+                        <button class="date-pill active" data-date="all">📅 Todas</button>
                         <button class="date-pill" data-date="today">Hoy</button>
                         <button class="date-pill" data-date="tomorrow">Mañana</button>
+                        <button class="date-pill" data-date="weekend">Finde</button>
+                    </div>
+                    <div class="specific-date-box">
+                        <span>O una fecha exacta:</span>
+                        <input type="date" id="calendar-input" class="custom-date-input">
                     </div>
                 </div>
-                <!-- Col 4: Hora -->
+
+                <!-- Col 4: Audiencia -->
                 <div class="search-col">
-                    <h3>Horario</h3>
-                    <div class="time-filter-group">
-                        <label class="checkbox-option"><input type="checkbox" name="time-filter" value="morning"><span>Mañana</span></label>
-                        <label class="checkbox-option"><input type="checkbox" name="time-filter" value="afternoon"><span>Tarde</span></label>
+                    <h3>Preferencias</h3>
+                    <div class="audience-grid">
+                        <label class="filter-chip">
+                            <input type="checkbox" id="filter-pets">
+                            <span class="chip-content">🐶 Mascotas</span>
+                        </label>
+                        <label class="filter-chip">
+                            <input type="checkbox" id="filter-kids">
+                            <span class="chip-content">🧒 Niños</span>
+                        </label>
+                        <label class="filter-chip">
+                            <input type="checkbox" id="switch-gratis">
+                            <span class="chip-content">💰 Gratis</span>
+                        </label>
                     </div>
                 </div>
             </div>
+
             <div class="search-panel-footer">
-                <button class="btn-clear" id="btn-reset-filters"><i class="fa-solid fa-rotate-left"></i></button>
-                <div class="footer-actions">
-                    <label class="premium-switch">
-                        <input type="checkbox" id="switch-gratis">
-                        <span class="slider"></span>
-                        <span class="label-text">Gratis</span>
-                    </label>
-                </div>
+                <button class="btn" id="btn-reset-filters" style="background-color: #d32f2f; color: white; border-radius: 15px; font-weight: 800; padding: 1rem 2rem; box-shadow: 0 10px 20px rgba(211, 47, 47, 0.2); transition: all 0.3s; border: none; cursor: pointer;">
+                    <i class="fa-solid fa-rotate-left"></i> Limpiar
+                </button>
+                <button class="btn" id="btn-apply-filters" style="background-color: #0077b6; color: white; border: none; cursor: pointer; border-radius: 15px; font-weight: 800; padding: 1rem 2rem; box-shadow: 0 10px 20px rgba(0, 119, 182, 0.2); transition: all 0.3s;">
+                    Mostrar <span id="results-count">...</span> resultados
+                </button>
             </div>
         </div>
 
@@ -246,17 +266,34 @@
             <p class="txt-loading">Cargando proyectos...</p>
         </div>
 
-        <!-- Mini-Map Section (MapCN Style) -->
-        <section class="home-map-section fade-in">
+        <!-- Mini-Map Section (Desplegable) -->
+        <section class="home-map-section fade-in hidden-map" id="mapa-home-wrapper">
             <div class="section-header">
                 <h2><i class="fa-solid fa-map-location-dot"></i> Exploración Cercana</h2>
                 <p>Descubre iniciativas y eventos ambientales en tiempo real.</p>
             </div>
             <div class="mini-map-container">
                 <div id="mini-map"></div>
+                
+                <!-- PANEL LATERAL DE DETALLES INTEGRADO -->
+                <aside id="home-event-detail-panel" class="map-side-panel hidden">
+                    <button class="panel-close-btn" id="close-home-side-panel"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="panel-img-container" style="height: 120px;">
+                        <img id="home-side-panel-img" src="" alt="Imagen">
+                    </div>
+                    <div class="panel-content" style="padding: 12px;">
+                        <span id="home-side-panel-badge" class="badge"></span>
+                        <h3 id="home-side-panel-title" style="font-size: 16px;"></h3>
+                        <p class="panel-meta" style="font-size: 12px;"><i class="fa-solid fa-location-dot"></i> <span id="home-side-panel-location"></span></p>
+                    </div>
+                    <div class="panel-footer" style="padding: 0 12px 12px;">
+                        <a href="#" id="home-side-panel-link" class="btn-full" style="padding: 8px; font-size: 13px;">Ver detalles</a>
+                    </div>
+                </aside>
+
                 <div class="map-overlay">
                     <a href="/mapa.html" class="btn btn-primary">
-                        <i class="fa-solid fa-expand"></i> Ver pantalla completa
+                        <i class="fa-solid fa-expand"></i> Ver Atlas Completo
                     </a>
                 </div>
             </div>
@@ -277,18 +314,23 @@
                     <span class="nivel-btn-title">💡 Ecotecnias</span>
                     <p class="nivel-btn-desc">Tecnologías para el hogar sustentable.</p>
                 </a>
+                <a href="./pages/agua.html" class="nivel-btn-item glass-effect">
+                    <span class="nivel-btn-title">🌊 Agua</span>
+                    <p class="nivel-btn-desc">Cuidado y alternativas para uso del agua.</p>
+                </a>
+                <a href="./pages/lecturas.html" class="nivel-btn-item glass-effect">
+                    <span class="nivel-btn-title">📚 Lecturas</span>
+                    <p class="nivel-btn-desc">Reflexiones y guías de educación ambiental.</p>
+                </a>
+                <a href="./pages/documentales.html" class="nivel-btn-item glass-effect">
+                    <span class="nivel-btn-title">🎥 Documentales</span>
+                    <p class="nivel-btn-desc">Catálogo de cine y material audiovisual ecológico.</p>
+                </a>
                 <a href="./pages/firmas.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">✍️ Firmas</span>
                     <p class="nivel-btn-desc">Apoya causas ambientales importantes.</p>
                 </a>
-                <a href="./pages/lecturas.html" class="nivel-btn-item glass-effect">
-                    <span class="nivel-btn-title">📚 Lecturas</span>
-                    <p class="nivel-btn-desc">Guías y artículos recomendados.</p>
-                </a>
-                <a href="./pages/documentales.html" class="nivel-btn-item glass-effect">
-                    <span class="nivel-btn-title">🎬 Documentales</span>
-                    <p class="nivel-btn-desc">Vídeos educativos seleccionados.</p>
-                </a>
+
             </div>
             <button onclick="window.scrollTo({top: 0, behavior: 'smooth'});" class="btn-back-to-top">
                 <i class="fa-solid fa-arrow-up"></i> Ir al Buscador
@@ -306,7 +348,7 @@
                     <span class="nivel-btn-title">👥 Agentes de cambio</span>
                     <p class="nivel-btn-desc">Conoce a quienes lideran el cambio.</p>
                 </a>
-                <a href="#" class="nivel-btn-item glass-effect">
+                <a href="./pages/convocatoria.html" class="nivel-btn-item glass-effect">
                     <span class="nivel-btn-title">📣 Convocatorias</span>
                     <p class="nivel-btn-desc">Oportunidades para tus proyectos.</p>
                 </a>
@@ -358,6 +400,10 @@
                     <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
                     <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
                 </div>
+                <!-- Puerta de acceso administrativa discreta -->
+                <div class="footer-admin-box">
+                    <a href="./admin-login.html" class="footer-admin-link"><i class="fa-solid fa-lock"></i> Staff</a>
+                </div>
             </div>
         </div>
         <div class="footer-bottom">
@@ -365,10 +411,6 @@
         </div>
     </footer>
 
-    <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    
     <!-- JS Module -->
     <script type="module" src="./assets/js/pages/index.js"></script>
 </body>

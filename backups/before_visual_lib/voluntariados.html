@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es" class="theme-ajolote">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voluntariados Activos | EcoGuía SOS</title>
+    <meta name="description" content="Encuentra oportunidades de voluntariado ambiental en tu comunidad con EcoGuía SOS.">
+
+    <!-- PWA -->
+    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#72B04D">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* Specific overrides for Voluntariados */
+        .v-img { width: 100%; height: 200px; object-fit: cover; }
+        .v-content { padding: 20px; color: white; display: flex; flex-direction: column; flex-grow: 1; }
+        .v-content h3 { margin-top: 0; color: var(--primary-color); font-size: 1.4rem; }
+        .v-tag { color: #ccc; font-size: 0.9rem; margin-bottom: 5px; }
+        .v-tag i { margin-right: 8px; color: var(--primary-color); }
+        
+        .voluntariado-card { overflow: hidden; }
+    </style>
+</head>
+
+<body class="dark-theme">
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
+            </a>
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="../index.html">Inicio</a></li>
+                <li><a href="../pages/nosotros.html">Nosotros</a></li>
+                <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="interior-hero">
+        <span class="category-badge">🦎 Nivel Ajolote (Intermedio)</span>
+        <h2>Voluntariados Activos</h2>
+        <p>Encuentra organizaciones e iniciativas que necesitan tu energía y tiempo.</p>
+        <nav class="level-subnav fade-in">
+            <a href="agentes.html" class="subnav-link"><i class="fa-solid fa-users"></i> Agentes</a>
+            <a href="voluntariados.html" class="subnav-link active"><i class="fa-solid fa-handshake-angle"></i> Voluntariados</a>
+        </nav>
+    </header>
+
+    <main class="content-section">
+        <div class="card-grid-container" id="voluntariados-container">
+            <!-- Interactivity handled by voluntariados.js -->
+        </div>
+    </main>
+
+    <!-- FOOTER INTERIOR (ÍNDICE VERDE) -->
+    <footer class="footer-interior">
+        <div class="footer-interior-content">
+            <div class="footer-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo" class="footer-mini-logo">
+                <span class="footer-title">EcoGuía SOS</span>
+            </div>
+            
+            <div class="footer-contact-info">
+                <p>Generando Redes Para el Futuro</p>
+                <a href="mailto:contacto@ecogaiasos.com">contacto@ecogaiasos.com</a>
+            </div>
+
+            <div class="footer-social-minimal">
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-legal">
+            &copy; 2025 EcoGuía SOS. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <!-- JS Module -->
+    <script type="module" src="../assets/js/pages/voluntariados.js"></script>
+</body>
+
+</html>

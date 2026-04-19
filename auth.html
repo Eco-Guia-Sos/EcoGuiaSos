@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - EcoGuía SOS</title>
+    
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="./assets/css/global.css">
+    <link rel="stylesheet" href="./assets/css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="dark-theme">
+
+    <div id="particles-js"></div>
+
+    <div class="auth-wrapper">
+        <header class="auth-header">
+            <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+            <img src="./assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="auth-logo">
+        </header>
+
+        <main class="auth-container glass-effect">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login">Ingresar</button>
+                <button class="auth-tab" id="tab-signup">Voluntario</button>
+                <button class="auth-tab" id="tab-actor">Soy Actor</button>
+            </div>
+
+            <!-- Formulario de Login -->
+            <form id="form-login" class="auth-form active">
+                <h2>¡Hola de nuevo!</h2>
+                <p>Ingresa tus credenciales para continuar.</p>
+                
+                <div class="input-group">
+                    <label for="login-email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="tu@email.com" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="login-password">Contraseña</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-btn shimmer-extra">Entrar</button>
+            </form>
+
+            <!-- Formulario de Registro (Voluntario) -->
+            <form id="form-signup" class="auth-form">
+                <h2>Crea tu Cuenta</h2>
+                <p>Únete como voluntario para recibir noticias y participar.</p>
+                
+                <div class="input-group">
+                    <label for="reg-name">Nombre Completo</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="reg-name" placeholder="Ej. Juan Pérez" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-email">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="reg-email" placeholder="tu@email.com" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-phone">Teléfono (WhatsApp)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="reg-phone" placeholder="Ej. +52 55..." required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Redes Sociales (Pulsar para añadir)</label>
+                    <div class="social-selector" data-form="signup">
+                        <button type="button" class="social-btn facebook" data-net="facebook" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+                        <button type="button" class="social-btn instagram" data-net="instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+                        <button type="button" class="social-btn whatsapp" data-net="whatsapp" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button type="button" class="social-btn x-twitter" data-net="x-twitter" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                        <button type="button" class="social-btn youtube" data-net="youtube" title="YouTube"><i class="fa-brands fa-youtube"></i></button>
+                        <button type="button" class="social-btn web" data-net="web" title="Sitio Web" style="color: #5bc2f7;"><i class="fa-solid fa-globe"></i></button>
+                    </div>
+                    <div id="signup-social-inputs" class="social-inputs-container">
+                        <!-- Campos dinámicos aquí -->
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-password">Contraseña</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-btn shimmer-extra">Crear Cuenta</button>
+            </form>
+
+            <!-- Formulario de Solicitud (Actor) -->
+            <form id="form-actor-request" class="auth-form">
+                <h2>Solicitud de Actor</h2>
+                <p>Cuéntanos sobre tu organización para darte permisos de publicación.</p>
+                
+                <div class="input-group">
+                    <label for="actor-name">Nombre o Razón Social</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-building"></i>
+                        <input type="text" id="actor-name" placeholder="Ej. Huerto Roma Verde" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="actor-email">Email de Contacto</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="actor-email" placeholder="contacto@organizacion.com" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="actor-phone">Teléfono / WhatsApp</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="actor-phone" placeholder="55 1234 5678" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Redes Sociales / Web <span class="required-badge">Obligatorio (mín. 1)</span></label>
+                    <div class="social-selector" data-form="actor">
+                        <button type="button" class="social-btn facebook" data-net="facebook" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+                        <button type="button" class="social-btn instagram" data-net="instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+                        <button type="button" class="social-btn whatsapp" data-net="whatsapp" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button type="button" class="social-btn x-twitter" data-net="x-twitter" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                        <button type="button" class="social-btn youtube" data-net="youtube" title="YouTube"><i class="fa-brands fa-youtube"></i></button>
+                        <button type="button" class="social-btn web" data-net="web" title="Sitio Web" style="color: #5bc2f7;"><i class="fa-solid fa-globe"></i></button>
+                    </div>
+                    <div id="actor-social-inputs" class="social-inputs-container">
+                        <!-- Campos dinámicos aquí -->
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="actor-password">Contraseña para tu cuenta <span class="required-badge">Obligatorio</span></label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="actor-password" placeholder="Crea tu clave de acceso" required minlength="6">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="actor-bio">¿A qué se dedican? (Breve Bio)</label>
+                    <div class="input-wrapper">
+                        <textarea id="actor-bio" class="auth-textarea" placeholder="Breve descripción de su impacto ecológico..." required></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-btn shimmer-extra btn-actor-submit">Enviar Solicitud</button>
+            </form>
+
+            <div id="auth-message" class="auth-message"></div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script type="module" src="./assets/js/auth-handler.js"></script>
+    <script>
+        const tabLogin = document.getElementById('tab-login');
+        const tabSignup = document.getElementById('tab-signup');
+        const tabActor = document.getElementById('tab-actor');
+        
+        const forms = {
+            'login': document.getElementById('form-login'),
+            'signup': document.getElementById('form-signup'),
+            'actor': document.getElementById('form-actor-request')
+        };
+
+        const switchTab = (activeId) => {
+            [tabLogin, tabSignup, tabActor].forEach(tab => {
+                if(tab.id === `tab-${activeId}`) tab.classList.add('active');
+                else tab.classList.remove('active');
+            });
+
+            Object.keys(forms).forEach(key => {
+                if(key === activeId) forms[key].classList.add('active');
+                else forms[key].classList.remove('active');
+            });
+        };
+
+        tabLogin.addEventListener('click', () => switchTab('login'));
+        tabSignup.addEventListener('click', () => switchTab('signup'));
+        tabActor.addEventListener('click', () => switchTab('actor'));
+
+        // Leer parámetro 'tab' de la URL para activar la pestaña correcta al cargar
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTab = urlParams.get('tab');
+        
+        if (urlTab === 'signup' || urlTab === 'actor') {
+            // Viene del botón "Súmate": ocultamos la pestaña de "Ingresar"
+            tabLogin.style.display = 'none';
+            switchTab(urlTab === 'actor' ? 'actor' : 'signup');
+        } else {
+            // Viene de "Iniciar sesión" (o sin parámetro): ocultamos TODO el contenedor de tabs
+            // para que sólo se vea el formulario de login.
+            document.querySelector('.auth-tabs').style.display = 'none';
+            switchTab('login');
+        }
+
+        // Initialize particles
+        if (typeof particlesJS !== 'undefined') {
+            particlesJS("particles-js", {
+                "particles": {
+                    "number": { "value": 40, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": ["#72B04D", "#0077b6"] },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.3, "random": true },
+                    "size": { "value": 6, "random": true },
+                    "move": { "enable": true, "speed": 2 }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

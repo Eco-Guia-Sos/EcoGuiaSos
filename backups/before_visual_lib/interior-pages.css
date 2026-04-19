@@ -1,0 +1,389 @@
+/* assets/css/interior-pages.css */
+/* Common styles for all interior pages (Agentes, Cursos, etc.) */
+
+.interior-hero {
+    padding: 120px 20px 40px 20px;
+    text-align: center;
+    color: white;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.interior-hero h2 {
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+}
+
+/* Colibrí Theme */
+.theme-colibri .interior-hero {
+    background-image: linear-gradient(to bottom, rgba(74, 107, 89, 0.9), rgba(74, 107, 89, 0.5)), url('../img/colibri.webp');
+}
+.theme-colibri .interior-hero h2 { color: var(--primary-color); }
+
+/* Ajolote Theme */
+.theme-ajolote .interior-hero {
+    background-image: linear-gradient(to bottom, rgba(53, 94, 59, 0.85), rgba(53, 94, 59, 0.5)), url('../img/ajolote.webp');
+}
+.theme-ajolote .interior-hero h2 { color: #ff85a1; }
+
+/* Lobo Theme */
+.theme-lobo .interior-hero {
+    background-image: linear-gradient(to bottom, rgba(106, 0, 168, 0.85), rgba(106, 0, 168, 0.4)), url('../img/lobo.webp');
+}
+.theme-lobo .interior-hero h2 { color: #d4a5ff; }
+
+.category-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 5px 15px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-bottom: 15px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+.content-section {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.intro-text {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 40px auto;
+    color: #ccc;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.card-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.loader-text {
+    color: white;
+    text-align: center;
+    width: 100%;
+    padding: 40px;
+}
+
+/* Simple Card Styles (Used in Cursos, Ecotecnias, etc.) */
+.card-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .card-grid-container {
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 columns for better readability */
+        gap: 12px !important;
+    }
+    
+    .interior-hero h2 {
+        font-size: 2rem;
+    }
+
+    /* Estilos para que las dash-cards sean mini en móvil */
+    .dash-card-img {
+        height: 80px !important;
+    }
+    .dash-card-body {
+        padding: 8px !important;
+    }
+    .dash-card-body h3 {
+        font-size: 0.75rem !important;
+        margin-bottom: 5px !important;
+    }
+    .dash-card-body p, .dash-card-body span {
+        font-size: 0.65rem !important;
+    }
+
+    .badge-pill {
+        font-size: 0.5rem !important;
+        padding: 2px 6px !important;
+        top: 5px !important;
+        right: 5px !important;
+    }
+
+    /* Ajustes para que el contenido no desborde en mini-tarjetas */
+    .card-content {
+        padding: 10px;
+    }
+    .card-title {
+        font-size: 0.8rem; /* Texto más pequeño */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .card-location {
+        font-size: 0.65rem;
+    }
+    .card-category {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+    }
+
+    /* Ajustes específicos para las mini-tarjetas de Agentes */
+    .agente-card {
+        padding: 8px !important;
+    }
+    .agente-img {
+        width: 100%;
+        height: 80px !important;
+        object-fit: cover;
+        border-radius: 12px;
+    }
+    .agente-card h3 {
+        font-size: 0.75rem !important;
+        margin: 5px 0 2px 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+    .agente-especialidad {
+        font-size: 0.6rem !important;
+        text-align: center;
+        margin-bottom: 0 !important;
+    }
+    /* Ocultar resto de info en móvil */
+    .agente-org,
+    .agente-mini-desc,
+    .agente-socials {
+        display: none !important;
+    }
+
+    /* Ajustes para sección Colibrí (Cursos, Ecotecnias, Agua, etc.) */
+    .c-img {
+        height: 80px !important;
+        border-radius: 8px;
+    }
+    .c-content {
+        padding: 5px !important;
+    }
+    .c-content h3 {
+        font-size: 0.75rem !important;
+        margin: 5px 0 0 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+        width: 100%;
+    }
+    .c-info, .c-desc, .c-content .btn-action-main {
+        display: none !important;
+    }
+
+    /* Ajustes para Ecotecnias y Temas (Iconos en vez de imágenes) */
+    .ecotecnia-card, .tema-card {
+        padding: 8px !important;
+    }
+    .e-header {
+        flex-direction: column !important;
+        gap: 5px !important;
+        margin-bottom: 0 !important;
+    }
+    .e-icon, .tema-icon {
+        font-size: 1.8rem !important;
+        margin-bottom: 2px !important;
+    }
+    .e-title, .tema-card h3 {
+        font-size: 0.7rem !important;
+        margin: 5px 0 0 0 !important;
+        white-space: normal !important;
+        text-align: center;
+        width: 100%;
+        line-height: 1.2;
+    }
+    .e-desc, .e-tags, .tema-card p, .tema-tag {
+        display: none !important;
+    }
+}
+
+.generic-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: var(--transition-smooth);
+    display: flex;
+    flex-direction: column;
+}
+
+.generic-card:hover {
+    transform: translateY(-5px);
+    background: rgba(43, 44, 46, 0.8);
+}
+
+.theme-colibri .generic-card:hover { border-color: var(--primary-color); }
+.theme-ajolote .generic-card:hover { border-color: #ff85a1; }
+.theme-lobo .generic-card:hover { border-color: #d4a5ff; }
+
+/* Styles for specific lists */
+.btn-action-main {
+    margin-top: auto;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.theme-colibri .btn-action-main { background-color: var(--primary-color); color: var(--bg-dark); }
+.theme-ajolote .btn-action-main { background-color: #ff85a1; color: white; }
+.theme-lobo .btn-action-main { background-color: #6a00a8; color: white; }
+
+.theme-colibri .btn-action-main:hover { background-color: white; }
+.theme-ajolote .btn-action-main:hover { background-color: white; color: #ff85a1; }
+.theme-lobo .btn-action-main:hover { background-color: #8b2fc9; }
+
+/* Sub-navigation Menu */
+.level-subnav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    padding: 0 10px;
+}
+
+.subnav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.subnav-link i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.subnav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.subnav-link:hover i {
+    transform: scale(1.2);
+}
+
+.subnav-link.active {
+    background: white;
+    color: var(--bg-dark);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    transform: translateY(-2px);
+}
+
+.theme-ajolote .subnav-link.active {
+    background-color: #ff85a1;
+    color: white;
+}
+
+.theme-lobo .subnav-link.active {
+    background-color: #6a00a8;
+    color: white;
+}
+
+/* Responsivo para sub-nav */
+@media (max-width: 768px) {
+    .level-subnav {
+        gap: 10px;
+    }
+    .subnav-link {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+}
+
+/* --- ESTILOS DASHBOARD CARD (Global) --- */
+.dash-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dash-card-img {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.dash-card-body {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.dash-card-body h3 {
+    margin: 0 0 10px 0;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.dash-card-body p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* Estado Vacío Premium */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    background: -webkit-linear-gradient(45deg, var(--color-gaia), var(--color-eco));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: white;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #94a3b8;
+    margin-bottom: 25px;
+}

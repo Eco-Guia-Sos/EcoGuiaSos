@@ -1,9 +1,10 @@
 /* assets/js/pages/voluntariados.js */
 import { supabase } from '../supabase.js';
-import { setupNavbar, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
 
 async function initVoluntariados() {
     setupNavbar();
+    setupAuthObserver();
     const container = document.getElementById('voluntariados-container');
     if (!container) return;
 

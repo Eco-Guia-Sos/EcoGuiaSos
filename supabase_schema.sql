@@ -1,51 +1,60 @@
--- schema.sql
--- Run this query to create the initial tables for EcoGuía SOS
+-- ==========================================
+-- SCRIPT DE BASE DE DATOS PARA ECOGUÍA SOS
+-- Ejecuta este código en el SQL Editor de tu Dashboard de Supabase
+-- ==========================================
 
--- Tabla de Usuarios (Administradores)
-CREATE TABLE IF NOT EXISTS public.usuarios (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT UNIQUE NOT NULL,
-    nombre TEXT NOT NULL,
-    rol TEXT DEFAULT 'admin',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- 1. Tabla de Favoritos (Eventos y Lugares)
+CREATE TABLE IF NOT EXISTS public.favoritos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    item_id UUID NOT NULL,
+    item_tipo TEXT CHECK (item_tipo IN ('evento', 'lugar')),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(user_id, item_id, item_tipo)
 );
 
--- Tabla de Eventos
-CREATE TABLE IF NOT EXISTS public.eventos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nombre TEXT NOT NULL,
-    categoria TEXT NOT NULL,
-    ubicacion TEXT NOT NULL,
-    mapa_url TEXT,
-    imagen TEXT,
-    descripcion TEXT,
-    fecha_inicio TIMESTAMP WITH TIME ZONE,
-    fecha_fin TIMESTAMP WITH TIME ZONE,
-    creado_por UUID REFERENCES public.usuarios(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- Habilitar RLS para Favoritos
+ALTER TABLE public.favoritos ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de Seguridad (Favoritos)
+CREATE POLICY "Usuarios pueden ver sus propios favoritos"
+ON public.favoritos FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Usuarios pueden insertar sus propios favoritos"
+ON public.favoritos FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Usuarios pueden eliminar sus propios favoritos"
+ON public.favoritos FOR DELETE
+USING (auth.uid() = user_id);
+
+
+-- 2. Tabla de Seguimientos de Actores
+CREATE TABLE IF NOT EXISTS public.seguimientos_actores (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    actor_id UUID REFERENCES public.perfiles(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(user_id, actor_id)
 );
 
--- Tabla de Lugares
-CREATE TABLE IF NOT EXISTS public.lugares (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nombre TEXT NOT NULL,
-    categoria TEXT NOT NULL,
-    ubicacion TEXT NOT NULL,
-    mapa_url TEXT,
-    imagen TEXT,
-    descripcion TEXT,
-    horario TEXT,
-    creado_por UUID REFERENCES public.usuarios(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+-- Habilitar RLS para Seguimientos
+ALTER TABLE public.seguimientos_actores ENABLE ROW LEVEL SECURITY;
 
--- Habilitar Row Level Security (Políticas de seguridad)
-ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.eventos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lugares ENABLE ROW LEVEL SECURITY;
+-- Políticas de Seguridad (Seguimientos)
+CREATE POLICY "Usuarios pueden ver a quién siguen"
+ON public.seguimientos_actores FOR SELECT
+USING (auth.uid() = user_id);
 
--- Políticas públicas para LEER eventos y lugares (cualquiera puede verlos en la web)
-CREATE POLICY "Permitir lectura publica de eventos" ON public.eventos FOR SELECT USING (true);
-CREATE POLICY "Permitir lectura publica de lugares" ON public.lugares FOR SELECT USING (true);
+CREATE POLICY "Usuarios pueden seguir actores"
+ON public.seguimientos_actores FOR INSERT
+WITH CHECK (auth.uid() = user_id);
 
--- (Las políticas de inserción/edición se configurarán para usuarios autenticados)
+CREATE POLICY "Usuarios pueden dejar de seguir actores"
+ON public.seguimientos_actores FOR DELETE
+USING (auth.uid() = user_id);
+
+-- 3. Índices para mejorar rendimiento
+CREATE INDEX IF NOT EXISTS idx_favoritos_user ON public.favoritos(user_id);
+CREATE INDEX IF NOT EXISTS idx_seguimientos_user ON public.seguimientos_actores(user_id);

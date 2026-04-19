@@ -1,8 +1,9 @@
 /* assets/js/pages/firmas.js */
-import { setupNavbar } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
 
 function initFirmas() {
     setupNavbar();
+    setupAuthObserver();
     console.log('Firmas page initialized');
 }
 

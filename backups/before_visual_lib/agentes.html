@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es" class="theme-ajolote dark-theme">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentes de Cambio | EcoGuía SOS</title>
+    <meta name="description" content="Conoce a los líderes y organizaciones que hacen la diferencia en materia ecológica.">
+
+    <!-- PWA -->
+    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#72B04D">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/interior-pages.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* Specific overrides for Agentes */
+        .agente-card { 
+            padding: 30px 20px; 
+            align-items: center; 
+            text-align: center; 
+            background: var(--tarjeta-bg-dark);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--tarjeta-border-dark);
+            box-shadow: var(--shadow-strong);
+            border-radius: 20px;
+        }
+        .agente-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color); margin-bottom: 15px; }
+        .agente-card h3 { margin: 0 0 5px 0; color: white; font-size: 1.3rem; }
+        .agente-especialidad { color: var(--primary-color); font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
+        .agente-org { color: #aaa; font-size: 0.85rem; margin-bottom: 5px; }
+        .agente-socials { margin-top: 15px; display: flex; gap: 15px; font-size: 1.2rem; justify-content: center; }
+        .agente-socials a { color: var(--primary-color); transition: color 0.3s ease; }
+        .agente-socials a:hover { color: white; }
+        .agente-mini-desc { font-size: 0.8rem; color: #ccc; margin: 10px 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    </style>
+</head>
+
+<body class="dark-theme">
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
+            </a>
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="../index.html">Inicio</a></li>
+                <li><a href="../pages/nosotros.html">Nosotros</a></li>
+                <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="interior-hero">
+        <span class="category-badge">🦎 Nivel Ajolote (Intermedio)</span>
+        <h2>Agentes de Cambio</h2>
+        <p>Conoce, apoya y colabora con las personas detrás del impacto social.</p>
+        <nav class="level-subnav fade-in">
+            <a href="agentes.html" class="subnav-link active"><i class="fa-solid fa-users"></i> Agentes</a>
+            <a href="voluntariados.html" class="subnav-link"><i class="fa-solid fa-handshake-angle"></i> Voluntariados</a>
+        </nav>
+    </header>
+
+    <main class="content-section">
+        <div class="card-grid-container" id="agentes-container">
+            <!-- Interactivity handled by agentes.js -->
+        </div>
+    </main>
+
+    <!-- FOOTER INTERIOR (ÍNDICE VERDE) -->
+    <footer class="footer-interior">
+        <div class="footer-interior-content">
+            <div class="footer-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo" class="footer-mini-logo">
+                <span class="footer-title">EcoGuía SOS</span>
+            </div>
+            
+            <div class="footer-contact-info">
+                <p>Generando Redes Para el Futuro</p>
+                <a href="mailto:contacto@ecogaiasos.com">contacto@ecogaiasos.com</a>
+            </div>
+
+            <div class="footer-social-minimal">
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-legal">
+            &copy; 2025 EcoGuía SOS. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <!-- JS Module -->
+    <script type="module" src="../assets/js/pages/agentes.js"></script>
+</body>
+
+</html>

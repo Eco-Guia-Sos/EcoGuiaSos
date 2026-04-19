@@ -1,9 +1,10 @@
 /* assets/js/pages/agentes.js */
 import { supabase } from '../supabase.js';
-import { setupNavbar, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, showLoader, showErrorState, showEmptyState } from '../ui-utils.js';
 
 async function initAgentes() {
     setupNavbar();
+    setupAuthObserver();
     const container = document.getElementById('agentes-container');
     if (!container) return;
 
@@ -47,8 +48,12 @@ async function initAgentes() {
                 : `<div class="agente-org"><i class="fa-solid fa-location-dot"></i> ${alcaldia || zona || 'Varias zonas'}</div>`;
 
             const cardHtml = `
-                <article class="agente-card generic-card fade-in" data-alcaldia="${alcaldia}" data-categoria="${especialidad}">
-                    <img src="${imgUrl}" alt="${nombre}" class="agente-img" onerror="this.src='/assets/img/kpop.webp'">
+                <article class="agente-card generic-card fade-in hover-glow" 
+                         onclick="window.location.href='agente-detalle.html?id=${agente.id}'" 
+                         style="cursor:pointer"
+                         data-alcaldia="${alcaldia}" 
+                         data-categoria="${especialidad}">
+                    <img src="${imgUrl}" alt="${nombre}" class="agente-img" loading="lazy" onerror="this.src='/assets/img/kpop.webp'">
                     <h3>${nombre}</h3>
                     <div class="agente-especialidad">${especialidad}</div>
                     <div class="agente-org"><i class="fa-solid fa-users"></i> ${organizacion}</div>
@@ -57,14 +62,78 @@ async function initAgentes() {
                     <div class="agente-socials">
                         ${redesHtml}
                     </div>
+                    <div class="agente-actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <button class="btn-follow-agente btn btn-primary" 
+                                data-actor-id="${agente.usuario_id}" 
+                                style="display: none; width: 100%; font-size: 0.85rem; padding: 8px;">
+                            + Seguir
+                        </button>
+                    </div>
                 </article>
             `;
             container.innerHTML += cardHtml;
         });
+
+        // 3. Activar botones de seguimiento
+        setupFollowButtons();
+
     } catch (error) {
         console.error('Error fetching agentes:', error);
         showErrorState('agentes-container', 'Error al cargar agentes. Verifica tu conexión a la base de datos.');
     }
+}
+
+async function setupFollowButtons() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const btns = document.querySelectorAll('.btn-follow-agente');
+    const userId = session.user.id;
+
+    // Cargar seguimientos actuales del usuario
+    const { data: followings } = await supabase
+        .from('seguimientos_actores')
+        .select('actor_id')
+        .eq('user_id', userId);
+
+    const followingIds = new Set(followings?.map(f => f.actor_id) || []);
+
+    btns.forEach(btn => {
+        const actorId = btn.dataset.actorId;
+        if (!actorId || actorId === 'null') return;
+
+        btn.style.display = 'block';
+        let isFollowing = followingIds.has(actorId);
+        
+        const updateUI = (active) => {
+            if (active) {
+                btn.innerHTML = '✓ Siguiendo';
+                btn.style.background = '#333';
+                btn.style.borderColor = '#72B04D';
+                btn.style.color = '#72B04D';
+            } else {
+                btn.innerHTML = '+ Seguir';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+        };
+
+        updateUI(isFollowing);
+
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Evitar navegar al perfil al dar clic en seguir
+            
+            if (isFollowing) {
+                await supabase.from('seguimientos_actores').delete().eq('user_id', userId).eq('actor_id', actorId);
+                isFollowing = false;
+            } else {
+                await supabase.from('seguimientos_actores').insert({ user_id: userId, actor_id: actorId });
+                isFollowing = true;
+            }
+            updateUI(isFollowing);
+        });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', initAgentes);
