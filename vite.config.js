@@ -5,6 +5,7 @@ export default defineConfig(({ command }) => {
   return {
     // Para Vercel y la mayoría de despliegues modernos, la raíz '/' es lo ideal.
     base: '/',
+    plugins: [],
     server: {
       watch: {
         ignored: ['**/memory/**', '**/.agent/**', '**/.github/**', '**/node_modules/**']
