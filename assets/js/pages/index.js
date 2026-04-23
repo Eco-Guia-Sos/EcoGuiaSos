@@ -519,7 +519,7 @@ function filtrarYRenderizar() {
 
     renderCards(datosPaginados);
     actualizarMiniMapaConFiltros(datosFiltrados); // El mapa muestra todos
-    // renderizarControlFiltros(); // Eliminado por ReferenceError
+    renderNearbySlider(datosFiltrados); // Carrusel de navegación por mapa
     renderizarBotonCargarMas(datosFiltrados.length);
 }
 
@@ -547,6 +547,114 @@ function renderizarBotonCargarMas(totalFiltrados) {
     } else {
         if (btnContainer) btnContainer.remove();
     }
+}
+
+/**
+ * Habilita el desplazamiento por arrastre (drag-to-scroll) para el slider en desktop.
+ */
+function habilitarDragScroll(el) {
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let isDragging = false;
+
+    el.addEventListener('mousedown', (e) => {
+        isDown = true;
+        isDragging = false;
+        el.classList.add('active');
+        const rect = el.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        scrollLeft = el.scrollLeft;
+    });
+
+    el.addEventListener('mouseleave', () => {
+        isDown = false;
+        el.classList.remove('active');
+    });
+
+    el.addEventListener('mouseup', () => {
+        isDown = false;
+        el.classList.remove('active');
+    });
+
+    el.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const walk = (x - startX) * 2;
+        
+        if (Math.abs(x - startX) > 5) {
+            isDragging = true;
+        }
+
+        if (isDragging) {
+            e.preventDefault();
+            el.scrollLeft = scrollLeft - walk;
+        }
+    });
+
+    // Función auxiliar para saber si estamos arrastrando
+    el.isDragging = () => isDragging;
+}
+
+/**
+ * Renderiza el carrusel horizontal debajo del mapa para navegación rápida.
+ */
+function renderNearbySlider(items) {
+    const slider = document.getElementById('nearby-events-slider');
+    if (!slider) return;
+
+    slider.innerHTML = '';
+
+    // Si no hay ítems o no hay coordenadas de usuario, no mostrar nada
+    if (!items || items.length === 0) {
+        slider.innerHTML = '<p style="color: #666; font-size: 0.8rem; padding: 20px;">No hay eventos cercanos para mostrar en el radar.</p>';
+        return;
+    }
+
+    items.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'nearby-slider-card';
+        
+        const distText = p.distancia_calculada ? `a ${p.distancia_calculada.toFixed(1)} km` : 'Distancia desconocida';
+        const icon = p.tipo === 'evento' ? '<i class="fa-solid fa-calendar-star"></i>' : '<i class="fa-solid fa-shop"></i>';
+
+        card.innerHTML = `
+            <div class="nearby-card-img">
+                <img src="${p.imagen || '/assets/img/kpop.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
+            </div>
+            <div class="nearby-card-type-icon">${icon}</div>
+            <div class="nearby-card-info">
+                <div class="nearby-card-title">${p.nombre}</div>
+                <div class="nearby-card-dist">${distText}</div>
+            </div>
+        `;
+
+        // Al hacer clic, "volamos" hacia el marcador Y abrimos el panel de detalles
+        card.addEventListener('click', (e) => {
+            // Solo disparamos el clic si NO estábamos arrastrando el slider
+            if (slider.isDragging && slider.isDragging()) return;
+
+            e.stopPropagation();
+            if (miniMapHandle && p.coordenadas) {
+                // 1. Mover el mapa
+                miniMapHandle.flyTo({
+                    center: [p.coordenadas.lng, p.coordenadas.lat],
+                    zoom: 16,
+                    essential: true
+                });
+
+                // 2. Abrir el panel de detalles lateral
+                abrirPanelDetalleHome(p);
+            }
+        });
+
+        slider.appendChild(card);
+    });
+
+    // Habilitar el arrastre con el mouse
+    habilitarDragScroll(slider);
 }
 
 function calcularDistancia(lat1, lon1, lat2, lon2) {

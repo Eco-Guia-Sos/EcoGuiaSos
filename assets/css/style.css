@@ -1106,12 +1106,12 @@ html {
 /* Marcador de Usuario Premium (Estilo Instagram) */
 .user-marker-premium {
     position: relative;
-    cursor: pointer;
     z-index: 1000;
     display: flex;
     flex-direction: column;
     align-items: center;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none; /* Permite hacer clic A TRAVÉS del marcador del usuario */
 }
 
 .user-marker-premium:hover {
@@ -1270,11 +1270,12 @@ html {
     border-top-color: #72B04D;
 }
 
-/* Marcadores de Agrupamiento (Clusters con Imagen) */
-.map-cluster-marker {
-    width: 54px;
-    height: 54px;
-    border-radius: 14px;
+/* Marcadores de Eventos/Lugares (Clusters e Individuales) - Estilo Tarjeta Vertical */
+.map-cluster-marker,
+.map-card-marker {
+    width: 48px;
+    height: 72px; /* Forma de rectángulo vertical */
+    border-radius: 8px; /* Bordes ligeramente redondeados como tarjeta */
     background: white;
     border: 3px solid #1a1e23;
     box-shadow: 0 10px 25px rgba(0,0,0,0.4);
@@ -1282,18 +1283,21 @@ html {
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     z-index: 20;
+    pointer-events: auto; /* Estos sí deben ser clickeables */
 }
 
-.map-cluster-marker:hover {
-    transform: scale(1.2) translateY(-5px);
+.map-cluster-marker:hover,
+.map-card-marker:hover {
+    transform: scale(1.15) translateY(-5px);
     z-index: 100;
 }
 
-.map-cluster-marker img {
+.map-cluster-marker img,
+.map-card-marker img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 11px;
+    border-radius: 5px; /* Radio interno para la imagen */
 }
 
 .cluster-count-badge {
@@ -1316,11 +1320,129 @@ html {
     z-index: 5;
 }
 
-.map-cluster-marker.type-evento { border-color: #b71c1c; }
-.map-cluster-marker.type-evento .cluster-count-badge { background: #b71c1c; }
+.map-cluster-marker.type-evento, .map-card-marker.type-evento { border-color: #b71c1c; }
+.map-cluster-marker.type-evento .cluster-count-badge, .map-card-marker.type-evento .cluster-count-badge { background: #b71c1c; }
 
-.map-cluster-marker.type-lugar { border-color: #72B04D; }
-.map-cluster-marker.type-lugar .cluster-count-badge { background: #72B04D; }
+.map-cluster-marker.type-lugar, .map-card-marker.type-lugar { border-color: #72B04D; }
+.map-cluster-marker.type-lugar .cluster-count-badge, .map-card-marker.type-lugar .cluster-count-badge { background: #72B04D; }
+
+.nearby-slider-wrapper {
+    padding: 15px;
+    background: linear-gradient(to bottom, #1a1e23, #121519);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nearby-events-slider {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 10px 0 20px;
+    scrollbar-width: thin; /* Mostrar una barra delgada para feedback visual */
+    scrollbar-color: var(--color-eco) transparent;
+    cursor: grab;
+    user-select: none;
+    width: 100%;
+}
+
+.nearby-events-slider::-webkit-scrollbar {
+    height: 4px;
+    display: block; /* Mostrar barra en Chrome/Safari para que el usuario sepa que puede scrollear */
+}
+
+.nearby-events-slider::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.nearby-events-slider::-webkit-scrollbar-thumb {
+    background: rgba(77, 182, 232, 0.3);
+    border-radius: 10px;
+}
+
+.nearby-slider-card {
+    flex: 0 0 160px; /* Un poco más anchas */
+    flex-shrink: 0; /* OBLIGATORIO: Evita que se encojan y permite el scroll */
+    height: 220px; /* Un poco más altas */
+    background: #1e2329;
+    border-radius: 18px;
+    overflow: hidden;
+    scroll-snap-align: start;
+    position: relative;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nearby-slider-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    border-color: var(--color-eco);
+    box-shadow: 0 15px 30px rgba(0, 119, 182, 0.2);
+}
+
+.nearby-card-img {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.nearby-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+    transition: filter 0.3s;
+}
+
+.nearby-slider-card:hover .nearby-card-img img {
+    filter: brightness(0.9);
+}
+
+.nearby-card-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    color: white;
+}
+
+.nearby-card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nearby-card-dist {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #4db6e8;
+    background: rgba(77, 182, 232, 0.15);
+    padding: 2px 8px;
+    border-radius: 50px;
+    display: inline-block;
+}
+
+.nearby-card-type-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    border: 1px solid rgba(255,255,255,0.2);
+}
 
 @keyframes marker-pulse {
     0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.4); }

@@ -294,6 +294,12 @@
 
         <!-- Mini-Map Section (Desplegable) -->
         <section class="home-map-section fade-in hidden-map" id="mapa-home-wrapper">
+            <div class="map-header-actions" style="padding: 15px; display: flex; justify-content: center;">
+                <a href="mapa.html" class="btn btn-primary shimmer-extra" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center;">
+                    <i class="fa-solid fa-expand"></i> VER ATLAS COMPLETO
+                </a>
+            </div>
+
             <div class="mini-map-container">
                 <div id="mini-map"></div>
 
@@ -318,10 +324,11 @@
 
             </div> <!-- .mini-map-container -->
 
-            <div class="map-footer-actions">
-                <a href="mapa.html" class="btn btn-primary shimmer-extra">
-                    <i class="fa-solid fa-expand"></i> VER ATLAS COMPLETO
-                </a>
+            <!-- Carrusel Horizontal de Eventos Cercanos -->
+            <div class="nearby-slider-wrapper">
+                <div id="nearby-events-slider" class="nearby-events-slider">
+                    <!-- Se llena dinámicamente desde index.js -->
+                </div>
             </div>
         </section>
     </main>
