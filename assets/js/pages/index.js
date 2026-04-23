@@ -56,10 +56,17 @@ function initIndex() {
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                 _cachedSession = session;
                 _cachedProfile = null; // Limpiar cache al cambiar de sesión
-                await getCachedProfile(); // Forzar carga de nuevo perfil
+                
                 if (session) {
-                    console.log('[Auth] Sesión detectada, obteniendo ubicación silenciosa...');
+                    console.log('[Auth] Sesión detectada en index.js, obteniendo ubicación silenciosa en 1.5s...');
                     setTimeout(() => obtenerUbicacionSilenciosa(), 1500);
+                }
+                
+                try {
+                    await getCachedProfile(); // Forzar carga de nuevo perfil
+                    console.log('[Auth] Perfil recargado exitosamente tras inicio de sesión.');
+                } catch(e) {
+                    console.warn('[Auth] Error recargando perfil:', e);
                 }
             }
         });
@@ -575,8 +582,10 @@ async function activarProximidad() {
     console.log('[GPS] Solicitando ubicación precisa...');
 
     return new Promise((resolve) => {
+        console.log('[GPS] Llamando a navigator.geolocation.getCurrentPosition (Manual)...');
         navigator.geolocation.getCurrentPosition(
             (position) => {
+                console.log('[GPS] ¡getCurrentPosition respondió exitosamente!');
                 userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
                 proximidadActiva = true;
                 
@@ -596,21 +605,26 @@ async function activarProximidad() {
             },
             (error) => {
                 console.error("[GPS] Error:", error);
-                alert("No pudimos obtener tu ubicación precisa actual. Revisa los permisos de tu navegador.");
+                alert("No pudimos obtener tu ubicación precisa actual. Revisa los permisos de tu navegador o si el tiempo de espera expiró.");
                 if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
                 resolve(null);
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            // Aumentamos el timeout a 30s por si el usuario tarda en aceptar el permiso o Windows es lento
+            { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
         );
     });
 }
 
 async function obtenerUbicacionSilenciosa() {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+        console.warn('[GPS] Geolocation no soportado en este navegador.');
+        return;
+    }
     
-    console.log('[GPS] Solicitando ubicación silenciosa (login)...');
+    console.log('[GPS] Solicitando ubicación silenciosa (login)... Llamando a getCurrentPosition...');
     navigator.geolocation.getCurrentPosition(
         (position) => {
+            console.log('[GPS] Ubicación silenciosa obtenida con éxito.');
             userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
             
             // ACTIVAR proximidad por defecto (silencioso, sin mover el scroll/mapa)
@@ -632,8 +646,9 @@ async function obtenerUbicacionSilenciosa() {
         (error) => {
             console.log("[GPS] Ubicación silenciosa falló o fue denegada:", error);
         },
-        // Permitimos usar un caché reciente (hasta 1 minuto) para que sea súper rápido en el login
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        // enableHighAccuracy en false para que sea MUY rápido (ideal para el radar de 100km)
+        // timeout de 30s para dar tiempo a aceptar el permiso si aparece.
+        { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
     );
 }
 
