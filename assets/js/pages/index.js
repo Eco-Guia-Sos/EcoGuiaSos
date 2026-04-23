@@ -572,77 +572,45 @@ async function activarProximidad() {
     const loader = document.getElementById('loader');
     if (loader) { loader.style.display = 'flex'; loader.style.opacity = '1'; }
     
-    // Reset para forzar actualización real y evitar "ubicación pegada"
-    userCoords = null;
-    const requestTime = Date.now();
-
-    console.log('[GPS] Buscando ubicación 100% real (saltando caché)...');
+    console.log('[GPS] Solicitando ubicación precisa...');
 
     return new Promise((resolve) => {
-        let stableCount = 0;
-        const watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                // Si la lectura es más vieja que nuestro clic, el navegador nos está engañando con caché.
-                if (pos.timestamp < requestTime - 1000) {
-                    console.log('[GPS] Ignorando lectura de caché antigua...');
-                    return;
-                }
-
-                stableCount++;
-                userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, isGPS: true };
-                console.log(`[GPS] Lectura fresca #${stableCount}: ${userCoords.lat}, ${userCoords.lng}`);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
+                proximidadActiva = true;
                 
-                // Necesitamos al menos 2 lecturas nuevas para asegurar estabilidad
-                if (stableCount >= 2) finalice();
+                if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
+                
+                filtrarYRenderizar();
+
+                // Centrar y Zoom en el usuario (Solo en acción manual)
+                if (miniMapHandle) {
+                    miniMapHandle.flyTo({
+                        center: [userCoords.lng, userCoords.lat],
+                        zoom: 14,
+                        essential: true
+                    });
+                }
+                resolve(userCoords);
             },
-            (err) => { console.warn('[GPS] Calentamiento:', err); },
-            { enableHighAccuracy: true, maximumAge: 0 }
+            (error) => {
+                console.error("[GPS] Error:", error);
+                alert("No pudimos obtener tu ubicación precisa actual. Revisa los permisos de tu navegador.");
+                if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
+                resolve(null);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
-
-        const timeoutId = setTimeout(finalice, 4000); // Máximo 4s de espera para el calentamiento
-
-        function finalice() {
-            navigator.geolocation.clearWatch(watchId);
-            clearTimeout(timeoutId);
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
-                    proximidadActiva = true;
-                    if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
-                    
-                    filtrarYRenderizar();
-
-                    // Centrar y Zoom en el usuario (Solo en acción manual)
-                    if (miniMapHandle) {
-                        miniMapHandle.flyTo({
-                            center: [userCoords.lng, userCoords.lat],
-                            zoom: 14,
-                            essential: true
-                        });
-                    }
-                    resolve(userCoords);
-                },
-                (error) => {
-                    alert("No pudimos obtener tu ubicación precisa actual.");
-                    if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
-                    resolve(null);
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
     });
 }
 
 async function obtenerUbicacionSilenciosa() {
     if (!navigator.geolocation) return;
-    const requestTime = Date.now();
     
+    console.log('[GPS] Solicitando ubicación silenciosa (login)...');
     navigator.geolocation.getCurrentPosition(
         (position) => {
-            // Ignorar si el navegador nos da una respuesta cacheada vieja
-            if (position.timestamp < requestTime - 2000) return;
-
             userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
             
             // ACTIVAR proximidad por defecto (silencioso, sin mover el scroll/mapa)
@@ -662,9 +630,10 @@ async function obtenerUbicacionSilenciosa() {
             filtrarYRenderizar();
         },
         (error) => {
-            console.log("Ubicación silenciosa falló o fue denegada:", error);
+            console.log("[GPS] Ubicación silenciosa falló o fue denegada:", error);
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        // Permitimos usar un caché reciente (hasta 1 minuto) para que sea súper rápido en el login
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
 }
 
