@@ -31,7 +31,7 @@ let maxRendered = 9;
 let filtrosAvanzados = {
     categoria: 'all',
     ubicacion: 'all', 
-    distancia: 10,
+    distancia: 100,
     fechas: 'all', 
     fechaExacta: null,
     soloGratis: false,
@@ -646,8 +646,17 @@ async function obtenerUbicacionSilenciosa() {
             userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
             
             // ACTIVAR proximidad por defecto (silencioso, sin mover el scroll/mapa)
+            // Lo ponemos al máximo (100km) para que se vean todos los eventos pero con km
             proximidadActiva = true;
-            console.log('[GPS] Ubicación inicial registrada. Filtros de cercanía activos.');
+            filtrosAvanzados.distancia = 100;
+            
+            // Sincronizar UI del slider si existe
+            const slider = document.getElementById('distance-slider');
+            const valLabel = document.getElementById('distance-value');
+            if (slider) slider.value = 100;
+            if (valLabel) valLabel.innerText = 100;
+
+            console.log('[GPS] Ubicación inicial registrada. Radar activado a 100km.');
             
             // Renderizamos para que aparezcan los km en las tarjetas
             filtrarYRenderizar();
