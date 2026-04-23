@@ -1204,6 +1204,43 @@ html {
     object-fit: cover;
 }
 
+/* Botón de Relocalización Premium en el Mapa */
+.map-relocate-btn {
+    position: absolute;
+    bottom: 25px;
+    right: 15px;
+    width: 48px;
+    height: 48px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #72B04D;
+    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid transparent;
+}
+
+.map-relocate-btn:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 10px 30px rgba(114, 176, 77, 0.4);
+    border-color: #72B04D;
+}
+
+.map-relocate-btn.loading i {
+    animation: spin-relocate 1s linear infinite;
+}
+
+@keyframes spin-relocate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .map-card-marker::after {
     content: '';
     position: absolute;
