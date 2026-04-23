@@ -1,11 +1,13 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 export default defineConfig(({ command }) => {
   return {
     // Para Vercel y la mayoría de despliegues modernos, la raíz '/' es lo ideal.
     base: '/',
-    plugins: [],
+    plugins: [cloudflare()],
     server: {
       watch: {
         ignored: ['**/memory/**', '**/.agent/**', '**/.github/**', '**/node_modules/**']
