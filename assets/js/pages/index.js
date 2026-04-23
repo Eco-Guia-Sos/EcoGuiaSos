@@ -566,31 +566,40 @@ function abrirMapaAutomaticamente() {
 async function activarProximidad() {
     if (!navigator.geolocation) return alert("Tu navegador no soporta geolocalización.");
     
-    // Auto-abrir mapa al pedir proximidad
+    // Auto-abrir mapa al pedir proximidad (Acción Manual)
     abrirMapaAutomaticamente();
 
     const loader = document.getElementById('loader');
     if (loader) { loader.style.display = 'flex'; loader.style.opacity = '1'; }
     
-    console.log('[GPS] Iniciando calentamiento de sensor...');
+    // Reset para forzar actualización real y evitar "ubicación pegada"
+    userCoords = null;
+    const requestTime = Date.now();
 
-    // Limpiar caché forzado usando watchPosition brevemente
+    console.log('[GPS] Buscando ubicación 100% real (saltando caché)...');
+
     return new Promise((resolve) => {
         let stableCount = 0;
         const watchId = navigator.geolocation.watchPosition(
             (pos) => {
+                // Si la lectura es más vieja que nuestro clic, el navegador nos está engañando con caché.
+                if (pos.timestamp < requestTime - 1000) {
+                    console.log('[GPS] Ignorando lectura de caché antigua...');
+                    return;
+                }
+
                 stableCount++;
                 userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, isGPS: true };
                 console.log(`[GPS] Lectura fresca #${stableCount}: ${userCoords.lat}, ${userCoords.lng}`);
                 
-                // Después de 2 lecturas o 2.5 segundos, fijamos la mejor
+                // Necesitamos al menos 2 lecturas nuevas para asegurar estabilidad
                 if (stableCount >= 2) finalice();
             },
-            (err) => { console.warn('[GPS] Error en calentamiento:', err); },
+            (err) => { console.warn('[GPS] Calentamiento:', err); },
             { enableHighAccuracy: true, maximumAge: 0 }
         );
 
-        const timeoutId = setTimeout(finalice, 3000);
+        const timeoutId = setTimeout(finalice, 4000); // Máximo 4s de espera para el calentamiento
 
         function finalice() {
             navigator.geolocation.clearWatch(watchId);
@@ -604,7 +613,7 @@ async function activarProximidad() {
                     
                     filtrarYRenderizar();
 
-                    // Centrar y Zoom en el usuario
+                    // Centrar y Zoom en el usuario (Solo en acción manual)
                     if (miniMapHandle) {
                         miniMapHandle.flyTo({
                             center: [userCoords.lng, userCoords.lat],
@@ -615,7 +624,7 @@ async function activarProximidad() {
                     resolve(userCoords);
                 },
                 (error) => {
-                    alert("No pudimos obtener tu ubicación precisa.");
+                    alert("No pudimos obtener tu ubicación precisa actual.");
                     if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
                     resolve(null);
                 },
@@ -627,11 +636,21 @@ async function activarProximidad() {
 
 async function obtenerUbicacionSilenciosa() {
     if (!navigator.geolocation) return;
+    const requestTime = Date.now();
+    
     navigator.geolocation.getCurrentPosition(
         (position) => {
+            // Ignorar si el navegador nos da una respuesta cacheada vieja
+            if (position.timestamp < requestTime - 2000) return;
+
             userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
-            // NO encendemos proximidadActiva aquí para no filtrar el catálogo entero.
-            // Solo lo guardamos por si el usuario usa la búsqueda avanzada después.
+            
+            // ACTIVAR proximidad por defecto (silencioso, sin mover el scroll/mapa)
+            proximidadActiva = true;
+            console.log('[GPS] Ubicación inicial registrada. Filtros de cercanía activos.');
+            
+            // Renderizamos para que aparezcan los km en las tarjetas
+            filtrarYRenderizar();
         },
         (error) => {
             console.log("Ubicación silenciosa falló o fue denegada:", error);
