@@ -18,7 +18,7 @@ async function getCachedProfile() {
         const { data: { session } } = await supabase.auth.getSession();
         _cachedSession = session;
         if (!session) return null;
-        const { data: profile } = await supabase.from('perfiles').select('rol').eq('id', session.user.id).single();
+        const { data: profile } = await supabase.from('perfiles').select('rol, imagen, nombre_completo').eq('id', session.user.id).single();
         _cachedProfile = profile ? { ...profile, id: session.user.id } : null;
     } catch (e) { _cachedProfile = null; }
     return _cachedProfile;
@@ -48,15 +48,15 @@ function initIndex() {
         setupAuthObserver();
 
         // ✅ OPTIMIZACIÓN: Cargar datos inmediatamente sin esperar Auth.
-        // La Auth se resuelve en paralelo; si el usuario tiene sesión,
-        // los datos ya estarán listos cuando el perfil llegue.
         cargarDatosDeSupabase();
+        getCachedProfile(); // Pre-cargar perfil para el mapa
 
         // Escuchar cambios de Auth solo para actualizar la UI (permisos en cards)
-        supabase.auth.onAuthStateChange((event, session) => {
+        supabase.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                 _cachedSession = session;
                 _cachedProfile = null; // Limpiar cache al cambiar de sesión
+                await getCachedProfile(); // Forzar carga de nuevo perfil
                 if (session) {
                     console.log('[Auth] Sesión detectada, obteniendo ubicación silenciosa...');
                     setTimeout(() => obtenerUbicacionSilenciosa(), 1500);
@@ -285,24 +285,34 @@ function actualizarMiniMapaConFiltros(datos) {
     const bounds = new maplibregl.LngLatBounds();
     let hasCoords = false;
 
-    // 1. Marcador de Usuario ("Tú" - Mira de Precisión)
+    // 1. Marcador de Usuario ("Tú" - Estilo Premium)
     if (userCoords) {
         const el = document.createElement('div');
-        el.className = 'user-marker';
+        el.className = 'user-marker-premium';
+        
+        // Intentar usar el avatar del perfil real
+        let avatarSrc = '/assets/img/kpop.webp';
+        if (_cachedProfile && _cachedProfile.imagen) {
+            avatarSrc = _cachedProfile.imagen;
+        }
+
         el.innerHTML = `
-            <div class="user-marker-cross-h"></div>
-            <div class="user-marker-cross-v"></div>
-            <div class="user-marker-pulse"></div>
+            <div class="user-marker-avatar">
+                <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/kpop.webp'">
+            </div>
+            <div class="user-marker-label">
+                Tú <span class="status">Ahora</span>
+            </div>
         `;
         
         const popupHtml = `
-            <div style="text-align: center; color: #0077b6; padding: 5px;">
-                <h4 style="margin: 0; font-weight: 800; font-size: 15px; letter-spacing: -0.5px;">📍 Tú</h4>
-                <p style="margin: 3px 0 0; font-size: 11px; color: #666; font-weight: 600;">Explorando desde aquí</p>
+            <div style="text-align: center; color: #72B04D; padding: 8px;">
+                <h4 style="margin: 0; font-weight: 800; font-size: 16px; letter-spacing: -0.5px;">📍 Tu ubicación</h4>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #444; font-weight: 600;">Estás explorando cerca de aquí</p>
             </div>
         `;
 
-        const userMarker = new maplibregl.Marker({ element: el })
+        const userMarker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([userCoords.lng, userCoords.lat])
             .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(popupHtml))
             .addTo(miniMapHandle);

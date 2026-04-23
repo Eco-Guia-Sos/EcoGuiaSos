@@ -1103,51 +1103,79 @@ html {
     cursor: pointer;
 }
 
-/* El círculo exterior de la mira */
-.user-marker::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border: 2px solid #00a2ff;
+/* Marcador de Usuario Premium (Estilo Instagram) */
+.user-marker-premium {
+    position: relative;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.user-marker-premium:hover {
+    transform: scale(1.1) translateY(-5px);
+}
+
+.user-marker-avatar {
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    box-shadow: 0 0 10px rgba(0, 162, 255, 0.5);
+    border: 3px solid #72B04D;
+    padding: 2px;
+    background: white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
 }
 
-/* El punto central */
-.user-marker::before {
-    content: '';
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background-color: #00a2ff;
-    border-radius: 50%;
-    z-index: 2;
-}
-
-/* Las líneas de la cruz */
-.user-marker-cross-h, .user-marker-cross-v {
-    position: absolute;
-    background-color: #00a2ff;
-    z-index: 1;
-}
-.user-marker-cross-h { width: 28px; height: 2px; }
-.user-marker-cross-v { width: 2px; height: 28px; }
-
-/* Animación de pulso solo para el aura */
-.user-marker-pulse {
-    position: absolute;
+.user-marker-avatar img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: rgba(0, 162, 255, 0.2);
-    animation: marker-pulse 2s infinite;
-    z-index: -1;
+    object-fit: cover;
 }
 
-@keyframes marker-pulse {
-    0% { transform: scale(1); opacity: 0.6; }
-    100% { transform: scale(3); opacity: 0; }
+.user-marker-label {
+    background: rgba(15, 20, 25, 0.85);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    margin-top: 8px;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    gap: 5px;
+    letter-spacing: -0.2px;
+}
+
+.user-marker-label .status {
+    color: #72B04D;
+    text-transform: capitalize;
+}
+
+/* Animación de pulso para el marcador de usuario */
+.user-marker-premium::before {
+    content: '';
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 48px;
+    background: rgba(114, 176, 77, 0.4);
+    border-radius: 50%;
+    z-index: -1;
+    animation: user-pulse 2s infinite;
+}
+
+@keyframes user-pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
 }
 
 /* Marcadores tipo Instagram/Airbnb (Mini-Cards) */
