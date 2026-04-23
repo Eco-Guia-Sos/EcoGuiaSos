@@ -550,7 +550,8 @@ async function activarProximidad() {
         (error) => {
             alert("No pudimos obtener tu ubicación.");
             if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 }
 
@@ -564,7 +565,8 @@ async function obtenerUbicacionSilenciosa() {
         },
         (error) => {
             console.log("Ubicación silenciosa falló o fue denegada:", error);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
 }
 
