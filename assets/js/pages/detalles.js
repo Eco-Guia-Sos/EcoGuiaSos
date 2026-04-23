@@ -1,6 +1,6 @@
 /* DETALLES.JS - Lógica de carga dinámica (Estilo CDMX) */
 import { supabase } from '../supabase.js';
-import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, sanitize } from '../ui-utils.js';
 
 let mapHandle = null;
 
@@ -95,10 +95,10 @@ async function loadSubEvents(lugarId) {
             container.innerHTML += `
                 <div class="mini-event-card hover-glow" onclick="window.location.href='/pages/eventos.html?id=${ev.id}'" style="min-width: 160px; max-width: 180px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.3s; padding-bottom: 5px;">
                     <div style="height: 100px; width: 100%; overflow: hidden;">
-                        <img src="${ev.imagen || '/assets/img/kpop.webp'}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" alt="${ev.nombre}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="${ev.imagen || '/assets/img/kpop.webp'}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" alt="${sanitize(ev.nombre)}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                     </div>
                     <div style="padding: 12px;">
-                        <h4 style="font-size: 0.9rem; margin: 0 0 6px 0; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${ev.nombre}">${ev.nombre}</h4>
+                        <h4 style="font-size: 0.9rem; margin: 0 0 6px 0; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${sanitize(ev.nombre)}">${sanitize(ev.nombre)}</h4>
                         <p style="font-size: 0.75rem; color: #5bc2f7; margin: 0; font-weight: 600;"><i class="fa-regular fa-clock"></i> ${fTxt}</p>
                     </div>
                 </div>
@@ -129,7 +129,7 @@ function renderData(item, type) {
     
     // Description
     const desc = document.getElementById('detail-description');
-    desc.innerHTML = item.descripcion ? item.descripcion.replace(/\n/g, '<br>') : 'Sin descripción detallada por el momento.';
+    desc.innerHTML = item.descripcion ? sanitize(item.descripcion).replace(/\n/g, '<br>') : 'Sin descripción detallada por el momento.';
 
     // Fechas y Horarios (Estructurados o Antiguos)
     const hours = document.getElementById('detail-hours');

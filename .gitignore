@@ -34,3 +34,10 @@ dist-ssr
 .agent/
 _skills_tmp/
 memory/
+
+# Project specific ignores
+awesome-skills/
+scratch/
+*.sql
+.env.bak
+comprimir_assets.py

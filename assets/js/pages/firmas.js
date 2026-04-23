@@ -1,10 +1,11 @@
 /* assets/js/pages/firmas.js */
 import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { initDynamicSection } from '../dynamic-section-handler.js';
 
-function initFirmas() {
+async function initFirmas() {
     setupNavbar();
     setupAuthObserver();
-    console.log('Firmas page initialized');
+    await initDynamicSection('firmas', 'colibri');
 }
 
 document.addEventListener('DOMContentLoaded', initFirmas);

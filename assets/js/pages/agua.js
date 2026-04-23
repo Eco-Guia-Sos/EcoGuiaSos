@@ -1,10 +1,15 @@
 /* assets/js/pages/agua.js */
 import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { initDynamicSection } from '../dynamic-section-handler.js';
 
-function initAgua() {
+async function initAgua() {
     setupNavbar();
     setupAuthObserver();
-    console.log('Agua page initialized');
+    
+    // Inicializar contenido dinámico
+    await initDynamicSection('agua', 'colibri');
+    
+    console.log('Agua page initialized dynamically');
 }
 
 document.addEventListener('DOMContentLoaded', initAgua);

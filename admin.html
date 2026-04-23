@@ -1,30 +1,34 @@
 <!DOCTYPE html>
-<html lang="es" class="theme-lobo">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | EcoGuía SOS</title>
+    <title>Panel de Administración | EcoGuía SOS</title>
     
-    <link rel="icon" href="./assets/gif/EGSlg.webp" type="image/gif">
-    <meta name="theme-color" content="#34495e">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 
-    <!-- CSS Modules -->
-    <link rel="stylesheet" href="./assets/css/global.css">
+    <!-- Font Awesome — carga no bloqueante -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./assets/css/main.css">
     <link rel="stylesheet" href="./assets/css/admin.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- MapLibre GL CSS -->
-    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
+
+    <!-- MapLibre GL — CSS no bloqueante, JS con defer -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' media="print" onload="this.media='all'">
+    <noscript><link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet'></noscript>
+    <script defer src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
 </head>
-<body class="admin-body dark-theme">
+<body class="admin-body dark-mode">
 
-    <!-- Botón hamburguesa (solo visible en móvil) -->
-    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Abrir menú">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-    <!-- Overlay para cerrar sidebar en móvil -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
+    <!-- Sidebar -->
     <aside class="admin-sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <img src="./assets/gif/EGSlg.webp" alt="EcoGuía Logo">
@@ -33,10 +37,31 @@
         
         <nav class="admin-menu">
             <ul>
-                <li><a href="#" class="active"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-calendar-alt"></i> <span>Eventos</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-map-location-dot"></i> <span>Lugares</span></a></li>
-                <li><a href="#"><i class="fa-solid fa-users"></i> <span>Usuarios</span></a></li>
+                <li><a href="#" class="active" data-view="dashboard"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></a></li>
+                
+                <li class="menu-category">Contenido Hubs</li>
+                <li>
+                    <a href="#" data-view="colibri" class="hub-link-colibri">
+                        <i class="fa-solid fa-dove"></i> <span>Hub Colibrí</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-view="ajolote" class="hub-link-ajolote">
+                        <i class="fa-solid fa-frog"></i> <span>Hub Ajolote</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" data-view="lobo" class="hub-link-lobo">
+                        <i class="fa-solid fa-dog"></i> <span>Hub Lobo</span>
+                    </a>
+                </li>
+
+                <li class="menu-category">Administración</li>
+                <li><a href="#" data-view="eventos"><i class="fa-solid fa-calendar-alt"></i> <span>Eventos</span></a></li>
+                <li><a href="#" data-view="lugares"><i class="fa-solid fa-map-location-dot"></i> <span>Lugares</span></a></li>
+                <li><a href="#" data-view="usuarios" class="only-admin"><i class="fa-solid fa-user-shield"></i> <span>Actores / Staff</span></a></li>
+                <li><a href="#" data-view="voluntarios" class="only-admin"><i class="fa-solid fa-users"></i> <span>Voluntarios</span></a></li>
+                
                 <li class="menu-divider"></li>
                 <li><a href="./index.html" class="nav-back-admin"><i class="fa-solid fa-house"></i> <span>Ir a Inicio</span></a></li>
             </ul>
@@ -49,20 +74,24 @@
         </div>
     </aside>
 
-    <div class="admin-main-wrapper">
+    <!-- Sidebar Backdrop (mobile overlay) -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <div class="admin-main-wrapper" id="admin-main-wrapper">
         <header class="admin-header">
+            <button class="mobile-nav-toggle" id="mobile-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <div class="header-titles">
                 <h1>Hola, <span id="admin-user-display">Administrador</span></h1>
-                <p class="admin-subtitle">Gestión de contenido EcoGuía SOS</p>
+                <p class="admin-subtitle">Resumen general de la plataforma.</p>
             </div>
-            <button class="btn-admin btn-primary-admin" id="btn-nuevo" disabled>
-                <i class="fa-solid fa-plus"></i> Crear Nuevo
-            </button>
+            <!-- El botón Crear Nuevo ahora es contextual y aparece en la tabla -->
         </header>
 
-        <main class="admin-content">
-            <!-- Stats -->
-            <div class="stats-grid">
+        <main class="admin-content" id="admin-main-content">
+            <!-- Stats (Visible solo en dashboard) -->
+            <div class="stats-grid" id="dashboard-stats">
                 <div class="stat-card fade-in">
                     <div class="stat-icon icon-red">
                         <i class="fa-solid fa-calendar-alt"></i>
@@ -81,262 +110,530 @@
                         <p>Lugares Registrados</p>
                     </div>
                 </div>
-                <div class="stat-card fade-in" style="animation-delay: 0.2s;">
-                    <div class="stat-icon icon-blue">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="stat-usuarios">0</h3>
-                        <p>Administradores</p>
-                    </div>
+            </div>
+
+            <!-- Menú de Sub-secciones por Hub (Solo visible al elegir Hub) -->
+            <div id="hub-menu-view" class="hidden fade-in">
+                <div class="hub-menu-grid" id="hub-menu-grid">
+                    <!-- Se carga dinámicamente -->
                 </div>
             </div>
 
-            <!-- Table Section -->
-            <div class="table-container fade-in" style="animation-delay: 0.3s;">
+            <!-- Tabla de Datos (Visible en Dashboard, Usuarios o Áreas específicas) -->
+            <div class="table-container fade-in" id="admin-table-container">
                 <div class="table-header">
-                    <h3>Últimos Registros</h3>
-                    <div class="table-actions">
-                        <!-- Posibles filtros rápidos aquí -->
+                    <h3 id="table-title">Últimos Registros</h3>
+                    <div class="table-actions-container">
+                        <div class="admin-search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="admin-search-input" placeholder="Buscar registros...">
+                        </div>
+                        <button class="btn-admin btn-create-new" id="btn-nuevo" style="display: none;">
+                            <i class="fa-solid fa-plus"></i> Nuevo Registro
+                        </button>
                     </div>
                 </div>
-                
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Categoría</th>
-                            <th>Tipo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-registros">
-                        <tr><td colspan="4" style="text-align: center;">Cargando base de datos...</td></tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-registros">
+                            <tr><td colspan="4" style="text-align: center;">Cargando base de datos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
 
     <!-- ============================================================ -->
-    <!-- Modal: Crear Nuevo Registro                                  -->
+    <!-- MODAL DINÁMICO: Crear / Editar                               -->
     <!-- ============================================================ -->
-    <div id="modal-nuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto;">
-        <div style="background: #1a2634; padding: 30px; border-radius: 12px; width: 100%; max-width: 520px; border: 1px solid rgba(255,255,255,0.1); margin: auto;">
-            <h2 style="margin-bottom: 20px;">Crear Nuevo</h2>
-            <form id="form-nuevo">
-
-                <!-- 1. TIPO DE PROYECTO (Ahora hasta arriba) -->
-                <div style="margin-bottom: 25px; padding: 15px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
-                    <label style="display: block; margin-bottom: 12px; font-weight: bold; color: var(--color-eco); font-size: 0.95rem;">¿Qué vas a registrar?</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <button type="button" class="btn-categoria active" data-cat="evento" style="padding: 12px; border-radius: 8px; border: none; background: var(--color-eco); color: white; cursor: pointer; transition: 0.3s; font-weight: 600;"><i class="fa-solid fa-calendar-star"></i> Evento</button>
-                        <button type="button" class="btn-categoria" data-cat="lugar" style="padding: 12px; border-radius: 8px; border: none; background: rgba(0,0,0,0.3); color: white; cursor: pointer; transition: 0.3s; font-weight: 600;"><i class="fa-solid fa-shop"></i> Lugar Permanente</button>
-                    </div>
+    <div id="modal-nuevo" class="modal-overlay hidden">
+        <div class="modal-content glass-effect" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2 id="modal-title-text">Nuevo Registro</h2>
+                <button class="btn-close-modal" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-nuevo" style="padding: 25px;">
+                <!-- SECTOR SELECTOR (RESTORED) -->
+                <div class="form-type-selector">
+                    <button type="button" class="type-btn active" data-type="eventos" id="btn-type-event">
+                        <i class="fa-solid fa-calendar-day"></i> Evento
+                    </button>
+                    <button type="button" class="type-btn" data-type="lugares" id="btn-type-place">
+                        <i class="fa-solid fa-location-dot"></i> Lugar / Sede
+                    </button>
+                    <button type="button" class="type-btn" data-type="contenido" id="btn-type-content" style="display: none;">
+                        <i class="fa-solid fa-file-lines"></i> Contenido
+                    </button>
                 </div>
 
-                <!-- Tipo Invisible (Guardado interno) -->
-                <input type="hidden" id="input-tipo" value="evento">
-
-                <!-- Nombre -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Nombre</label>
-                    <input type="text" id="input-nombre" required placeholder="Ej. Huerto Roma Verde" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                </div>
-
-                <!-- Categoría / Tipo de Espacio -->
-                <div style="margin-bottom: 15px;">
-                    <label id="label-categoria" style="display: block; margin-bottom: 5px;">Categoría</label>
-                    
-                    <!-- Dropdown para eventos -->
-                    <div id="container-categoria-evento">
-                        <select id="input-categoria" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                            <option value="" disabled selected>-- Selecciona --</option>
-                            <optgroup label="🌱 Naturaleza">
-                                <option value="Huerto Urbano">Huerto Urbano</option>
-                                <option value="Limpieza">Jornada de Limpieza</option>
-                                <option value="Reforestación">Reforestación</option>
-                            </optgroup>
-                            <optgroup label="🎓 Educación">
-                                <option value="Taller">Taller</option>
-                                <option value="Curso">Curso</option>
-                                <option value="Conferencia">Conferencia</option>
-                            </optgroup>
-                            <optgroup label="🤝 Comunidad">
-                                <option value="Festival">Festival</option>
-                                <option value="Bazar">Bazar / Mercado</option>
-                                <option value="Voluntariado">Voluntariado</option>
-                            </optgroup>
-                            <!-- Solo visible para ADMINS — el JS oculta/muestra este grupo -->
-                            <optgroup label="⚙️ Solo Admin" id="optgroup-admin" style="display:none;">
-                                <option value="Líder Ambiental">Líder Ambiental / Agente</option>
-                                <option value="Institución">Institución Oficial</option>
-                                <option value="Normativa">Normativa / Legal</option>
-                                <option value="Fondo">Fondo / Financiamiento</option>
-                            </optgroup>
-                        </select>
+                <div class="form-grid">
+                    <!-- Título (Universal) -->
+                    <div class="form-group full-width">
+                        <label id="label-nombre">Nombre / Título</label>
+                        <input type="text" id="input-nombre" required placeholder="Ej. Taller de Huertos Urbanos">
                     </div>
 
-                    <!-- Texto libre para lugares -->
-                    <div id="container-categoria-lugar" style="display: none;">
-                        <input type="text" id="input-categoria-libre" placeholder="Ej. Huerto Urbano, Espacio Cultural..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                    </div>
-                </div>
+                    <!-- Tipo Oculto (Se maneja por contexto) -->
+                    <input type="hidden" id="input-tipo">
 
-                <!-- Ubicación -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Ubicación (Nombre/Dirección)</label>
-                    <input type="text" id="input-ubicacion" placeholder="Ej. Jalapa 234, Roma Sur, CDMX" required style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                </div>
-
-                <!-- 🔑 EXTRACTOR DE COORDENADAS DESDE GOOGLE MAPS -->
-                <div style="margin-bottom: 12px; padding: 12px 14px; background: rgba(0,119,182,0.12); border: 1px solid rgba(91,194,247,0.35); border-radius: 8px;">
-                    <label style="display: block; margin-bottom: 6px; font-size: 0.83rem; color: #5bc2f7;">
-                        <i class="fa-brands fa-google"></i> Pega un link de Google Maps para extraer coordenadas automáticamente:
-                    </label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="input-gmaps-extract"
-                            placeholder="https://maps.app.goo.gl/... o maps.google.com/..."
-                            style="flex:1; padding: 9px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; font-size: 0.85rem;">
-                        <button type="button" id="btn-extract-coords"
-                            style="padding: 9px 14px; background: rgba(0,119,182,0.7); border: none; color: white; border-radius: 5px; cursor: pointer; font-size: 0.85rem; white-space: nowrap;">
-                            <i class="fa-solid fa-crosshairs"></i> Extraer
-                        </button>
-                    </div>
-                    <small id="extract-status" style="display:block; margin-top:5px; font-size:0.78rem; color: #888;">
-                        💡 En Google Maps: busca el lugar → "Compartir" → copia el link.
-                    </small>
-                </div>
-
-                <!-- Latitud / Longitud -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 5px;">Latitud</label>
-                        <input type="number" id="input-lat" step="any" placeholder="19.4326" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 5px;">Longitud</label>
-                        <input type="number" id="input-lng" step="any" placeholder="-99.1332" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                    </div>
-                </div>
-
-                <!-- GPS Helper -->
-                <button type="button" id="btn-gps-helper" style="width: 100%; padding: 8px; margin-bottom: 15px; background: rgba(114,176,77,0.2); border: 1px solid var(--color-eco); color: var(--color-eco); border-radius: 5px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación actual (GPS)
-                </button>
-
-                <!-- Mini Map Picker -->
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-size: 0.85rem; color: #888;">O haz clic en el mapa para colocar el pin exacto:</label>
-                    <div id="map-picker" style="width: 100%; height: 200px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #000;"></div>
-                </div>
-
-                <!-- Link Google Maps (para botón "Cómo llegar") -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Link de Google Maps (Opcional, para botón "Cómo llegar")</label>
-                    <input type="url" id="input-mapa" placeholder="https://maps.app.goo.gl/..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                </div>
-
-                <!-- Imagen -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Imagen (Opcional)</label>
-                    <input type="file" id="input-imagen-file" accept="image/*" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                    <small id="upload-status" style="display:block; margin-top:5px; color:#f39c12;"></small>
-                </div>
-
-                <!-- SELECCIÓN DE SEDE (Solo para eventos) -->
-                <div id="section-sede" style="margin-bottom: 20px; padding: 15px; background: rgba(91,194,247,0.05); border-radius: 8px; border: 1px solid rgba(91,194,247,0.15);">
-                    <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #5bc2f7;"><i class="fa-solid fa-map-location-dot"></i> ¿Tiene una Sede Fija?</label>
-                    <select id="input-lugar-id" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                        <option value="">No (Sujeto a cambios técnicos)</option>
-                    </select>
-                </div>
-
-
-
-                <!-- FECHAS Y HORARIOS (Dinámico) -->
-                <div id="section-fechas" style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--color-eco);"><i class="fa-regular fa-calendar-check"></i> Inicio</label>
-                        <input type="datetime-local" id="input-fecha-inicio" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                    </div>
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: var(--color-eco);"><i class="fa-regular fa-calendar-xmark"></i> Fin</label>
-                        <input type="datetime-local" id="input-fecha-fin" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px;">
-                    </div>
-                </div>
-
-                <!-- Descripción -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Descripción Breve (Opcional)</label>
-                    <textarea id="input-descripcion" rows="3" placeholder="Escribe un poco sobre este evento o lugar..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
-                </div>
-
-                <!-- Redes Sociales / Web (Estilo Premium: Pulsar para añadir) -->
-                <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                    <label style="display: block; margin-bottom: 15px; font-weight: 700; color: #fff; font-size: 0.9rem;">
-                        Redes Sociales (Pulsar para añadir)
-                    </label>
-                    
-                    <!-- Icon Dashboard (Estilo: Se prenden al pulsar) -->
-                    <div style="display: flex; gap: 12px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <button type="button" class="btn-sn-toggle sn-off" data-sn="fb" data-color="#1877F2" title="Facebook" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-facebook"></i></button>
-                        <button type="button" class="btn-sn-toggle sn-off" data-sn="ig" data-color="linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" title="Instagram" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-instagram"></i></button>
-                        <button type="button" class="btn-sn-toggle sn-off" data-sn="wa" data-color="#25D366" title="WhatsApp" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-whatsapp"></i></button>
-                        <button type="button" class="btn-sn-toggle sn-off" data-sn="x" data-color="#000" title="X (Twitter)" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-x-twitter"></i></button>
-                        <button type="button" class="btn-sn-toggle sn-off" data-sn="yt" data-color="#FF0000" title="YouTube" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-brands fa-youtube"></i></button>
-                        <div style="width: 2px; height: 30px; background: rgba(255,255,255,0.1); margin: auto 5px;"></div>
-                        <button type="button" class="btn-sn-toggle sn-off" data-sn="web" data-color="#34495e" title="Sitio Web o Forms" style="width: 45px; height: 45px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-solid fa-globe"></i></button>
-                    </div>
-
-                    <!-- Hidden Inputs Container -->
-                    <div id="sn-inputs-container" style="display: grid; gap: 12px;">
-                        <div id="input-group-fb" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
-                            <i class="fa-brands fa-facebook" style="width: 25px; color: #1877F2; font-size: 1.4rem;"></i>
-                            <input type="url" id="input-fb" placeholder="URL o usuario de facebook" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                    <!-- SECCIÓN EVENTOS -->
+                    <div id="section-evento-fields" class="form-section-container">
+                        <div class="form-group">
+                            <label>Categoría del Evento</label>
+                            <select id="input-categoria-evento">
+                                <option value="">Selecciona...</option>
+                                <option value="reforestacion">Reforestación</option>
+                                <option value="taller">Taller</option>
+                                <option value="conferencia">Conferencia</option>
+                                <option value="limpieza">Limpieza de Playas/Ríos</option>
+                                <option value="otro">Otro</option>
+                            </select>
                         </div>
-                        <div id="input-group-ig" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
-                            <i class="fa-brands fa-instagram" style="width: 25px; color: #E4405F; font-size: 1.4rem;"></i>
-                            <input type="url" id="input-ig" placeholder="URL o usuario de instagram" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        <div class="form-group">
+                            <label>Sede / Lugar</label>
+                            <select id="input-sede">
+                                <option value="">Cargando sedes...</option>
+                            </select>
                         </div>
-                        <div id="input-group-wa" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
-                            <i class="fa-brands fa-whatsapp" style="width: 25px; color: #25D366; font-size: 1.4rem;"></i>
-                            <input type="url" id="input-wa" placeholder="URL o usuario de whatsapp" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        <div class="form-group">
+                            <label>Fecha Inicio</label>
+                            <input type="datetime-local" id="input-fecha-inicio">
                         </div>
-                        <div id="input-group-x" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
-                            <i class="fa-brands fa-x-twitter" style="width: 25px; color: #fff; font-size: 1.4rem;"></i>
-                            <input type="url" id="input-x" placeholder="URL o usuario de x-twitter" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        <div class="form-group">
+                            <label>Fecha Fin</label>
+                            <input type="datetime-local" id="input-fecha-fin">
                         </div>
-                        <div id="input-group-yt" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
-                            <i class="fa-brands fa-youtube" style="width: 25px; color: #FF0000; font-size: 1.4rem;"></i>
-                            <input type="url" id="input-yt" placeholder="URL o usuario de youtube" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                    </div>
+
+                    <!-- SECCIÓN LUGARES -->
+                    <div id="section-lugar-fields" class="form-section-container" style="display: none;">
+                        <div class="form-group">
+                            <label>Tipo de Lugar</label>
+                            <select id="input-categoria-lugar">
+                                <option value="">Selecciona...</option>
+                                <option value="punto_reciclaje">Punto de Reciclaje</option>
+                                <option value="centro_acopio">Centro de Acopio</option>
+                                <option value="parque_ecologico">Parque Ecológico</option>
+                                <option value="huerto_comunitario">Huerto Comunitario</option>
+                                <option value="tienda_eco">Tienda Eco-friendly</option>
+                            </select>
                         </div>
-                        <div id="input-group-web" class="sn-input-group" style="display: none; align-items: center; gap: 12px;">
-                            <i class="fa-solid fa-globe" style="width: 25px; color: #5bc2f7; font-size: 1.4rem;"></i>
-                            <input type="url" id="input-web" placeholder="Link al sitio web oficial" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px;">
+                        <div class="form-group full-width">
+                            <label>Dirección Completa</label>
+                            <input type="text" id="input-direccion" placeholder="Calle, Número, Colonia, Ciudad...">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Enlace Google Maps (Para extraer coordenadas)</label>
+                            <div class="input-with-button">
+                                <input type="url" id="input-gmaps" placeholder="https://maps.app.goo.gl/...">
+                                <button type="button" class="btn btn-secondary" id="btn-extract-coords" title="Extraer Coordenadas">
+                                    <i class="fa-solid fa-location-crosshairs"></i> Extraer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN CONTENIDO (Para Hubs) -->
+                    <div id="section-content-fields" class="form-section-container" style="display: none;">
+                        <div class="form-group full-width">
+                            <label>Enlace Externo (Web / PDF)</label>
+                            <input type="url" id="input-enlace" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <!-- Imagen (File + URL) - Universal -->
+                    <div class="form-group full-width">
+                        <label>Imagen Portada</label>
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="input-imagen-file" accept="image/*" style="display: none;">
+                            <button type="button" class="btn-admin" id="btn-trigger-upload" style="width: 100%; margin-bottom: 10px;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar Imagen
+                            </button>
+                            <input type="url" id="input-imagen-url" placeholder="O pega una URL de imagen aquí...">
+                            <div id="image-preview" class="image-preview hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Descripción (Universal) -->
+                    <div class="form-group full-width">
+                        <label>Descripción / Detalles</label>
+                        <textarea id="input-descripcion" rows="4" placeholder="Describe los detalles aquí..."></textarea>
+                    </div>
+
+                    <!-- Mapa Picker (Universal for Geo items) -->
+                    <div id="map-section" style="display: none; grid-column: span 2; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+                        <div class="map-header">
+                            <label><i class="fa-solid fa-map-location-dot"></i> Ajuste Fino de Ubicación</label>
+                            <button type="button" class="btn-gps-helper" id="btn-gps-helper">
+                                <i class="fa-solid fa-crosshairs"></i> Mi ubicación
+                            </button>
+                        </div>
+                        <div id="map-picker" style="height: 250px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);"></div>
+                        <div class="coords-row">
+                            <div class="coord-field">
+                                <label>Latitud</label>
+                                <input type="text" id="input-lat" readonly placeholder="0.000000">
+                            </div>
+                            <div class="coord-field">
+                                <label>Longitud</label>
+                                <input type="text" id="input-lng" readonly placeholder="0.000000">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Enlace de Forms/Registro (Solo para eventos) -->
-                <div id="section-registro" style="margin-bottom: 25px; padding: 15px; background: rgba(155,34,56,0.08); border: 1px solid rgba(155,34,56,0.3); border-radius: 12px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #ff6b81;">
-                        <i class="fa-solid fa-clipboard-list"></i> Enlace de Registro (Google Forms, etc.)
-                    </label>
-                    <input type="url" id="input-reg-link" placeholder="https://forms.gle/..." style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
-                </div>
-
-                <!-- Acciones -->
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                    <button type="button" id="btn-cancelar" style="padding: 10px 15px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer;">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="padding: 10px 15px; border-radius: 5px;">Guardar</button>
+                <div class="modal-footer" style="margin-top: 30px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancelar">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-form">Guardar Registro</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- MODAL DINÁMICO: EVENTOS (Diseño Premium Súmate)              -->
+    <!-- ============================================================ -->
+    <div id="modal-nuevo-evento" class="modal-overlay hidden">
+        <div class="modal-content glass-effect" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2>Crear Nuevo Evento</h2>
+                <button class="btn-close-modal" id="btn-close-evento"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-nuevo-evento" style="padding: 25px;">
+                <div class="form-grid">
+                    <!-- Título -->
+                    <div class="form-group full-width">
+                        <label>Nombre del Evento</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="ev-nombre" required placeholder="Ej. Taller de Huertos Urbanos">
+                        </div>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div class="form-group">
+                        <label>Categoría del Evento</label>
+                        <div class="input-wrapper">
+                            <select id="ev-categoria" required>
+                                <option value="">Selecciona...</option>
+                                <option value="reforestacion">Reforestación</option>
+                                <option value="taller">Taller</option>
+                                <option value="conferencia">Conferencia</option>
+                                <option value="limpieza">Limpieza de Playas/Ríos</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Sede -->
+                    <div class="form-group">
+                        <label>Sede / Lugar</label>
+                        <div class="input-wrapper">
+                            <select id="ev-sede">
+                                <option value="">Cargando sedes...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fechas -->
+                    <div class="form-group">
+                        <label>Inicio (Fecha y Hora)</label>
+                        <div class="input-wrapper">
+                            <input type="datetime-local" id="ev-fecha-inicio" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Fin (Fecha y Hora)</label>
+                        <div class="input-wrapper">
+                            <input type="datetime-local" id="ev-fecha-fin" required>
+                        </div>
+                    </div>
+
+                    <!-- Dirección de texto -->
+                    <div class="form-group full-width">
+                        <label>Dirección Escrita (Para mostrar en el evento)</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="ev-ubicacion" placeholder="Ej: Calle 123, Colonia Roma..." required>
+                        </div>
+                    </div>
+
+                    <!-- Maps Extractor -->
+                    <div class="form-group full-width">
+                        <label>Ubicación (Enlace de Google Maps)</label>
+                        <div class="input-with-button">
+                            <div class="input-wrapper blue-effect" style="flex: 1;">
+                                <input type="url" id="ev-gmaps" placeholder="https://maps.app.goo.gl/..." required>
+                            </div>
+                            <button type="button" class="btn btn-secondary shimmer-extra" id="ev-btn-extract-coords" title="Extraer Coordenadas" style="height: 42px; margin-top: 5px;">
+                                <i class="fa-solid fa-location-crosshairs"></i> Extraer
+                            </button>
+                        </div>
+                        <div class="coords-row" style="margin-top: 10px;">
+                            <div class="coord-field">
+                                <label>Latitud</label>
+                                <input type="text" id="ev-lat" readonly placeholder="0.000000" required>
+                            </div>
+                            <div class="coord-field">
+                                <label>Longitud</label>
+                                <input type="text" id="ev-lng" readonly placeholder="0.000000" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagen -->
+                    <div class="form-group full-width">
+                        <label>Imagen Portada</label>
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="ev-imagen-file" accept="image/*" style="display: none;">
+                            <button type="button" class="btn-admin" id="ev-btn-trigger-upload" style="width: 100%; margin-bottom: 10px;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar Imagen
+                            </button>
+                            <div class="input-wrapper">
+                                <input type="url" id="ev-imagen-url" placeholder="O pega una URL de imagen aquí...">
+                            </div>
+                            <div id="ev-image-preview" class="image-preview hidden">
+                                <button type="button" class="btn-remove-preview" id="ev-btn-remove-img" title="Quitar imagen">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Redes Sociales Selector -->
+                    <div class="form-group full-width">
+                        <label>Redes y Contacto del Evento (Opcional)</label>
+                        <div class="social-selector" id="ev-social-selector">
+                            <button type="button" class="social-btn facebook" data-net="social_fb" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+                            <button type="button" class="social-btn instagram" data-net="social_ig" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+                            <button type="button" class="social-btn whatsapp" data-net="social_wa" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                            <button type="button" class="social-btn x-twitter" data-net="social_x" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                            <button type="button" class="social-btn youtube" data-net="social_yt" title="YouTube"><i class="fa-brands fa-youtube"></i></button>
+                            <button type="button" class="social-btn web" data-net="social_web" title="Sitio Web"><i class="fa-solid fa-globe"></i></button>
+                        </div>
+                        <div id="ev-social-inputs" class="social-inputs-container">
+                            <!-- Campos dinámicos aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="form-group full-width">
+                        <label>Descripción / Detalles</label>
+                        <div class="input-wrapper" style="align-items: flex-start; padding-top: 10px;">
+                            <textarea id="ev-descripcion" rows="4" placeholder="Describe los detalles aquí..." required style="background: transparent; border: none; color: white; width: 100%; resize: vertical; outline: none;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Enlace Registro / Forms -->
+                    <div class="form-group full-width">
+                        <label>Enlace de Registro / Formulario (Habilita el botón Súmate)</label>
+                        <div class="input-wrapper pink-effect">
+                            <input type="url" id="ev-reg-link" placeholder="https://forms.gle/... o enlace de registro">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer" style="margin-top: 30px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancelar-evento">Cancelar</button>
+                    <button type="submit" class="btn btn-primary shimmer-extra" id="btn-submit-evento">Guardar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL DINÁMICO: LUGARES / SEDES (Diseño Premium)             -->
+    <!-- ============================================================ -->
+    <div id="modal-nuevo-lugar" class="modal-overlay hidden">
+        <div class="modal-content glass-effect" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2>Crear Nuevo Lugar / Sede</h2>
+                <button class="btn-close-modal" id="btn-close-lugar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-nuevo-lugar" style="padding: 25px;">
+                <div class="form-grid">
+                    <!-- Título -->
+                    <div class="form-group full-width">
+                        <label>Nombre del Lugar</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="pl-nombre" required placeholder="Ej. Huerto Roma Verde">
+                        </div>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <div class="input-wrapper">
+                            <select id="pl-categoria" required>
+                                <option value="">Selecciona...</option>
+                                <option value="punto_reciclaje">Punto de Reciclaje</option>
+                                <option value="centro_acopio">Centro de Acopio</option>
+                                <option value="parque_ecologico">Parque Ecológico</option>
+                                <option value="huerto_comunitario">Huerto Comunitario</option>
+                                <option value="tienda_eco">Tienda Eco-friendly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Ubicación / Dirección -->
+                    <div class="form-group full-width">
+                        <label>Dirección / Ubicación</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="pl-ubicacion" required placeholder="Calle, Número, Colonia, Ciudad...">
+                        </div>
+                    </div>
+
+                    <!-- Maps Extractor -->
+                    <div class="form-group full-width">
+                        <label>Ubicación (Enlace de Google Maps)</label>
+                        <div class="input-with-button">
+                            <div class="input-wrapper blue-effect" style="flex: 1;">
+                                <input type="url" id="pl-gmaps" placeholder="https://maps.app.goo.gl/..." required>
+                            </div>
+                            <button type="button" class="btn btn-secondary shimmer-extra" id="pl-btn-extract-coords" title="Extraer Coordenadas" style="height: 42px; margin-top: 5px;">
+                                <i class="fa-solid fa-location-crosshairs"></i> Extraer
+                            </button>
+                        </div>
+                        <div class="coords-row" style="margin-top: 10px;">
+                            <div class="coord-field">
+                                <label>Latitud</label>
+                                <input type="text" id="pl-lat" readonly placeholder="0.000000" required>
+                            </div>
+                            <div class="coord-field">
+                                <label>Longitud</label>
+                                <input type="text" id="pl-lng" readonly placeholder="0.000000" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagen -->
+                    <div class="form-group full-width">
+                        <label>Imagen del Lugar</label>
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="pl-imagen-file" accept="image/*" style="display: none;">
+                            <button type="button" class="btn-admin" id="pl-btn-trigger-upload" style="width: 100%; margin-bottom: 10px;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar Imagen
+                            </button>
+                            <div class="input-wrapper">
+                                <input type="url" id="pl-imagen-url" placeholder="O pega una URL de imagen aquí...">
+                            </div>
+                            <div id="pl-image-preview" class="image-preview hidden">
+                                <button type="button" class="btn-remove-preview" id="pl-btn-remove-img" title="Quitar imagen">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Redes Sociales Selector -->
+                    <div class="form-group full-width">
+                        <label>Redes y Contacto (Opcional)</label>
+                        <div class="social-selector" id="pl-social-selector">
+                            <button type="button" class="social-btn facebook" data-net="social_fb" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+                            <button type="button" class="social-btn instagram" data-net="social_ig" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+                            <button type="button" class="social-btn whatsapp" data-net="social_wa" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                            <button type="button" class="social-btn x-twitter" data-net="social_x" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                            <button type="button" class="social-btn youtube" data-net="social_yt" title="YouTube"><i class="fa-brands fa-youtube"></i></button>
+                            <button type="button" class="social-btn web" data-net="social_web" title="Sitio Web"><i class="fa-solid fa-globe"></i></button>
+                        </div>
+                        <div id="pl-social-inputs" class="social-inputs-container">
+                            <!-- Campos dinámicos aquí -->
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="form-group full-width">
+                        <label>Descripción / Detalles</label>
+                        <div class="input-wrapper" style="align-items: flex-start; padding-top: 10px;">
+                            <textarea id="pl-descripcion" rows="4" placeholder="Describe el lugar..." required style="background: transparent; border: none; color: white; width: 100%; resize: vertical; outline: none;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Enlace Registro / Forms (Opcional para Lugares) -->
+                    <div class="form-group full-width">
+                        <label>Enlace Externo (Súmate / Info extra)</label>
+                        <div class="input-wrapper pink-effect">
+                            <input type="url" id="pl-reg-link" placeholder="https://...">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer" style="margin-top: 30px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancelar-lugar">Cancelar</button>
+                    <button type="submit" class="btn btn-primary shimmer-extra" id="btn-submit-lugar">Guardar Lugar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE PERMISOS -->
+    <div id="permissions-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-effect" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Gestión de Permisos</h2>
+                <button class="btn-close-modal" id="btn-close-perms"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <p style="color: #888; margin-bottom: 20px;">Activa las secciones donde este actor puede proponer contenido.</p>
+                <div id="permissions-list" class="permissions-grid">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" id="btn-cancel-perms">Cancelar</button>
+                <button class="btn btn-primary" id="btn-save-perms">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE PERFIL / INFO -->
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-effect" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Información del Agente</h2>
+                <button class="btn-close-modal" id="btn-close-profile"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 25px;">
+                <form id="form-profile-edit">
+                    <div style="margin-bottom: 15px;">
+                        <label>Nombre Completo</label>
+                        <input type="text" id="prof-nombre" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label>Rol</label>
+                        <select id="prof-rol" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                            <option value="admin">Administrador</option>
+                            <option value="actor">Actor / Agente</option>
+                            <option value="user">Usuario</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label>Teléfono</label>
+                        <input type="text" id="prof-telefono" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <label>Redes Sociales</label>
+                        <textarea id="prof-links" rows="3" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;"></textarea>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-profile">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
-    <script type="module" src="./assets/js/pages/admin.js"></script>
+    <script src="./assets/js/pages/admin.js" type="module"></script>
 </body>
 </html>

@@ -96,9 +96,9 @@ export function setupAuthObserver() {
                             const dbName = profile.nombre_completo.split(' ')[0];
                             authBtn.innerHTML = `<i class="fa-solid fa-user-circle"></i> ${dbName} <i class="fa-solid fa-chevron-down" style="font-size:0.7rem; margin-left:5px;"></i>`;
                         }
-                        if (profile.rol && profile.rol !== user.role_assigned) {
+                        if (profile.rol) {
                             user.role_assigned = profile.rol;
-                            setupUserDropdown(authBtn, user); // Re-crear con rol correcto
+                            setupUserDropdown(authBtn, user); // Re-crear con rol correcto de DB
                         }
                     }
                 })
@@ -160,17 +160,20 @@ function setupUserDropdown(authBtn, user) {
     `;
 
     // ROLE CHECK: Only show "Mi Panel" (Admin) if role is 'actor' or 'admin'
-    const role = user.role_assigned || 'public';
-    const isAdmin = (role === 'actor' || role === 'admin');
+    const role = (user.role_assigned || 'public').toLowerCase();
+    const isAdmin = (role === 'actor' || role === 'admin' || user.email === 'ecoguiasos@gmail.com');
+    const isSubpage = window.location.pathname.includes('/pages/');
+    const adminPath = isSubpage ? '../admin.html' : './admin.html';
+    const favPath = isSubpage ? './mis-favoritos.html' : './pages/mis-favoritos.html';
 
     dropdown.innerHTML = `
         ${userHeader}
         ${isAdmin ? `
-            <a href="/admin.html" class="dropdown-item">
+            <a href="${adminPath}" class="dropdown-item">
                 <i class="fa-solid fa-gauge-high"></i> Mi Panel
             </a>
         ` : ''}
-        <a href="/pages/mis-favoritos.html" class="dropdown-item">
+        <a href="${favPath}" class="dropdown-item">
             <i class="fa-solid fa-star"></i> Mis Favoritos
         </a>
         <div class="dropdown-divider"></div>
@@ -242,3 +245,86 @@ window.handleMainLogout = async (e) => {
     }
 };
 
+
+/**
+ * Sanitiza una cadena de texto para evitar ataques XSS
+ * Convierte caracteres especiales en entidades HTML
+ * @param {string} str - La cadena a sanitizar
+ * @returns {string} - La cadena sanitizada
+ */
+export function sanitize(str) {
+    if (!str) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return str.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+/**
+ * Muestra una notificación tipo Toast
+ * @param {string} message - El mensaje a mostrar
+ * @param {string} type - 'success', 'error', 'warning'
+ */
+export function showToast(message, type = 'success') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.style = `
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+
+    const toast = document.createElement('div');
+    const colors = {
+        success: '#72B04D',
+        error: '#e74c3c',
+        warning: '#f39c12'
+    };
+    const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-xmark',
+        warning: 'fa-circle-exclamation'
+    };
+
+    toast.className = `toast-notification fade-in`;
+    toast.style = `
+        background: rgba(15, 20, 25, 0.9);
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 14px 24px;
+        border-radius: 12px;
+        border-left: 4px solid ${colors[type]};
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 250px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    `;
+
+    toast.innerHTML = `
+        <i class="fa-solid ${icons[type]}" style="color: ${colors[type]}; font-size: 1.2rem;"></i>
+        <span>${message}</span>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(50px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}

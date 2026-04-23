@@ -1,670 +1,1040 @@
 /* assets/js/pages/admin.js */
 import { supabase } from '../supabase.js';
-import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    
+// Scripts with type="module" are automatically deferred, no need for DOMContentLoaded wrapper.
+(async () => {
+    console.log('[Admin] 🚀 Iniciando panel...');
     setupNavbar();
     setupAuthObserver();
 
-    // Guard: Only allow admins or actors
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = './auth.html';
-        return;
-    }
+    // UI Selectors (Immediate)
+    const h1Header = document.querySelector('.header-titles h1');
+    const pHeader = document.querySelector('.admin-subtitle');
+    const statsGrid = document.getElementById('dashboard-stats');
+    const hubMenuView = document.getElementById('hub-menu-view');
+    const hubMenuGrid = document.getElementById('hub-menu-grid');
+    const tableContainer = document.getElementById('admin-table-container');
+    const tableTitle = document.getElementById('table-title');
+    const btnNuevo = document.getElementById('btn-nuevo');
+    const tbody = document.getElementById('tabla-registros');
+    const adminMainContent = document.getElementById('admin-main-content');
 
-    // Logout button in admin sidebar
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            window.location.href = './index.html';
+    // Mobile Sidebar Toggle
+    const mobileToggle = document.getElementById('mobile-toggle');
+    const adminSidebar = document.getElementById('admin-sidebar');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+    if (mobileToggle && adminSidebar && sidebarBackdrop) {
+        mobileToggle.addEventListener('click', () => {
+            adminSidebar.classList.toggle('active');
+            sidebarBackdrop.classList.toggle('active');
+        });
+
+        sidebarBackdrop.addEventListener('click', () => {
+            adminSidebar.classList.remove('active');
+            sidebarBackdrop.classList.remove('active');
+        });
+
+        // Close sidebar on menu item click (mobile only)
+        document.querySelectorAll('.admin-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    adminSidebar.classList.remove('active');
+                    sidebarBackdrop.classList.remove('active');
+                }
+            });
         });
     }
 
-    // Mobile sidebar toggle
-    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
-    const sidebar = document.getElementById('admin-sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-
-    function openSidebar() {
-        sidebar?.classList.add('open');
-        overlay?.classList.add('active');
-        if (sidebarToggleBtn) sidebarToggleBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    }
-
-    function closeSidebar() {
-        sidebar?.classList.remove('open');
-        overlay?.classList.remove('active');
-        if (sidebarToggleBtn) sidebarToggleBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
-    }
-
-    sidebarToggleBtn?.addEventListener('click', () => {
-        sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
-    });
-
-    overlay?.addEventListener('click', closeSidebar);
-
-    // Admin Sidebar Menu Filtering
-    const menuLinks = document.querySelectorAll('.admin-menu a');
-    let currentAdminFilter = 'all';
-
+    // Navigation Logic (Attached immediately)
+    const menuLinks = document.querySelectorAll('.admin-menu a[data-view]');
     menuLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            const h2Header = document.querySelector('.header-titles h1');
-            const pHeader = document.querySelector('.admin-subtitle');
-            
-            if (link.classList.contains('nav-back-admin')) return;
-            
             e.preventDefault();
+            const view = link.dataset.view;
             menuLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            const section = link.innerText.trim();
-            if (section.includes('Dashboard')) currentAdminFilter = 'all';
-            else if (section.includes('Eventos')) currentAdminFilter = 'evento';
-            else if (section.includes('Lugares')) currentAdminFilter = 'lugar';
-            else if (section.includes('Usuarios')) currentAdminFilter = 'perfiles';
-            
-            h2Header.textContent = `Gestión de ${section}`;
-            pHeader.textContent = `Listado de ${section.toLowerCase()} registrados en el sistema.`;
-            
-            cargarDatos(currentAdminFilter);
+            resetViews();
+
+            if (view === 'dashboard') {
+                showDashboard();
+            } else if (['colibri', 'ajolote', 'lobo'].includes(view)) {
+                showHubMenu(view);
+            } else {
+                showDirectSection(view, link.querySelector('span').textContent);
+            }
         });
     });
 
-    const { data: profile } = await supabase
-        .from('perfiles')
-        .select('rol')
-        .eq('id', session.user.id)
-        .single();
+    // 1. Guard: Authentication & Role Check
+    let session = null;
+    let perfil = { rol: 'user' }; // Fallback role
+    let esAdmin = false;
+    let esActor = false;
+    let currentAdminFilter = 'all';
+    let currentHub = null;
+    let currentSection = null;
 
-    if (!profile || (profile.rol !== 'admin' && profile.rol !== 'actor')) {
-        alert('No tienes permisos para acceder a esta sección.');
-        window.location.href = './index.html';
-        return;
-    }
+    try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        session = currentSession;
 
-    // Set user display name
-    const adminUserDisplay = document.getElementById('admin-user-display');
-    if (adminUserDisplay) {
-        adminUserDisplay.textContent = `Administrador (${session.user.email})`;
-    }
-
-    // Modal elements
-    const btnNuevo = document.getElementById('btn-nuevo');
-    const modalNuevo = document.getElementById('modal-nuevo');
-    const btnCancelar = document.getElementById('btn-cancelar');
-    const formNuevo = document.getElementById('form-nuevo');
-
-    if (btnNuevo) btnNuevo.disabled = false;
-
-    // Mostrar/ocultar categorías exclusivas de admin
-    const optgroupAdmin = document.getElementById('optgroup-admin');
-    if (optgroupAdmin && profile.rol === 'admin') {
-        optgroupAdmin.style.display = '';
-    }
-    
-    let mapPicker = null;
-    let marker = null;
-
-    cargarDatos('all');
-    setupModal();
-
-    function setupModal() {
-        if (!btnNuevo) return;
-
-        btnNuevo.addEventListener('click', async () => {
-            await loadSedesDropdown();
-            modalNuevo.style.display = 'flex';
-            initMapPicker();
-        });
-
-        btnCancelar.addEventListener('click', () => {
-            modalNuevo.style.display = 'none';
-            formNuevo.reset();
-            if (marker) marker.remove();
-            marker = null;
-        });
-        // Toggle Lógica para Tipo (Evento vs Lugar Permanente)
-        const typeSelect = document.getElementById('input-tipo');
-        const catBtns = document.querySelectorAll('.btn-categoria');
-        
-        catBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Update internal hidden input
-                if (typeSelect) typeSelect.value = btn.dataset.cat;
-                
-                // Active button visual
-                catBtns.forEach(b => {
-                    b.classList.remove('active');
-                    b.style.background = 'rgba(0,0,0,0.3)';
-                });
-                btn.classList.add('active');
-                btn.style.background = 'var(--color-eco)';
-
-                // DYNAMIC UI TOGGLES
-                const isLugar = btn.dataset.cat === 'lugar';
-                
-                // 1. Categoria (Dropdown vs Text)
-                document.getElementById('label-categoria').innerText = isLugar ? 'Tipo de Espacio (Ej. Huerto, Parque...)' : 'Categoría';
-                document.getElementById('container-categoria-evento').style.display = isLugar ? 'none' : 'block';
-                document.getElementById('container-categoria-lugar').style.display = isLugar ? 'block' : 'none';
-
-                // 2. Fechas / Horario
-                document.getElementById('section-fechas').style.display = isLugar ? 'none' : 'grid';
-
-                // 3. Sede & Registro (Only for events)
-                document.getElementById('section-sede').style.display = isLugar ? 'none' : 'block';
-                document.getElementById('section-registro').style.display = isLugar ? 'none' : 'block';
-            });
-        });
-
-        // Auto-fill coordenadas si selecciona un lugar
-        const inputLugarId = document.getElementById('input-lugar-id');
-        if (inputLugarId) {
-            inputLugarId.addEventListener('change', (e) => {
-                const lugarId = e.target.value;
-                if (!lugarId) return;
-                const lugar = window.sysLugaresCache?.find(l => l.id === lugarId);
-                if (lugar) {
-                    if (lugar.ubicacion) document.getElementById('input-ubicacion').value = lugar.ubicacion;
-                    if (lugar.lat && lugar.lng) {
-                        document.getElementById('input-lat').value = lugar.lat;
-                        document.getElementById('input-lng').value = lugar.lng;
-                        updatePickerMarker(lugar.lat, lugar.lng);
-                    }
-                }
-            });
-        }
-
-        // Redes Sociales: Lógica de Toggle (Se prenden al pulsar)
-        const snToggles = document.querySelectorAll('.btn-sn-toggle');
-        snToggles.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sn = btn.dataset.sn;
-                const activeColor = btn.dataset.color;
-                const group = document.getElementById(`input-group-${sn}`);
-                
-                if (group) {
-                    if (group.style.display === 'none' || group.style.display === '') {
-                        // PRENDER
-                        group.style.display = 'flex';
-                        btn.style.background = activeColor;
-                        btn.style.color = 'white';
-                        btn.style.boxShadow = `0 4px 15px ${activeColor.includes('gradient') ? 'rgba(214, 41, 118, 0.4)' : activeColor + '66'}`;
-                        btn.classList.replace('sn-off', 'sn-on');
-                    } else {
-                        // APAGAR
-                        group.style.display = 'none';
-                        btn.style.background = 'rgba(255,255,255,0.05)';
-                        btn.style.color = 'rgba(255,255,255,0.4)';
-                        btn.style.boxShadow = 'none';
-                        btn.classList.replace('sn-on', 'sn-off');
-                        document.getElementById(`input-${sn}`).value = '';
-                    }
-                }
-            });
-        });
-
-        // GPS Helper Logic
-        const btnGPS = document.getElementById('btn-gps-helper');
-        if (btnGPS) {
-            btnGPS.addEventListener('click', () => {
-                if (!navigator.geolocation) return alert("Tu navegador no soporta GPS.");
-                btnGPS.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Obteniendo...';
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    document.getElementById('input-lat').value = lat;
-                    document.getElementById('input-lng').value = lng;
-                    updatePickerMarker(lat, lng);
-                    btnGPS.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación actual (GPS)';
-                }, () => {
-                    alert("Error al obtener ubicación. Asegúrate de dar permiso al navegador.");
-                    btnGPS.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación actual (GPS)';
-                });
-            });
-        }
-
-        // 🔑 EXTRACTOR DE COORDENADAS DESDE GOOGLE MAPS
-        const btnExtract = document.getElementById('btn-extract-coords');
-        const extractInput = document.getElementById('input-gmaps-extract');
-        const extractStatus = document.getElementById('extract-status');
-
-        if (btnExtract && extractInput) {
-            btnExtract.addEventListener('click', async () => {
-                const raw = extractInput.value.trim();
-                if (!raw) return;
-
-                extractStatus.style.color = '#f39c12';
-                extractStatus.textContent = '🔄 Procesando link...';
-
-                // Intento 1: Extraer del URL directamente (formato @lat,lng)
-                const coordMatch = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (coordMatch) {
-                    setExtractedCoords(parseFloat(coordMatch[1]), parseFloat(coordMatch[2]));
-                    return;
-                }
-
-                // Intento 2: Buscar ?q=lat,lng
-                const qMatch = raw.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (qMatch) {
-                    setExtractedCoords(parseFloat(qMatch[1]), parseFloat(qMatch[2]));
-                    return;
-                }
-
-                // Intento 3: Link corto (goo.gl / maps.app.goo.gl) — necesita expandirse
-                // Como no podemos hacer CORS fetch al link corto, pedimos al usuario que use el link largo
-                if (raw.includes('goo.gl') || raw.includes('maps.app')) {
-                    extractStatus.style.color = '#5bc2f7';
-                    extractStatus.innerHTML = '⚠️ Link corto detectado. <strong>Abre el link en tu navegador</strong>, copia el URL largo de la barra de dirección y pégalo aquí. El URL largo contiene @lat,lng.';
-                    return;
-                }
-
-                extractStatus.style.color = '#ff5252';
-                extractStatus.textContent = '❌ No se encontraron coordenadas en este link. Intenta con el URL completo de maps.google.com.';
-            });
-        }
-
-        function setExtractedCoords(lat, lng) {
-            document.getElementById('input-lat').value = lat.toFixed(6);
-            document.getElementById('input-lng').value = lng.toFixed(6);
-            updatePickerMarker(lat, lng);
-            extractStatus.style.color = '#2ed573';
-            extractStatus.textContent = `✅ Coordenadas extraidas: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-        }
-
-        formNuevo.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btnSubmit = formNuevo.querySelector('button[type="submit"]');
-            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-            btnSubmit.disabled = true;
-
-            const tipo = document.getElementById('input-tipo').value;
-            const table = (tipo === 'evento') ? 'eventos' : 'lugares';
-
-            // 1. Validar y subir imagen si hay archivo
-            let imagenUrl = null;
-            const fileInput = document.getElementById('input-imagen-file');
-            const uploadStatus = document.getElementById('upload-status');
-
-            if (fileInput?.files?.length > 0) {
-                const file = fileInput.files[0];
-                
-                // --- VALIDACIONES DE CALIDAD ---
-                const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-                const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-
-                if (!ALLOWED_TYPES.includes(file.type)) {
-                    alert('❌ Formato no permitido. Por favor usa JPG, PNG o WebP. (Evita .bmp o .tiff)');
-                    btnSubmit.innerHTML = 'Guardar';
-                    btnSubmit.disabled = false;
-                    return;
-                }
-
-                if (file.size > MAX_SIZE) {
-                    alert('❌ Imagen muy pesada. El límite es de 2MB para mantener la página rápida.');
-                    btnSubmit.innerHTML = 'Guardar';
-                    btnSubmit.disabled = false;
-                    return;
-                }
-                // -------------------------------
-
-                const ext = file.name.split('.').pop();
-                const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-                uploadStatus.textContent = '⏳ Subiendo imagen...';
-
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('imagenes-plataforma')
-                    .upload(fileName, file, { upsert: false });
-
-                if (uploadError) {
-                    uploadStatus.textContent = `⚠️ Error subida: ${uploadError.message}`;
-                    console.error("Error storage:", uploadError);
-                } else {
-                    const { data: urlData } = supabase.storage
-                        .from('imagenes-plataforma')
-                        .getPublicUrl(uploadData.path);
-                    imagenUrl = urlData.publicUrl;
-                    uploadStatus.textContent = '✅ Imagen subida';
-                }
-            }
-
-            // 2. Construir payload limpio
-            const lat = parseFloat(document.getElementById('input-lat').value) || null;
-            const lng = parseFloat(document.getElementById('input-lng').value) || null;
-            const mapaUrl = document.getElementById('input-mapa').value.trim() 
-                         || document.getElementById('input-gmaps-extract').value.trim() 
-                         || null;
-
-            const isEvento = tipo === 'evento';
-            
-            const payload = {
-                nombre: document.getElementById('input-nombre').value,
-                categoria: isEvento ? document.getElementById('input-categoria').value : document.getElementById('input-categoria-libre').value,
-                ubicacion: document.getElementById('input-ubicacion').value,
-                mapa_url: mapaUrl,
-                descripcion: document.getElementById('input-descripcion').value.trim() || null,
-                lat: document.getElementById('input-lat').value || null,
-                lng: document.getElementById('input-lng').value || null,
-                fecha_inicio: isEvento ? (document.getElementById('input-fecha-inicio').value || null) : null,
-                fecha_fin: isEvento ? (document.getElementById('input-fecha-fin').value || null) : null,
-                social_fb: document.getElementById('input-fb').value.trim() || null,
-                social_ig: document.getElementById('input-ig').value.trim() || null,
-                social_wa: document.getElementById('input-wa').value.trim() || null,
-                social_yt: document.getElementById('input-yt').value.trim() || null,
-                social_web: document.getElementById('input-web').value.trim() || null,
-                reg_link: isEvento ? (document.getElementById('input-reg-link').value.trim() || null) : null,
-                owner_id: session.user.id
-            };
-
-            if (isEvento) {
-                payload.lugar_id = document.getElementById('input-lugar-id')?.value || null;
-            }
-
-            if (imagenUrl) payload.imagen = imagenUrl;
-
-            try {
-                const editingId = formNuevo.dataset.editingId;
-                const editingTable = formNuevo.dataset.editingTable;
-
-                if (editingId && editingTable) {
-                    // MODO EDICIÓN — UPDATE
-                    const { error } = await supabase.from(editingTable).update(payload).eq('id', editingId);
-                    if (error) { console.error('Error update:', error); throw error; }
-                    delete formNuevo.dataset.editingId;
-                    delete formNuevo.dataset.editingTable;
-                } else {
-                    // MODO CREACIÓN — INSERT
-                    const { error } = await supabase.from(table).insert([payload]);
-                    if (error) { console.error('Error insert:', error); throw error; }
-                }
-
-                // Reset modal
-                document.querySelector('#modal-nuevo h2').textContent = 'Crear Nuevo';
-                const btnS = formNuevo.querySelector('button[type="submit"]');
-                btnS.textContent = 'Guardar';
-
-                modalNuevo.style.display = 'none';
-                formNuevo.reset();
-                uploadStatus.textContent = '';
-                cargarDatos(currentAdminFilter);
-                alert('✅ ¡Guardado con éxito!');
-            } catch (err) {
-                console.error("Error guardando:", err);
-                alert(`Error al guardar: ${err.message || 'Revisa la consola para más detalles.'}`);
-            } finally {
-                btnSubmit.innerHTML = 'Guardar';
-                btnSubmit.disabled = false;
-            }
-        });
-    }
-
-    function initMapPicker() {
-        if (mapPicker) {
-            mapPicker.resize();
+        if (!session) {
+            window.location.href = './auth.html';
             return;
         }
 
-        mapPicker = new maplibregl.Map({
-            container: 'map-picker',
-            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-            center: [-99.1332, 19.4326],
-            zoom: 11
-        });
+        const { data: profile, error: perfilError } = await supabase
+            .from('perfiles')
+            .select('rol')
+            .eq('id', session.user.id)
+            .single();
 
-        mapPicker.on('click', (e) => {
-            const { lng, lat } = e.lngLat;
-            document.getElementById('input-lat').value = lat.toFixed(6);
-            document.getElementById('input-lng').value = lng.toFixed(6);
-            updatePickerMarker(lat, lng);
-        });
-    }
-
-    function updatePickerMarker(lat, lng) {
-        if (!mapPicker) return;
-        if (marker) marker.remove();
-        marker = new maplibregl.Marker({ color: '#72B04D' })
-            .setLngLat([lng, lat])
-            .addTo(mapPicker);
-        mapPicker.flyTo({ center: [lng, lat], zoom: 14 });
-    }
-
-    async function loadSedesDropdown() {
-        const select = document.getElementById('input-lugar-id');
-        if (!select) return;
-        
-        // Fetch only basic logic needed
-        const { data: lugares } = await supabase.from('lugares').select('id, nombre, lat, lng, ubicacion').order('nombre');
-        window.sysLugaresCache = lugares || [];
-        
-        select.innerHTML = '<option value="">No (Será una ubicación independiente)</option>';
-        if (lugares) {
-            lugares.forEach(l => {
-                select.innerHTML += `<option value="${l.id}">${l.nombre}</option>`;
-            });
+        if (perfilError || !profile || !['admin', 'actor'].includes(profile.rol)) {
+            console.warn('[Security] Acceso denegado');
+            window.location.href = './index.html';
+            return;
         }
+
+        perfil = profile;
+        esAdmin = perfil.rol === 'admin';
+        esActor = perfil.rol === 'actor';
+
+        // Show admin-only elements
+        if (esAdmin) {
+            document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'flex');
+        }
+
+        // 2. Initialize Dashboard
+        showDashboard();
+
+    } catch (err) {
+        console.error("Critical Error during admin initialization:", err);
+    }
+
+    function resetViews() {
+        if (statsGrid) statsGrid.classList.add('hidden');
+        if (hubMenuView) hubMenuView.classList.add('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
+        if (btnNuevo) btnNuevo.style.display = 'none';
+        currentHub = null;
+        currentSection = null;
+        if (adminMainContent) adminMainContent.classList.remove('hub-colibri', 'hub-ajolote', 'hub-lobo');
+    }
+
+    /**
+     * Utility to compress images client-side before upload
+     * @param {File} file 
+     * @returns {Promise<Blob>}
+     */
+    async function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/webp', 0.7); // Highly optimized WebP
+                };
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function showDashboard() {
+        h1Header.textContent = `Hola, ${perfil.rol === 'admin' ? 'Administrador' : 'Actor'}`;
+        pHeader.textContent = 'Resumen general de la plataforma.';
+        statsGrid.classList.remove('hidden');
+        tableContainer.classList.remove('hidden');
+        tableTitle.textContent = 'Últimos Registros Globales';
+        currentAdminFilter = 'all';
+        cargarDatos('all');
+    }
+
+    function showHubMenu(hub) {
+        resetViews();
+        currentHub = hub;
+        adminMainContent.classList.add(`hub-${hub}`);
+        h1Header.textContent = `Hub ${hub.charAt(0).toUpperCase() + hub.slice(1)}`;
+        pHeader.textContent = 'Selecciona un área para gestionar su contenido.';
+        hubMenuView.classList.remove('hidden');
+        renderHubMenuGrid(hub);
+    }
+
+    function showDirectSection(view, title) {
+        h1Header.textContent = title;
+        pHeader.textContent = `Listado de ${title.toLowerCase()} registrados.`;
+        tableContainer.classList.remove('hidden');
+        tableTitle.textContent = `Registros: ${title}`;
+        
+        if (view !== 'usuarios' && view !== 'voluntarios') {
+            btnNuevo.style.display = 'flex';
+        }
+        
+        currentAdminFilter = view;
+        cargarDatos(view);
+    }
+
+    function renderHubMenuGrid(hub) {
+        hubMenuGrid.innerHTML = '';
+        const sections = {
+            colibri: [
+                { id: 'agua', label: 'Agua y Cuenca', icon: 'fa-droplet' },
+                { id: 'cursos', label: 'Cursos', icon: 'fa-chalkboard-user' },
+                { id: 'ecotecnias', label: 'Ecotecnias', icon: 'fa-solar-panel' },
+                { id: 'lecturas', label: 'Lecturas', icon: 'fa-book-open' },
+                { id: 'documentales', label: 'Cine/Documental', icon: 'fa-film' },
+                { id: 'firmas', label: 'Firmas/Peticiones', icon: 'fa-pen-nib' }
+            ],
+            ajolote: [
+                { id: 'convocatoria', label: 'Convocatorias', icon: 'fa-bullhorn' },
+                { id: 'voluntariados', label: 'Voluntariados', icon: 'fa-handshake-angle' },
+                { id: 'agentes', label: 'Agentes de Cambio', icon: 'fa-users' },
+                { id: 'eventos', label: 'Eventos de Comunidad', icon: 'fa-calendar-day' }
+            ],
+            lobo: [
+                { id: 'fondos', label: 'Fondos y Apoyos', icon: 'fa-hand-holding-dollar' },
+                { id: 'normativa', label: 'Normativa Ambiental', icon: 'fa-scale-balanced' }
+            ]
+        };
+
+        (sections[hub] || []).forEach(sec => {
+            const card = document.createElement('div');
+            card.className = 'hub-card';
+            card.innerHTML = `<i class="fa-solid ${sec.icon}"></i><h4>${sec.label}</h4>`;
+            card.onclick = () => {
+                currentSection = sec.id;
+                hubMenuView.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                tableTitle.textContent = `Gestión: ${sec.label}`;
+                pHeader.textContent = `Área específica de ${sec.label} en Hub ${hub}.`;
+                btnNuevo.style.display = 'flex';
+                currentAdminFilter = `seccion_${sec.id}_${hub}`;
+                cargarDatos(currentAdminFilter);
+            };
+            hubMenuGrid.appendChild(card);
+        });
     }
 
     async function cargarDatos(filter = 'all') {
-        const tbody = document.getElementById('tabla-registros');
-        if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888;">Actualizando datos...</td></tr>';
-
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Cargando datos...</td></tr>';
+        
         try {
-            let allEventos = [];
-            let allLugares = [];
+            let allItems = [];
+            
+            if (filter === 'all') {
+                const [eventsRes, placesRes] = await Promise.all([
+                    supabase.from('eventos').select('*').order('created_at', { ascending: false }),
+                    supabase.from('lugares').select('*').order('created_at', { ascending: false })
+                ]);
 
-            // Actores solo ven sus propios registros
-            const isActor = profile.rol === 'actor';
-            const ownerFilter = isActor ? { column: 'owner_id', value: session.user.id } : null;
+                if (eventsRes.data) {
+                    const mappedEvents = eventsRes.data.map(x => ({...x, nombre: x.nombre, categoria: x.categoria, tipo_orig: 'evento'}));
+                    allItems = [...allItems, ...mappedEvents];
+                }
+                if (placesRes.data) {
+                    const mappedPlaces = placesRes.data.map(x => ({...x, nombre: x.nombre, categoria: x.categoria, tipo_orig: 'lugar'}));
+                    allItems = [...allItems, ...mappedPlaces];
+                }
 
-            if (filter === 'all' || filter === 'evento') {
-                let q = supabase.from('eventos').select('*').order('created_at', { ascending: false });
-                if (ownerFilter) q = q.eq(ownerFilter.column, ownerFilter.value);
-                const { data: ev, error: evErr } = await q;
-                if (evErr) console.error('Error eventos:', evErr);
-                if (ev) allEventos = ev;
+                document.getElementById('stat-eventos').textContent = allItems.filter(x => x.tipo_orig === 'evento').length;
+                document.getElementById('stat-lugares').textContent = allItems.filter(x => x.tipo_orig === 'lugar').length;
+            } 
+            else if (filter === 'eventos' || filter === 'lugares') {
+                let q = supabase.from(filter).select('*').order('created_at', { ascending: false });
+                if (esActor) q = q.eq('owner_id', session.user.id);
+                const { data } = await q;
+                if (data) allItems = data.map(x => ({...x, nombre: x.nombre, categoria: x.categoria, tipo_orig: filter.slice(0, -1)}));
             }
-            if (filter === 'all' || filter === 'lugar') {
-                let q = supabase.from('lugares').select('*').order('created_at', { ascending: false });
-                if (ownerFilter) q = q.eq(ownerFilter.column, ownerFilter.value);
-                const { data: lu, error: luErr } = await q;
-                if (luErr) console.error('Error lugares:', luErr);
-                if (lu) allLugares = lu;
+            else if (filter.startsWith('seccion_')) {
+                const parts = filter.split('_');
+                const secId = parts[1];
+                const hub = parts[2];
+                let q = supabase.from('contenido_secciones').select('*').eq('seccion_id', secId).eq('parent_hub', hub);
+                if (esActor) q = q.eq('owner_id', session.user.id);
+                const { data } = await q;
+                if (data) allItems = data.map(x => ({...x, nombre: x.titulo, categoria: x.seccion_id, tipo_orig: 'contenido_secciones'}));
             }
-
-            // Actualizar contadores del dashboard
-            const statEventos = document.getElementById('stat-eventos');
-            const statLugares = document.getElementById('stat-lugares');
-            const statUsuarios = document.getElementById('stat-usuarios');
-            if (statEventos) statEventos.textContent = allEventos.length;
-            if (statLugares) statLugares.textContent = allLugares.length;
-
-            let allPerfiles = [];
-            if (filter === 'perfiles' && profile.rol === 'admin') {
-                const { data: pr } = await supabase.from('perfiles').select('*').order('created_at', { ascending: false });
-                if (pr) allPerfiles = pr;
-                if (statUsuarios) statUsuarios.textContent = pr?.filter(p => p.rol === 'admin').length || 0;
-            } else if (filter === 'all' && profile.rol === 'admin') {
-                const { count } = await supabase.from('perfiles').select('*', { count: 'exact', head: true }).eq('rol', 'admin');
-                if (statUsuarios) statUsuarios.textContent = count || 0;
+            else if (filter === 'usuarios' && esAdmin) {
+                const { data } = await supabase.from('perfiles').select('*').in('rol', ['admin', 'actor']).order('created_at', { ascending: false });
+                if (data) allItems = data.map(x => ({...x, nombre: x.nombre_completo, categoria: x.rol, tipo_orig: 'perfiles'}));
             }
-
-            let all = [
-                ...allEventos.map(x => ({...x, tipo_orig: 'evento'})),
-                ...allLugares.map(x => ({...x, tipo_orig: 'lugar'})),
-                ...allPerfiles.map(x => ({...x, nombre: x.nombre_usuario || x.email || 'Sin nombre', categoria: x.rol, tipo_orig: 'perfiles'}))
-            ];
-
-            tbody.innerHTML = '';
-            if (all.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888;">No hay registros en esta sección.</td></tr>';
-                return;
+            else if (filter === 'voluntarios' && esAdmin) {
+                const { data } = await supabase.from('perfiles').select('*').eq('rol', 'user').order('created_at', { ascending: false });
+                if (data) allItems = data.map(x => ({...x, nombre: x.nombre_completo, categoria: 'Voluntario', tipo_orig: 'perfiles'}));
             }
 
-            all.forEach(item => {
-                const isOwner = item.owner_id === session.user.id || profile.rol === 'admin';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${item.nombre}</strong></td>
-                    <td>${item.categoria || '--'}</td>
-                    <td><span class="badge" style="background: rgba(114, 176, 77, 0.2); color: var(--color-eco); border: 1px solid var(--color-eco);">activo</span></td>
-                    <td>
-                        ${isOwner && item.tipo_orig !== 'perfiles' ? `
-                        <button class="btn-admin" onclick="window.editarRegistro('${item.id}', '${item.tipo_orig}')" 
-                            style="background: transparent; color: #5bc2f7; border: none; cursor: pointer; font-size: 1.1rem; margin-right: 6px;" title="Editar">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>` : ''}
-                        ${isOwner ? `
-                        <button class="btn-admin" onclick="window.eliminarRegistro('${item.id}', '${item.tipo_orig}')" 
-                            style="background: transparent; color: #ff5252; border: none; cursor: pointer; font-size: 1.1rem;" title="Eliminar">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>` : ''}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } catch (error) {
-            console.error('Error cargando datos:', error);
+            renderTablaRows(allItems);
+        } catch (err) {
+            console.error('Error cargarDatos:', err);
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--color-danger);">Error al cargar datos.</td></tr>';
         }
     }
 
-    // --- EDITAR REGISTRO ---
-    window.editarRegistro = async function(id, tipo) {
-        const table = tipo === 'evento' ? 'eventos' : 'lugares';
-        const { data: item, error } = await supabase.from(table).select('*').eq('id', id).single();
-        if (error || !item) { alert('Error al cargar el registro.'); return; }
+    function renderTablaRows(items) {
+        tbody.innerHTML = '';
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666;">No se encontraron registros.</td></tr>';
+            return;
+        }
 
-        // Guardar el ID en edición en el formulario
-        formNuevo.dataset.editingId = id;
-        formNuevo.dataset.editingTable = table;
+        items.forEach(item => {
+            const tr = document.createElement('tr');
+            const statusLabel = item.estado || 'activo';
+            const badgeColor = statusLabel === 'publicado' ? '#72B04D' : (statusLabel === 'pendiente' ? '#f39c12' : '#64748b');
+            
+            tr.innerHTML = `
+                <td><strong>${sanitize(item.nombre)}</strong></td>
+                <td><span style="font-size: 0.8rem; color: #888;">${sanitize(item.categoria)}</span></td>
+                <td><span class="badge" style="background: ${badgeColor}22; color: ${badgeColor}; border: 1px solid ${badgeColor}44;">${statusLabel}</span></td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        ${item.tipo_orig === 'perfiles' ? `
+                            <button onclick="window.editarPerfil('${item.id}')" class="btn-admin" style="padding: 4px 8px; font-size: 0.75rem;"><i class="fa-solid fa-user-pen"></i> Info</button>
+                            ${item.rol === 'actor' ? `<button onclick="window.gestionarPermisos('${item.id}')" class="btn-admin" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--color-eco); color: var(--color-eco);"><i class="fa-solid fa-key"></i></button>` : ''}
+                        ` : `
+                            <button class="btn-admin" style="padding: 4px 8px; color: #5bc2f7;"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-admin" style="padding: 4px 8px; color: #ff5252;"><i class="fa-solid fa-trash"></i></button>
+                        `}
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-        // Reseteo previo de visuales por si acaso
-        document.querySelectorAll('.btn-categoria').forEach(b => {
-             b.classList.remove('active'); b.style.background = 'rgba(0,0,0,0.3)';
+    // ========== GESTIÓN DE MODAL "NUEVO REGISTRO" (DOS SECCIONES) ==========
+    const modalNuevo = document.getElementById('modal-nuevo');
+    const formNuevo = document.getElementById('form-nuevo');
+    const typeButtons = document.querySelectorAll('.type-btn');
+    const sectionEvento = document.getElementById('section-evento-fields');
+    const sectionLugar = document.getElementById('section-lugar-fields');
+    const sectionContent = document.getElementById('section-content-fields');
+    const mapSection = document.getElementById('map-section');
+
+    function switchFormType(type) {
+        document.getElementById('input-tipo').value = type;
+        
+        // Update Buttons
+        typeButtons.forEach(btn => {
+            if (btn.dataset.type === type) btn.classList.add('active');
+            else btn.classList.remove('active');
         });
 
-        // Pre-rellenar el formulario
-        document.getElementById('input-tipo').value = tipo;
+        // Toggle Sections
+        sectionEvento.style.display = type === 'eventos' ? 'grid' : 'none';
+        sectionLugar.style.display = type === 'lugares' ? 'grid' : 'none';
+        sectionContent.style.display = type === 'contenido' ? 'grid' : 'none';
         
-        // Activar botón visual correcto
-        const targetBtn = document.querySelector(`.btn-categoria[data-cat="${tipo}"]`);
-        if (targetBtn) {
-            targetBtn.classList.add('active');
-            targetBtn.style.background = 'var(--color-eco)';
-        }
-
-        // Cargar dropdown por si acaso y asignar
-        await loadSedesDropdown();
-        const sedeSection = document.getElementById('sede-section');
-        if (tipo === 'evento') {
-            if (sedeSection) sedeSection.style.display = 'block';
-            document.getElementById('input-lugar-id').value = item.lugar_id || '';
-        } else {
-            if (sedeSection) sedeSection.style.display = 'none';
-        }
-
-        document.getElementById('input-nombre').value = item.nombre || '';
-        document.getElementById('input-categoria').value = item.categoria || '';
-        document.getElementById('input-ubicacion').value = item.ubicacion || '';
-        document.getElementById('input-descripcion').value = item.descripcion || '';
+        // Map visibility (Events and Places need map)
+        mapSection.style.display = (type === 'eventos' || type === 'lugares') ? 'block' : 'none';
         
-        if (item.fecha_inicio) {
-            // Convert to YYYY-MM-DDTHH:mm for datetime-local
-            const dInicio = new Date(item.fecha_inicio);
-            dInicio.setMinutes(dInicio.getMinutes() - dInicio.getTimezoneOffset());
-            document.getElementById('input-fecha-inicio').value = dInicio.toISOString().slice(0, 16);
-        } else {
-            document.getElementById('input-fecha-inicio').value = '';
+        if ((type === 'eventos' || type === 'lugares') && typeof map !== 'undefined') {
+            setTimeout(() => map.resize(), 300);
         }
+
+        // Adjust label name if needed
+        document.getElementById('label-nombre').textContent = type === 'contenido' ? 'Título del Contenido' : 'Nombre / Título';
+    }
+
+    typeButtons.forEach(btn => {
+        btn.onclick = () => switchFormType(btn.dataset.type);
+    });
+
+    btnNuevo.onclick = () => {
+        if (currentAdminFilter === 'eventos') {
+            const modalEvento = document.getElementById('modal-nuevo-evento');
+            const formEvento = document.getElementById('form-nuevo-evento');
+            formEvento.reset();
+            document.getElementById('ev-image-preview').classList.add('hidden');
+            document.getElementById('ev-image-preview').style.backgroundImage = '';
+            cargarSedesEvento();
+            modalEvento.classList.remove('hidden');
+            return;
+        }
+
+        if (currentAdminFilter === 'lugares') {
+            const modalLugar = document.getElementById('modal-nuevo-lugar');
+            const formLugar = document.getElementById('form-nuevo-lugar');
+            formLugar.reset();
+            document.getElementById('pl-image-preview').classList.add('hidden');
+            document.getElementById('pl-image-preview').style.backgroundImage = '';
+            modalLugar.classList.remove('hidden');
+            return;
+        }
+
+        formNuevo.reset();
+        document.getElementById('modal-title-text').textContent = "Nuevo Registro";
+        document.getElementById('image-preview').classList.add('hidden');
+        document.getElementById('image-preview').style.backgroundImage = '';
         
-        if (item.fecha_fin) {
-            const dFin = new Date(item.fecha_fin);
-            dFin.setMinutes(dFin.getMinutes() - dFin.getTimezoneOffset());
-            document.getElementById('input-fecha-fin').value = dFin.toISOString().slice(0, 16);
-        } else {
-            document.getElementById('input-fecha-fin').value = '';
-        }
-
-        if (item.lat) document.getElementById('input-lat').value = item.lat;
-        if (item.lng) document.getElementById('input-lng').value = item.lng;
-
-        // Dynamic fields for Editing
-        const isEditLugar = tipo === 'lugar';
-        document.getElementById('label-categoria').innerText = isEditLugar ? 'Tipo de Espacio' : 'Categoría';
-        document.getElementById('container-categoria-evento').style.display = isEditLugar ? 'none' : 'block';
-        document.getElementById('container-categoria-lugar').style.display = isEditLugar ? 'block' : 'none';
-        document.getElementById('section-fechas').style.display = isEditLugar ? 'none' : 'grid';
-        document.getElementById('section-sede').style.display = isEditLugar ? 'none' : 'block';
-        document.getElementById('section-registro').style.display = isEditLugar ? 'none' : 'block';
-
-        if (isEditLugar) {
-            document.getElementById('input-categoria-libre').value = item.categoria || '';
-        } else {
-            document.getElementById('input-categoria').value = item.categoria || '';
-        }
+        // Auto-detect type based on current view
+        let defaultType = 'eventos';
+        if (currentAdminFilter === 'lugares') defaultType = 'lugares';
+        else if (currentAdminFilter.startsWith('seccion_')) defaultType = 'contenido';
         
-        // Redes Sociales
-        // Primero ocultar todos y quitar bordes para evitar residuos de ediciones anteriores
-        document.querySelectorAll('.btn-sn-toggle').forEach(b => b.style.border = 'none');
-        document.querySelectorAll('.sn-input-group').forEach(g => g.style.display = 'none');
+        // Hide/Show Content button only when needed
+        document.getElementById('btn-type-content').style.display = defaultType === 'contenido' ? 'flex' : 'none';
+        
+        switchFormType(defaultType);
+        modalNuevo.classList.remove('hidden');
+    };
 
-        const snKeys = { 
-            fb: item.social_fb, 
-            ig: item.social_ig, 
-            wa: item.social_wa, 
-            x: item.social_x, 
-            yt: item.social_yt,
-            web: item.social_web
-        };
+    // Extraer coordenadas de GMaps
+    document.getElementById('btn-extract-coords').onclick = () => {
+        const url = document.getElementById('input-gmaps').value;
+        if (!url) return showToast('Pega un enlace de Google Maps primero', 'error');
+        const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+        const match = url.match(regex);
+        if (match) {
+            const lat = parseFloat(match[1]);
+            const lng = parseFloat(match[2]);
+            document.getElementById('input-lat').value = lat;
+            document.getElementById('input-lng').value = lng;
+            if (typeof marker !== 'undefined') marker.setLngLat([lng, lat]);
+            if (typeof map !== 'undefined') map.flyTo({ center: [lng, lat], zoom: 15 });
+            showToast('Coordenadas extraídas correctamente');
+        } else {
+            showToast('No se pudieron extraer coordenadas.', 'warning');
+        }
+    };
 
-        Object.keys(snKeys).forEach(key => {
-            const btn = document.querySelector(`.btn-sn-toggle[data-sn="${key}"]`);
-            const group = document.getElementById(`input-group-${key}`);
-            const input = document.getElementById(`input-${key}`);
+    // GPS Helper
+    document.getElementById('btn-gps-helper').onclick = () => {
+        if (!navigator.geolocation) return showToast('Geolocalización no soportada', 'error');
+        showToast('Obteniendo ubicación...');
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude: lat, longitude: lng } = pos.coords;
+            document.getElementById('input-lat').value = lat;
+            document.getElementById('input-lng').value = lng;
+            if (typeof marker !== 'undefined') marker.setLngLat([lng, lat]);
+            if (typeof map !== 'undefined') map.flyTo({ center: [lng, lat], zoom: 16 });
+        }, () => showToast('Error al obtener GPS', 'error'));
+    };
 
-            if (snKeys[key]) {
-                input.value = snKeys[key];
-                if (group) group.style.display = 'flex';
-                if (btn) {
-                    const activeColor = btn.dataset.color;
-                    btn.style.background = activeColor;
-                    btn.style.color = 'white';
-                    btn.style.boxShadow = `0 4px 15px ${activeColor.includes('gradient') ? 'rgba(214, 41, 118, 0.4)' : activeColor + '66'}`;
-                    btn.classList.replace('sn-off', 'sn-on');
-                }
+    // Cargar Sedes
+    async function cargarSedes() {
+        const select = document.getElementById('input-sede');
+        if (!select) return;
+        select.innerHTML = '<option value="">Selecciona un lugar...</option>';
+        const { data } = await supabase.from('lugares').select('id, nombre').order('nombre');
+        if (data) {
+            data.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.textContent = l.nombre;
+                select.appendChild(opt);
+            });
+        }
+    }
+
+    // Cargar Sedes para el NUEVO modal de Eventos
+    async function cargarSedesEvento() {
+        const select = document.getElementById('ev-sede');
+        if (!select) return;
+        select.innerHTML = '<option value="">Selecciona un lugar...</option>';
+        const { data } = await supabase.from('lugares').select('id, nombre').order('nombre');
+        if (data) {
+            data.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.textContent = l.nombre;
+                select.appendChild(opt);
+            });
+        }
+    }
+
+    // Lógica para Extracción de Coordenadas y Mapas del NUEVO modal de Eventos
+    document.getElementById('ev-btn-extract-coords').onclick = () => {
+        const url = document.getElementById('ev-gmaps').value;
+        if (!url) return showToast('Pega un enlace de Google Maps primero', 'error');
+        const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+        const match = url.match(regex);
+        if (match) {
+            document.getElementById('ev-lat').value = parseFloat(match[1]);
+            document.getElementById('ev-lng').value = parseFloat(match[2]);
+            showToast('Coordenadas extraídas correctamente');
+        } else {
+            showToast('No se pudieron extraer coordenadas.', 'warning');
+        }
+    };
+
+    // Lógica para Extracción de Coordenadas y Mapas del NUEVO modal de Lugares
+    document.getElementById('pl-btn-extract-coords').onclick = () => {
+        const url = document.getElementById('pl-gmaps').value;
+        if (!url) return showToast('Pega un enlace de Google Maps primero', 'error');
+        const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+        const match = url.match(regex);
+        if (match) {
+            document.getElementById('pl-lat').value = parseFloat(match[1]);
+            document.getElementById('pl-lng').value = parseFloat(match[2]);
+            showToast('Coordenadas extraídas correctamente');
+        } else {
+            showToast('No se pudieron extraer coordenadas.', 'warning');
+        }
+    };
+
+    // Lógica para Redes Sociales del NUEVO modal de Eventos
+    const evSocialSelector = document.getElementById('ev-social-selector');
+    const evSocialContainer = document.getElementById('ev-social-inputs');
+    if (evSocialSelector && evSocialContainer) {
+        evSocialSelector.addEventListener('click', (e) => {
+            const btn = e.target.closest('.social-btn');
+            if (!btn) return;
+            const network = btn.dataset.net;
+            const iconClass = btn.querySelector('i').className;
+            
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                const row = evSocialContainer.querySelector(`[data-net="${network}"]`);
+                if (row) row.remove();
             } else {
-                input.value = '';
-                if (group) group.style.display = 'none';
-                if (btn) {
-                    btn.style.background = 'rgba(255,255,255,0.05)';
-                    btn.style.color = 'rgba(255,255,255,0.4)';
-                    btn.style.boxShadow = 'none';
-                    btn.classList.add('sn-off');
-                }
+                btn.classList.add('active');
+                const div = document.createElement('div');
+                div.className = 'social-input-group form-group'; // Usar form-group para diseño consistente
+                div.dataset.net = network;
+                div.innerHTML = `
+                    <div class="input-wrapper">
+                        <i class="${iconClass}"></i>
+                        <input type="text" placeholder="URL o usuario..." data-net="${network}" required>
+                    </div>
+                `;
+                evSocialContainer.appendChild(div);
             }
         });
+    }
 
-        document.getElementById('input-reg-link').value = item.reg_link || '';
+    function getEvSocial(net) {
+        const input = evSocialContainer.querySelector(`input[data-net="${net}"]`);
+        return input ? input.value : null;
+    }
 
-        // Cambiar título del modal y botón
-        document.querySelector('#modal-nuevo h2').textContent = 'Editar Registro';
-        const btnSubmit = formNuevo.querySelector('button[type="submit"]');
-        btnSubmit.textContent = 'Guardar Cambios';
+    // Lógica para Redes Sociales del NUEVO modal de Lugares
+    const plSocialSelector = document.getElementById('pl-social-selector');
+    const plSocialContainer = document.getElementById('pl-social-inputs');
+    if (plSocialSelector && plSocialContainer) {
+        plSocialSelector.addEventListener('click', (e) => {
+            const btn = e.target.closest('.social-btn');
+            if (!btn) return;
+            const network = btn.dataset.net;
+            const iconClass = btn.querySelector('i').className;
+            
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                const row = plSocialContainer.querySelector(`[data-net="${network}"]`);
+                if (row) row.remove();
+            } else {
+                btn.classList.add('active');
+                const div = document.createElement('div');
+                div.className = 'social-input-group form-group';
+                div.dataset.net = network;
+                div.innerHTML = `
+                    <div class="input-wrapper">
+                        <i class="${iconClass}"></i>
+                        <input type="text" placeholder="URL o usuario..." data-net="${network}" required>
+                    </div>
+                `;
+                plSocialContainer.appendChild(div);
+            }
+        });
+    }
 
-        modalNuevo.style.display = 'flex';
-        initMapPicker();
-        if (item.lat && item.lng) updatePickerMarker(item.lat, item.lng);
+    function getPlSocial(net) {
+        if (!plSocialContainer) return null;
+        const input = plSocialContainer.querySelector(`input[data-net="${net}"]`);
+        return input ? input.value : null;
+    }
+
+    // Imagen Handling VIEJO MODAL
+
+    const btnTrigger = document.getElementById('btn-trigger-upload');
+    const fileInput = document.getElementById('input-imagen-file');
+    const urlInput = document.getElementById('input-imagen-url');
+    const preview = document.getElementById('image-preview');
+
+    if (btnTrigger) {
+        btnTrigger.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    preview.style.backgroundImage = `url(${re.target.result})`;
+                    preview.classList.remove('hidden');
+                    btnTrigger.innerHTML = `<i class="fa-solid fa-check"></i> ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        urlInput.oninput = () => {
+            if (urlInput.value) {
+                preview.style.backgroundImage = `url(${urlInput.value})`;
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        };
+    }
+
+    // Imagen Handling NUEVO MODAL EVENTO
+    const evBtnTrigger = document.getElementById('ev-btn-trigger-upload');
+    const evFileInput = document.getElementById('ev-imagen-file');
+    const evUrlInput = document.getElementById('ev-imagen-url');
+    const evPreview = document.getElementById('ev-image-preview');
+
+    if (evBtnTrigger) {
+        evBtnTrigger.onclick = () => evFileInput.click();
+        evFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    evPreview.style.backgroundImage = `url(${re.target.result})`;
+                    evPreview.classList.remove('hidden');
+                    evBtnTrigger.innerHTML = `<i class="fa-solid fa-check"></i> ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        evUrlInput.oninput = () => {
+            if (evUrlInput.value) {
+                evPreview.style.backgroundImage = `url(${evUrlInput.value})`;
+                evPreview.classList.remove('hidden');
+            } else {
+                evPreview.classList.add('hidden');
+            }
+        };
+
+        // Lógica para quitar imagen
+        const evBtnRemoveImg = document.getElementById('ev-btn-remove-img');
+        if (evBtnRemoveImg) {
+            evBtnRemoveImg.onclick = (e) => {
+                e.stopPropagation();
+                evFileInput.value = '';
+                evUrlInput.value = '';
+                evPreview.classList.add('hidden');
+                evPreview.style.backgroundImage = 'none';
+                evBtnTrigger.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar Imagen`;
+            };
+        }
+    }
+
+    // Imagen Handling NUEVO MODAL LUGARES
+    const plBtnTrigger = document.getElementById('pl-btn-trigger-upload');
+    const plFileInput = document.getElementById('pl-imagen-file');
+    const plUrlInput = document.getElementById('pl-imagen-url');
+    const plPreview = document.getElementById('pl-image-preview');
+
+    if (plBtnTrigger) {
+        plBtnTrigger.onclick = () => plFileInput.click();
+        plFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    plPreview.style.backgroundImage = `url(${re.target.result})`;
+                    plPreview.classList.remove('hidden');
+                    plBtnTrigger.innerHTML = `<i class="fa-solid fa-check"></i> ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        plUrlInput.oninput = () => {
+            if (plUrlInput.value) {
+                plPreview.style.backgroundImage = `url(${plUrlInput.value})`;
+                plPreview.classList.remove('hidden');
+            } else {
+                plPreview.classList.add('hidden');
+            }
+        };
+
+        // Lógica para quitar imagen
+        const plBtnRemoveImg = document.getElementById('pl-btn-remove-img');
+        if (plBtnRemoveImg) {
+            plBtnRemoveImg.onclick = (e) => {
+                e.stopPropagation();
+                plFileInput.value = '';
+                plUrlInput.value = '';
+                plPreview.classList.add('hidden');
+                plPreview.style.backgroundImage = 'none';
+                plBtnTrigger.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar Imagen`;
+            };
+        }
+    }
+
+    // Cierre de modales
+    document.getElementById('btn-close-modal').onclick = () => modalNuevo.classList.add('hidden');
+    document.getElementById('btn-cancelar').onclick = () => modalNuevo.classList.add('hidden');
+    document.getElementById('btn-close-evento').onclick = () => document.getElementById('modal-nuevo-evento').classList.add('hidden');
+    document.getElementById('btn-cancelar-evento').onclick = () => document.getElementById('modal-nuevo-evento').classList.add('hidden');
+    document.getElementById('btn-close-lugar').onclick = () => document.getElementById('modal-nuevo-lugar').classList.add('hidden');
+    document.getElementById('btn-cancelar-lugar').onclick = () => document.getElementById('modal-nuevo-lugar').classList.add('hidden');
+
+
+
+    formNuevo.onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-form');
+        const tipo = document.getElementById('input-tipo').value;
+        
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        try {
+            let imageUrl = urlInput.value;
+
+            if (fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const filePath = `uploads/${fileName}`;
+                const { error: uploadError } = await supabase.storage.from('eco-media').upload(filePath, file);
+                if (uploadError) throw uploadError;
+                const { data: publicUrl } = supabase.storage.from('eco-media').getPublicUrl(filePath);
+                imageUrl = publicUrl.publicUrl;
+            }
+
+            const commonData = {
+                nombre: document.getElementById('input-nombre').value,
+                descripcion: document.getElementById('input-descripcion').value,
+                imagen_url: imageUrl,
+                owner_id: session.user.id,
+                estado: 'publicado'
+            };
+
+            if (tipo === 'eventos') {
+                const { error } = await supabase.from('eventos').insert([{
+                    ...commonData,
+                    categoria: document.getElementById('input-categoria-evento').value,
+                    lugar_id: document.getElementById('input-sede').value,
+                    fecha_inicio: document.getElementById('input-fecha-inicio').value,
+                    fecha_fin: document.getElementById('input-fecha-fin').value,
+                    lat: document.getElementById('input-lat').value || null,
+                    lng: document.getElementById('input-lng').value || null
+                }]);
+                if (error) throw error;
+            } 
+            else if (tipo === 'lugares') {
+                const { error } = await supabase.from('lugares').insert([{
+                    ...commonData,
+                    categoria: document.getElementById('input-categoria-lugar').value,
+                    direccion: document.getElementById('input-direccion').value,
+                    lat: document.getElementById('input-lat').value || null,
+                    lng: document.getElementById('input-lng').value || null
+                }]);
+                if (error) throw error;
+            }
+            else if (tipo === 'contenido') {
+                // If it's content, we need the section/hub from currentAdminFilter
+                const parts = currentAdminFilter.split('_');
+                const { error } = await supabase.from('contenido_secciones').insert([{
+                    titulo: commonData.nombre,
+                    descripcion: commonData.descripcion,
+                    imagen_url: commonData.imagen_url,
+                    enlace: document.getElementById('input-enlace').value,
+                    seccion_id: parts[1],
+                    parent_hub: parts[2],
+                    owner_id: commonData.owner_id,
+                    estado: 'publicado'
+                }]);
+                if (error) throw error;
+            }
+
+            showToast('✅ Registro guardado correctamente');
+            modalNuevo.classList.add('hidden');
+            formNuevo.reset();
+            cargarDatos(currentAdminFilter);
+        } catch (err) {
+            console.error('Error guardando:', err);
+            showToast('❌ Error al guardar registro', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar Registro';
+        }
     };
 
-    window.eliminarRegistro = async function(id, tipo) {
-        if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
-        const table = (tipo === 'evento') ? 'eventos' : (tipo === 'lugar' ? 'lugares' : 'perfiles');
-        const { error } = await supabase.from(table).delete().eq('id', id);
-        if (error) alert('Error: ' + error.message);
-        else cargarDatos(currentAdminFilter);
+    // ========== SUBMIT NUEVO MODAL EVENTO ==========
+    document.getElementById('form-nuevo-evento').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-evento');
+        btn.disabled = true;
+        btn.textContent = 'Guardando Evento...';
+
+        try {
+            let imageUrl = evUrlInput.value;
+
+            if (evFileInput.files[0]) {
+                const rawFile = evFileInput.files[0];
+                const file = await compressImage(rawFile);
+                const fileName = `${Math.random()}.webp`;
+                const filePath = `uploads/${fileName}`;
+                const { error: uploadError } = await supabase.storage.from('eco-media').upload(filePath, file, {
+                    contentType: 'image/webp'
+                });
+                if (uploadError) throw uploadError;
+                const { data: publicUrl } = supabase.storage.from('eco-media').getPublicUrl(filePath);
+                imageUrl = publicUrl.publicUrl;
+            }
+
+            const eventData = {
+                nombre: document.getElementById('ev-nombre').value,
+                descripcion: document.getElementById('ev-descripcion').value,
+                imagen_url: imageUrl,
+                owner_id: session.user.id, // THE ACTOR ID IS SAVED HERE
+                estado: 'publicado',
+                categoria: document.getElementById('ev-categoria').value,
+                lugar_id: document.getElementById('ev-sede').value,
+                fecha_inicio: document.getElementById('ev-fecha-inicio').value,
+                fecha_fin: document.getElementById('ev-fecha-fin').value,
+                ubicacion: document.getElementById('ev-ubicacion').value,
+                mapa_url: document.getElementById('ev-gmaps').value,
+                lat: document.getElementById('ev-lat').value || null,
+                lng: document.getElementById('ev-lng').value || null,
+                reg_link: document.getElementById('ev-reg-link').value || null,
+                // Redes
+                social_fb: getEvSocial('social_fb'),
+                social_ig: getEvSocial('social_ig'),
+                social_wa: getEvSocial('social_wa'),
+                social_x: getEvSocial('social_x'),
+                social_yt: getEvSocial('social_yt'),
+                social_web: getEvSocial('social_web')
+            };
+
+            const { error } = await supabase.from('eventos').insert([eventData]);
+            if (error) throw error;
+
+            showToast('✅ Evento creado correctamente');
+            document.getElementById('modal-nuevo-evento').classList.add('hidden');
+            document.getElementById('form-nuevo-evento').reset();
+            evSocialContainer.innerHTML = '';
+            document.querySelectorAll('#ev-social-selector .social-btn').forEach(b => b.classList.remove('active'));
+            cargarDatos('eventos');
+        } catch (err) {
+            console.error('Error guardando evento:', err);
+            showToast('❌ Error al guardar el evento', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar Evento';
+        }
     };
-});
+
+    function getEvSocial(network) {
+        const input = document.querySelector(`#ev-social-inputs input[data-net="${network}"]`);
+        return input ? input.value : null;
+    }
+
+    // ========== SUBMIT NUEVO MODAL LUGAR ==========
+    document.getElementById('form-nuevo-lugar').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-lugar');
+        btn.disabled = true;
+        btn.textContent = 'Guardando Lugar...';
+
+        try {
+            let imageUrl = plUrlInput.value;
+
+            if (plFileInput.files[0]) {
+                const rawFile = plFileInput.files[0];
+                const file = await compressImage(rawFile);
+                const fileName = `${Math.random()}.webp`;
+                const filePath = `uploads/${fileName}`;
+                const { error: uploadError } = await supabase.storage.from('eco-media').upload(filePath, file, {
+                    contentType: 'image/webp'
+                });
+                if (uploadError) throw uploadError;
+                const { data: publicUrl } = supabase.storage.from('eco-media').getPublicUrl(filePath);
+                imageUrl = publicUrl.publicUrl;
+            }
+
+            const placeData = {
+                nombre: document.getElementById('pl-nombre').value,
+                descripcion: document.getElementById('pl-descripcion').value,
+                imagen: imageUrl, // Columna en BD se llama "imagen"
+                owner_id: session.user.id,
+                categoria: document.getElementById('pl-categoria').value,
+                ubicacion: document.getElementById('pl-ubicacion').value,
+                mapa_url: document.getElementById('pl-gmaps').value,
+                lat: document.getElementById('pl-lat').value || null,
+                lng: document.getElementById('pl-lng').value || null,
+                reg_link: document.getElementById('pl-reg-link').value || null,
+                // Redes
+                social_fb: getPlSocial('social_fb'),
+                social_ig: getPlSocial('social_ig'),
+                social_wa: getPlSocial('social_wa'),
+                social_x: getPlSocial('social_x'),
+                social_yt: getPlSocial('social_yt'),
+                social_web: getPlSocial('social_web')
+            };
+
+            const { error } = await supabase.from('lugares').insert([placeData]);
+            if (error) throw error;
+
+            showToast('✅ Lugar creado correctamente');
+            document.getElementById('modal-nuevo-lugar').classList.add('hidden');
+            document.getElementById('form-nuevo-lugar').reset();
+            if(plSocialContainer) plSocialContainer.innerHTML = '';
+            document.querySelectorAll('#pl-social-selector .social-btn').forEach(b => b.classList.remove('active'));
+            cargarDatos('lugares');
+        } catch (err) {
+            console.error('Error guardando lugar:', err);
+            showToast('❌ Error al guardar el lugar', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar Lugar';
+        }
+    };
+
+
+    // User Profile logic
+    const profileModal = document.getElementById('profile-modal');
+    window.editarPerfil = async (id) => {
+        const { data } = await supabase.from('perfiles').select('*').eq('id', id).single();
+        if (data) {
+            document.getElementById('prof-nombre').value = data.nombre_completo || '';
+            document.getElementById('prof-rol').value = data.rol || 'user';
+            document.getElementById('prof-telefono').value = data.telefono || '';
+            document.getElementById('prof-links').value = data.social_links || '';
+            profileModal.dataset.userId = id;
+            profileModal.classList.remove('hidden');
+        }
+    };
+
+    document.getElementById('btn-close-profile').onclick = () => profileModal.classList.add('hidden');
+    document.getElementById('btn-cancel-profile').onclick = () => profileModal.classList.add('hidden');
+    
+    document.getElementById('form-profile-edit').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = profileModal.dataset.userId;
+        const updates = {
+            nombre_completo: document.getElementById('prof-nombre').value,
+            rol: document.getElementById('prof-rol').value,
+            telefono: document.getElementById('prof-telefono').value,
+            social_links: document.getElementById('prof-links').value
+        };
+        const { error } = await supabase.from('perfiles').update(updates).eq('id', id);
+        if (!error) {
+            showToast('Perfil actualizado');
+            profileModal.classList.add('hidden');
+            cargarDatos('usuarios');
+        }
+    };
+
+    // Mobile Toggle is already handled at the top of the script.
+
+    // ========== GESTIÓN DE PERMISOS ==========
+    const permsModal = document.getElementById('permissions-modal');
+    const permsList = document.getElementById('permissions-list');
+    let currentPermsUserId = null;
+
+    window.gestionarPermisos = async (userId) => {
+        currentPermsUserId = userId;
+        permsList.innerHTML = '<p style="grid-column: span 2;">Cargando permisos...</p>';
+        permsModal.classList.remove('hidden');
+
+        try {
+            const { data: currentPerms } = await supabase.from('permisos_actores').select('seccion_id, parent_hub').eq('user_id', userId);
+            
+            const allSections = [
+                { id: 'agua', label: 'Agua (Colibrí)', hub: 'colibri' },
+                { id: 'cursos', label: 'Cursos (Colibrí)', hub: 'colibri' },
+                { id: 'ecotecnias', label: 'Ecotecnias (Colibrí)', hub: 'colibri' },
+                { id: 'lecturas', label: 'Lecturas (Colibrí)', hub: 'colibri' },
+                { id: 'documentales', label: 'Cine (Colibrí)', hub: 'colibri' },
+                { id: 'firmas', label: 'Peticiones (Colibrí)', hub: 'colibri' },
+                { id: 'convocatoria', label: 'Convocatorias (Ajolote)', hub: 'ajolote' },
+                { id: 'voluntariados', label: 'Voluntariados (Ajolote)', hub: 'ajolote' },
+                { id: 'agentes', label: 'Agentes (Ajolote)', hub: 'ajolote' },
+                { id: 'eventos', label: 'Eventos (Ajolote)', hub: 'ajolote' },
+                { id: 'fondos', label: 'Fondos (Lobo)', hub: 'lobo' },
+                { id: 'normativa', label: 'Normativa (Lobo)', hub: 'lobo' }
+            ];
+
+            permsList.innerHTML = '';
+            allSections.forEach(sec => {
+                const hasPerm = currentPerms?.some(p => p.seccion_id === sec.id && p.parent_hub === sec.hub);
+                const div = document.createElement('label');
+                div.className = 'perm-item';
+                div.innerHTML = `
+                    <input type="checkbox" data-sec="${sec.id}" data-hub="${sec.hub}" ${hasPerm ? 'checked' : ''}>
+                    <span>${sec.label}</span>
+                `;
+                permsList.appendChild(div);
+            });
+
+        } catch (err) {
+            console.error('Error al cargar permisos:', err);
+            showToast('Error al cargar permisos', 'error');
+        }
+    };
+
+    document.getElementById('btn-close-perms').onclick = () => permsModal.classList.add('hidden');
+    document.getElementById('btn-cancel-perms').onclick = () => permsModal.classList.add('hidden');
+
+    document.getElementById('btn-save-perms').onclick = async () => {
+        const btn = document.getElementById('btn-save-perms');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        try {
+            const checks = permsList.querySelectorAll('input[type="checkbox"]');
+            const newPerms = Array.from(checks)
+                .filter(c => c.checked)
+                .map(c => ({
+                    user_id: currentPermsUserId,
+                    seccion_id: c.dataset.sec,
+                    parent_hub: c.dataset.hub
+                }));
+
+            await supabase.from('permisos_actores').delete().eq('user_id', currentPermsUserId);
+            if (newPerms.length > 0) {
+                const { error } = await supabase.from('permisos_actores').insert(newPerms);
+                if (error) throw error;
+            }
+
+            showToast('Permisos actualizados correctamente');
+            permsModal.classList.add('hidden');
+        } catch (err) {
+            console.error('Error al guardar permisos:', err);
+            showToast('Error al guardar cambios', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar Cambios';
+        }
+    };
+
+    document.getElementById('logout-btn').onclick = async () => {
+        await supabase.auth.signOut();
+        window.location.href = './index.html';
+    };
+})();

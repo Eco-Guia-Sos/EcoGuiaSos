@@ -1,10 +1,11 @@
 /* assets/js/pages/documentales.js */
 import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { initDynamicSection } from '../dynamic-section-handler.js';
 
-function initDocumentales() {
+async function initDocumentales() {
     setupNavbar();
     setupAuthObserver();
-    console.log('Documentales page initialized');
+    await initDynamicSection('documentales', 'colibri');
 }
 
 document.addEventListener('DOMContentLoaded', initDocumentales);

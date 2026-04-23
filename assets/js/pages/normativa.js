@@ -1,10 +1,11 @@
 /* assets/js/pages/normativa.js */
 import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { initDynamicSection } from '../dynamic-section-handler.js';
 
-function initNormativa() {
+async function initNormativa() {
     setupNavbar();
     setupAuthObserver();
-    console.log('Normativa page initialized');
+    await initDynamicSection('normativa', 'lobo');
 }
 
 document.addEventListener('DOMContentLoaded', initNormativa);

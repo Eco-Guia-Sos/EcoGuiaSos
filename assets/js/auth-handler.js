@@ -146,20 +146,32 @@ if (formActor) {
         btn.textContent = 'Procesando tu alta...';
 
         try {
-            // A. Registrar Cuenta de Usuario en Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        nombre_completo: fullName,
-                        telefono: phone,
-                        rol: 'user' // Inicia como user hasta ser aprobado
-                    }
-                }
-            });
+            // Obtener sesión actual para ver si ya está logueado
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            let userId = currentSession?.user?.id;
+            let authData = { user: currentSession?.user };
 
-            if (authError) throw authError;
+            if (!userId) {
+                // A. Registrar Cuenta de Usuario en Auth solo si no hay sesión
+                const { data, error: authError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            nombre_completo: fullName,
+                            telefono: phone,
+                            rol: 'user' // Inicia como user hasta ser aprobado
+                        }
+                    }
+                });
+                if (authError) throw authError;
+                authData = data;
+                userId = data.user.id;
+            } else {
+                console.log('[Auth] Usuario ya logueado, saltando registro de Auth. ID:', userId);
+            }
+
+            if (!userId) throw new Error("No se pudo obtener el ID de usuario.");
 
             // B. Asegurar registro en tabla 'perfiles' (si el trigger de Auth no lo hizo)
             const { error: profileError } = await supabase

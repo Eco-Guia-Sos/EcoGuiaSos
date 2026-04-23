@@ -1067,20 +1067,195 @@ html {
     z-index: 2;
 }
 
+/* Badge de eventos registrados en lugar */
+.place-event-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(91, 194, 247, 0.15);
+    color: #5bc2f7;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(91, 194, 247, 0.3);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.place-event-badge i {
+    font-size: 0.85rem;
+}
+
 .user-marker {
-    background-color: #0077b6;
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: 0 0 15px rgba(0, 119, 182, 0.6);
-    border: 3px solid white;
-    animation: marker-pulse 2s infinite;
+    position: relative;
+    z-index: 100;
+    cursor: pointer;
 }
+
+/* El círculo exterior de la mira */
+.user-marker::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #00a2ff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 162, 255, 0.5);
+}
+
+/* El punto central */
+.user-marker::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: #00a2ff;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+/* Las líneas de la cruz */
+.user-marker-cross-h, .user-marker-cross-v {
+    position: absolute;
+    background-color: #00a2ff;
+    z-index: 1;
+}
+.user-marker-cross-h { width: 28px; height: 2px; }
+.user-marker-cross-v { width: 2px; height: 28px; }
+
+/* Animación de pulso solo para el aura */
+.user-marker-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(0, 162, 255, 0.2);
+    animation: marker-pulse 2s infinite;
+    z-index: -1;
+}
+
+@keyframes marker-pulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(3); opacity: 0; }
+}
+
+/* Marcadores tipo Instagram/Airbnb (Mini-Cards) */
+.map-card-marker {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid white;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+}
+
+.map-card-marker:hover {
+    transform: scale(1.4) translateY(-5px);
+    z-index: 100;
+}
+
+.map-card-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.map-card-marker::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid white;
+}
+
+.map-card-marker.type-evento {
+    border-color: #b71c1c;
+}
+
+.map-card-marker.type-evento::after {
+    border-top-color: #b71c1c;
+}
+
+.map-card-marker.type-lugar {
+    border-color: #72B04D;
+}
+
+.map-card-marker.type-lugar::after {
+    border-top-color: #72B04D;
+}
+
+/* Marcadores de Agrupamiento (Clusters con Imagen) */
+.map-cluster-marker {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: white;
+    border: 3px solid #1a1e23;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    z-index: 20;
+}
+
+.map-cluster-marker:hover {
+    transform: scale(1.2) translateY(-5px);
+    z-index: 100;
+}
+
+.map-cluster-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 11px;
+}
+
+.cluster-count-badge {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: var(--color-eco);
+    color: white;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 6px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #1a1e23;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 5;
+}
+
+.map-cluster-marker.type-evento { border-color: #b71c1c; }
+.map-cluster-marker.type-evento .cluster-count-badge { background: #b71c1c; }
+
+.map-cluster-marker.type-lugar { border-color: #72B04D; }
+.map-cluster-marker.type-lugar .cluster-count-badge { background: #72B04D; }
 
 @keyframes marker-pulse {
     0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.4); }
@@ -1342,20 +1517,27 @@ html {
     height: 100%;
 }
 
-.map-overlay {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
+.map-footer-actions {
     display: flex;
     justify-content: center;
-    z-index: 5;
-    pointer-events: none;
+    padding: 1.5rem 0;
+    width: 100%;
 }
 
-.map-overlay .btn {
-    pointer-events: auto;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+.map-footer-actions .btn {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    min-width: 280px;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .map-footer-actions {
+        padding: 1rem 0;
+    }
+    .map-footer-actions .btn {
+        width: 100%;
+        max-width: 400px;
+    }
 }
 
 
@@ -1828,33 +2010,7 @@ footer {
    MAP REDESIGN UI (CARTELERA CDMX STYLE)
    ============================================================== */
 
-/* 1. Marcadores Numéricos */
-.numbered-marker {
-    background-color: #004d40; /* Default verde oscuro */
-    color: #ffffff;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    border: 2px solid #ffffff;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.numbered-marker:hover, .numbered-marker.active {
-    transform: scale(1.2);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
-    z-index: 100 !important;
-}
-
-.numbered-marker.type-evento {
-    background-color: #1565c0; /* Azul Cartelera */
-}
+/* 1. Marcadores de Mapa Actualizados (Ver sección anterior) */
 
 /* 2. Botón Píldora "Ver Mapa" */
 .btn-pill-map {

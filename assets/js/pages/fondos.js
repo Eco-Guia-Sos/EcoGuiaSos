@@ -1,11 +1,11 @@
 /* assets/js/pages/fondos.js */
 import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { initDynamicSection } from '../dynamic-section-handler.js';
 
-function initFondos() {
+async function initFondos() {
     setupNavbar();
     setupAuthObserver();
-    // Logic for dynamic loading could be added here later if a GSheet tab for Fondos is created.
-    console.log('Fondos page initialized');
+    await initDynamicSection('fondos', 'lobo');
 }
 
 document.addEventListener('DOMContentLoaded', initFondos);

@@ -1,14 +1,28 @@
-import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, sanitize } from '../ui-utils.js';
 import { supabase, supabaseUrl, supabaseKey } from '../supabase.js';
 import { setupFAB } from '../components/fab-menu.js';
-import { initAIAssistant } from '../ai-assistant.js';
 
 let todosLosProyectos = [];
 let filtroActual = 'evento';
 let subFiltroActual = 'all';
 let proximidadActiva = false;
 let userCoords = null;
-const RADIO_KM = 100; // Increased to 100km for better mock visibility
+const RADIO_KM = 100;
+
+// Cache de sesión y perfil del usuario (para no consultarlos repetidamente)
+let _cachedSession = null;
+let _cachedProfile = null;
+async function getCachedProfile() {
+    if (_cachedProfile) return _cachedProfile;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        _cachedSession = session;
+        if (!session) return null;
+        const { data: profile } = await supabase.from('perfiles').select('rol').eq('id', session.user.id).single();
+        _cachedProfile = profile ? { ...profile, id: session.user.id } : null;
+    } catch (e) { _cachedProfile = null; }
+    return _cachedProfile;
+}
 
 // Paginación
 let maxRendered = 9;
@@ -33,17 +47,19 @@ function initIndex() {
         setupNavbar();
         setupAuthObserver();
 
-        // 🟡 IMPORTANTE: Esperar a que la Auth esté lista antes de cargar datos
+        // ✅ OPTIMIZACIÓN: Cargar datos inmediatamente sin esperar Auth.
+        // La Auth se resuelve en paralelo; si el usuario tiene sesión,
+        // los datos ya estarán listos cuando el perfil llegue.
+        cargarDatosDeSupabase();
+
+        // Escuchar cambios de Auth solo para actualizar la UI (permisos en cards)
         supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                console.log(`[Inicio] Auth listo (${event}), cargando datos de Supabase...`);
-                cargarDatosDeSupabase();
-                
-                // AUTO-UBICACIÓN: Si hay sesión, guardar ubicación silenciosamente para búsqueda avanzada.
-                // Ya no aplicamos el filtro activo para mostrar todos los eventos.
-                if (session && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
-                    console.log('[Inicio] Usuario autenticado, obteniendo ubicación silenciosa...');
-                    setTimeout(() => obtenerUbicacionSilenciosa(), 1500); 
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                _cachedSession = session;
+                _cachedProfile = null; // Limpiar cache al cambiar de sesión
+                if (session) {
+                    console.log('[Auth] Sesión detectada, obteniendo ubicación silenciosa...');
+                    setTimeout(() => obtenerUbicacionSilenciosa(), 1500);
                 }
             }
         });
@@ -57,7 +73,6 @@ function initIndex() {
         setupFAB();
         setupHomeMapaToggle();
         setupAdvancedSearch();
-        initAIAssistant();
     } catch (e) {
         console.error("EcoGuía: Error inicializando componentes secundarios:", e);
     }
@@ -270,15 +285,20 @@ function actualizarMiniMapaConFiltros(datos) {
     const bounds = new maplibregl.LngLatBounds();
     let hasCoords = false;
 
-    if (proximidadActiva && userCoords) {
+    // 1. Marcador de Usuario ("Tú" - Mira de Precisión)
+    if (userCoords) {
         const el = document.createElement('div');
         el.className = 'user-marker';
-        el.innerHTML = '<i class="fa-solid fa-street-view"></i>';
+        el.innerHTML = `
+            <div class="user-marker-cross-h"></div>
+            <div class="user-marker-cross-v"></div>
+            <div class="user-marker-pulse"></div>
+        `;
         
         const popupHtml = `
-            <div style="text-align: center; color: #007bff; padding: 2px;">
-                <h4 style="margin: 0; font-weight: 700; font-size: 14px; letter-spacing: -0.3px;">📍 Tú estás aquí</h4>
-                <p style="margin: 3px 0 0; font-size: 11px; color: #666;">Punto de inicio de búsqueda</p>
+            <div style="text-align: center; color: #0077b6; padding: 5px;">
+                <h4 style="margin: 0; font-weight: 800; font-size: 15px; letter-spacing: -0.5px;">📍 Tú</h4>
+                <p style="margin: 3px 0 0; font-size: 11px; color: #666; font-weight: 600;">Explorando desde aquí</p>
             </div>
         `;
 
@@ -287,53 +307,117 @@ function actualizarMiniMapaConFiltros(datos) {
             .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(popupHtml))
             .addTo(miniMapHandle);
             
-        userMarker.togglePopup(); // ¡Abre el globito de texto automáticamente!
-        
-        currentMarkers.push(userMarker); // ¡Añadido para que sea persistente!
+        currentMarkers.push(userMarker);
         bounds.extend([userCoords.lng, userCoords.lat]);
         hasCoords = true;
     }
 
-    datos.forEach((p, index) => {
-        if (p.coordenadas && p.coordenadas.lat && p.coordenadas.lng) {
-            const isEvento = p.tipo === 'evento';
-            const el = document.createElement('div');
-            el.className = `numbered-marker ${isEvento ? 'type-evento' : ''}`;
-            el.innerHTML = `<span>${index + 1}</span>`;
+    // 2. Lógica de Agrupamiento (Clustering) Simplificada
+    // Agrupamos puntos que estén a menos de ~0.001 grados (~100m) de distancia
+    const clusters = [];
+    const CLUSTER_THRESHOLD = 0.002; 
 
-            const marker = new maplibregl.Marker({ element: el })
-                .setLngLat([p.coordenadas.lng, p.coordenadas.lat])
-                .addTo(miniMapHandle);
-                
-            // Click en marcador de inicio -> Abrir Panel de Información en el home
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                
-                miniMapHandle.flyTo({
-                    center: [p.coordenadas.lng, p.coordenadas.lat],
-                    zoom: 16,
-                    essential: true
-                });
+    datos.forEach(p => {
+        if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) return;
+        
+        let foundCluster = clusters.find(c => {
+            const dLat = Math.abs(c.lat - p.coordenadas.lat);
+            const dLng = Math.abs(c.lng - p.coordenadas.lng);
+            return dLat < CLUSTER_THRESHOLD && dLng < CLUSTER_THRESHOLD;
+        });
 
-                const panel = document.getElementById('home-event-detail-panel');
-                if(panel) {
-                    document.getElementById('home-side-panel-img').src = p.imagen || '/assets/img/kpop.webp';
-                    document.getElementById('home-side-panel-badge').innerText = p.tipo.toUpperCase();
-                    document.getElementById('home-side-panel-title').innerText = p.nombre;
-                    document.getElementById('home-side-panel-location').innerText = p.ubicacion || 'Ubicación seleccionada';
-                    const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
-                    document.getElementById('home-side-panel-link').href = `/pages/${detailPage}?id=${p.id}`;
-                    panel.classList.remove('hidden');
-                }
+        if (foundCluster) {
+            foundCluster.items.push(p);
+        } else {
+            clusters.push({
+                lat: p.coordenadas.lat,
+                lng: p.coordenadas.lng,
+                items: [p]
             });
-
-            currentMarkers.push(marker);
-            bounds.extend([p.coordenadas.lng, p.coordenadas.lat]);
-            hasCoords = true;
         }
     });
 
-    if (hasCoords) miniMapHandle.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+    // 3. Renderizar Clusters o Puntos Individuales
+    clusters.forEach(c => {
+        const count = c.items.length;
+        const p = c.items[0]; // Primer item para la imagen
+        const el = document.createElement('div');
+
+        if (count > 1) {
+            // Es un grupo (Cluster) con imagen + número
+            el.className = `map-cluster-marker type-${p.tipo}`;
+            el.innerHTML = `
+                <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
+                <div class="cluster-count-badge">${count > 2 ? '2+' : count}</div>
+            `;
+            
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const currentZoom = miniMapHandle.getZoom();
+                
+                // Si el zoom ya es alto, abrir el primer evento del grupo
+                if (currentZoom >= 15) {
+                    abrirPanelDetalleHome(p);
+                } else {
+                    // Si no, hacer zoom para expandir
+                    miniMapHandle.flyTo({ 
+                        center: [c.lng, c.lat], 
+                        zoom: currentZoom + 3,
+                        essential: true 
+                    });
+                }
+            });
+        } else {
+            // Es un punto único
+            el.className = `map-card-marker type-${p.tipo}`;
+            el.innerHTML = `<img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">`;
+            
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirPanelDetalleHome(p);
+            });
+        }
+
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([c.lng, c.lat])
+            .addTo(miniMapHandle);
+
+        currentMarkers.push(marker);
+        bounds.extend([c.lng, c.lat]);
+        hasCoords = true;
+    });
+
+    // 4. Centrado Inteligente
+    if (proximidadActiva && userCoords) {
+        // Si estamos buscando "Cerca de mí", forzar centrado en el usuario
+        miniMapHandle.flyTo({ 
+            center: [userCoords.lng, userCoords.lat], 
+            zoom: 14,
+            essential: true 
+        });
+    } else if (hasCoords) {
+        // Si no, ajustar vista para ver todos los puntos
+        miniMapHandle.fitBounds(bounds, { padding: 80, maxZoom: 15 });
+    }
+}
+
+function abrirPanelDetalleHome(p) {
+    const panel = document.getElementById('home-event-detail-panel');
+    if(panel) {
+        document.getElementById('home-side-panel-img').src = p.imagen || '/assets/img/kpop.webp';
+        document.getElementById('home-side-panel-badge').innerText = p.tipo.toUpperCase();
+        document.getElementById('home-side-panel-title').innerText = p.nombre;
+        document.getElementById('home-side-panel-location').innerText = p.ubicacion || 'Ubicación seleccionada';
+        const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
+        document.getElementById('home-side-panel-link').href = `/pages/${detailPage}?id=${p.id}`;
+        panel.classList.remove('hidden');
+        
+        miniMapHandle.flyTo({
+            center: [p.coordenadas.lng, p.coordenadas.lat],
+            zoom: 16,
+            essential: true
+        });
+    }
 }
 
 function filtrarYRenderizar() {
@@ -403,7 +487,7 @@ function filtrarYRenderizar() {
 
     renderCards(datosPaginados);
     actualizarMiniMapaConFiltros(datosFiltrados); // El mapa muestra todos
-    renderizarControlFiltros();
+    // renderizarControlFiltros(); // Eliminado por ReferenceError
     renderizarBotonCargarMas(datosFiltrados.length);
 }
 
@@ -497,8 +581,8 @@ function renderCards(data) {
     data.forEach(p => {
         const nivelClass = getNivelClass(p.categoria);
         const distLabel = p.distancia_calculada ? `<span class="dist-badge">a ${p.distancia_calculada.toFixed(1)} km</span>` : '';
-        const eventosBadge = (p.tipo === 'lugar') ? `<span class="dist-badge" style="background: rgba(91,194,247,0.2); color: #5bc2f7; border: 1px solid #5bc2f7; top: 10px; left: 10px; right: auto; transform: none;"><i class="fa-solid fa-calendar-star"></i> ${p.conteo_eventos || 0} evento(s)</span>` : '';
-        const actorBadge = p.actor_nombre ? `<div class="actor-badge" title="Publicado por: ${p.actor_nombre}"><i class="fa-solid fa-user-pen"></i><span>${p.actor_nombre}</span></div>` : '';
+        const eventosBadge = (p.tipo === 'lugar') ? `<span class="place-event-badge"><i class="fa-solid fa-calendar-star"></i> ${p.conteo_eventos || 0}</span>` : '';
+        const actorBadge = p.actor_nombre ? `<div class="actor-badge" title="Publicado por: ${sanitize(p.actor_nombre)}"><i class="fa-solid fa-user-pen"></i><span>${sanitize(p.actor_nombre)}</span></div>` : '';
 
         // Determinar archivo de detalles correcto
         const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
@@ -506,15 +590,15 @@ function renderCards(data) {
         const html = `
             <article class="card fade-in ${nivelClass}" data-owner="${p.owner_id || ''}" onclick="window.location.href='/pages/${detailPage}?id=${p.id}'" style="cursor: pointer;">
                 <div class="card-image">
-                    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
+                    <img src="${p.imagen}" alt="${sanitize(p.nombre)}" onerror="this.src='/assets/img/kpop.webp'">
                     ${distLabel}
                     ${eventosBadge}
                     ${actorBadge}
                     <div class="card-actions-overlay"></div>
                 </div>
                 <div class="card-content">
-                    <div class="card-header"><span class="card-category">${p.categoria}</span></div>
-                    <h3 class="card-title">${p.nombre}</h3>
+                    <div class="card-header"><span class="card-category">${sanitize(p.categoria)}</span></div>
+                    <h3 class="card-title">${sanitize(p.nombre)}</h3>
                 </div>
             </article>`;
         contenedor.innerHTML += html;
@@ -523,14 +607,14 @@ function renderCards(data) {
 }
 
 async function checkCardPermissions() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-    const isAdmin = profile?.role === 'admin';
-    const isActor = profile?.role === 'actor';
+    // ✅ Usa el perfil cacheado — no hace consultas extra a Supabase en cada render
+    const profile = await getCachedProfile();
+    if (!profile) return;
+    const isAdmin = profile.rol === 'admin';
+    const isActor = profile.rol === 'actor';
     document.querySelectorAll('.card').forEach(card => {
         const ownerId = card.getAttribute('data-owner');
-        if (isAdmin || (isActor && ownerId === session.user.id)) {
+        if (isAdmin || (isActor && ownerId === profile.id)) {
             const overlay = card.querySelector('.card-actions-overlay');
             if (overlay) overlay.innerHTML = `<button class="btn-icon-glass"><i class="fa-solid fa-pen"></i></button>`;
         }
@@ -610,7 +694,7 @@ function iniciarCarrusel() {
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
             },
-            effect: 'fade' 
+            effect: 'fade'
         });
     }
 }
@@ -797,4 +881,5 @@ function resetFiltros() {
     filtrarYRenderizar();
 }
 
-document.addEventListener('DOMContentLoaded', initIndex);
+// Initialization (Immediate for type="module")
+initIndex();

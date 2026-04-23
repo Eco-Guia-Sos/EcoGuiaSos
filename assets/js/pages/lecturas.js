@@ -1,10 +1,11 @@
 /* assets/js/pages/lecturas.js */
 import { setupNavbar, setupAuthObserver } from '../ui-utils.js';
+import { initDynamicSection } from '../dynamic-section-handler.js';
 
-function initLecturas() {
+async function initLecturas() {
     setupNavbar();
     setupAuthObserver();
-    console.log('Lecturas page initialized');
+    await initDynamicSection('lecturas', 'colibri');
 }
 
 document.addEventListener('DOMContentLoaded', initLecturas);
