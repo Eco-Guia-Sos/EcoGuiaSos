@@ -41,3 +41,9 @@ scratch/
 *.sql
 .env.bak
 comprimir_assets.py
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
