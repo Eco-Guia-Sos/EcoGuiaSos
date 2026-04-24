@@ -1359,11 +1359,11 @@ html {
 }
 
 .nearby-slider-card {
-    flex: 0 0 160px; /* Un poco más anchas */
-    flex-shrink: 0; /* OBLIGATORIO: Evita que se encojan y permite el scroll */
-    height: 220px; /* Un poco más altas */
+    flex: 0 0 140px; /* Tamaño cuadrado */
+    flex-shrink: 0;
+    height: 140px; /* Tamaño cuadrado */
     background: #1e2329;
-    border-radius: 18px;
+    border-radius: 12px;
     overflow: hidden;
     scroll-snap-align: start;
     position: relative;
@@ -1458,7 +1458,9 @@ html {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
-    margin-bottom: 4rem;
+    margin: 0 auto 4rem auto;
+    max-width: 1200px; /* Evita que crezcan infinitamente en PC */
+    padding: 0 1rem; /* Margen de seguridad en bordes */
 }
 
 @media (max-width: 600px) {
@@ -1468,23 +1470,30 @@ html {
     }
 }
 
-@media (min-width: 601px) {
+@media (min-width: 601px) and (max-width: 1024px) {
     .card-grid-container {
-        grid-template-columns: repeat(3, 1fr) !important; /* Strict 3 columns on tablets and desktop */
-        gap: 2rem !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1.5rem !important; /* Reducimos espacio para que quepan */
+    }
+}
+
+@media (min-width: 1025px) {
+    .card-grid-container {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 1rem !important; /* Muy poco espacio en PC para compactar */
     }
 }
 
 .card {
     display: flex;
     flex-direction: column;
-    background-color: #1a1e23; /* Dark Mode Cartelera */
+    background-color: #1a1e23;
     color: white;
-    border-radius: 24px; /* Super rounded corners */
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.3s ease;
-    height: auto;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    height: 100%;
     position: relative;
     border: 1px solid rgba(255,255,255,0.05);
 }
@@ -1509,10 +1518,78 @@ html {
 
 .card-image {
     width: 100%;
-    height: 200px;
+    aspect-ratio: 4 / 5; /* Formato vertical (historias) para móvil */
     position: relative;
-    /* overflow: hidden; */ /* Removed to allow actor-badge to pop out */
+    overflow: hidden;
 }
+
+@media (min-width: 601px) and (max-width: 1024px) {
+    .card {
+        max-width: 200px; /* Reducción adicional para tablet como pediste */
+        margin: 0 auto;
+        width: 100%;
+    }
+    .card-image {
+        aspect-ratio: 1 / 1;
+    }
+    .card-content {
+        padding: 0.8rem;
+    }
+    .card-title {
+        font-size: 0.9rem;
+    }
+}
+
+@media (min-width: 1025px) {
+    /* ESTILO CARTELERA CDMX (Horizontal) */
+    .card-grid-container {
+        gap: 1.5rem !important;
+        max-width: 1400px; /* Permitimos que la cuadrícula sea más ancha para las tarjetas horizontales */
+    }
+    .card {
+        max-width: 100%; /* Quitamos la restricción de ancho para que ocupe la columna */
+        flex-direction: row; /* IMAGEN A LA IZQ, TEXTO A LA DER */
+        align-items: center;
+        padding: 16px; /* Más padding para darle más volumen */
+        gap: 18px;
+        height: auto;
+        min-height: 170px; /* Asegura que la tarjeta sea más alta */
+    }
+    .card-image {
+        width: 160px; /* Imagen más grande */
+        height: 160px; /* Imagen más alta */
+        aspect-ratio: unset;
+        flex-shrink: 0; /* Para que no se aplaste la imagen */
+        border-radius: 10px; /* Bordes redondeados dentro de la tarjeta */
+    }
+    .card-image img {
+        height: 100%;
+        object-fit: cover;
+    }
+    .card-content {
+        flex: 1; /* Ocupa el espacio restante */
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+    }
+    .card-header {
+        justify-content: flex-start;
+        margin-bottom: 0.5rem;
+    }
+    .card-title {
+        font-size: 1rem; /* Texto más legible porque hay más espacio a lo ancho */
+        margin-bottom: 0.3rem;
+        text-align: left;
+    }
+    .card-category {
+        font-size: 0.7rem;
+        align-self: flex-start; /* Categoría alineada a la izquierda */
+        margin-bottom: 0.5rem;
+    }
+}
+
 
 .card-image img {
     width: 100%;
@@ -1526,18 +1603,18 @@ html {
 }
 
 .card-content {
-    padding: 1.5rem;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    flex-grow: 1; /* Pushes location to bottom if flex-direction is column */
+    justify-content: space-between;
+    flex-grow: 1;
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem; /* Reducido para ahorrar espacio vertical */
 }
 
 .card-category {
@@ -2002,47 +2079,7 @@ footer {
         left: 1.2rem;
     }
 
-    .card-grid-container {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
 
-    /* En móvil, la tarjeta vuelve a ser vertical pero muy compacta */
-    .card {
-        flex-direction: column;
-        height: auto;
-    }
-
-    .card-image {
-        width: 100%;
-        height: 80px; /* Reducido para mini tarjetas */
-    }
-
-    .card-content {
-        padding: 8px;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .card-title {
-        font-size: 0.75rem;
-        margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-align: center;
-        width: 100%;
-    }
-
-    /* Ocultar elementos no deseados en móvil */
-    .card-header,
-    .card-category,
-    .card-location,
-    .card-content > div {
-        display: none !important;
-    }
 
     /* Ajuste para el botón "Cómo usar" siempre visible en móvil */
     .nav-how-to-always-visible.nav-btn-how-to {
@@ -2385,4 +2422,62 @@ footer {
 .home-map-section {
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+}
+
+/* =========================================================
+   PAGINACIÓN NUMÉRICA (Estilo Cartelera CDMX)
+   ========================================================= */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 3rem 0;
+}
+
+.pagination-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1e23;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.pagination-btn:hover {
+    background: #2a2e33;
+    border-color: var(--color-eco);
+    transform: translateY(-2px);
+}
+
+.pagination-btn.active {
+    background: var(--color-eco);
+    border-color: var(--color-eco);
+    color: white;
+    box-shadow: 0 5px 15px rgba(114, 176, 77, 0.3);
+}
+
+.pagination-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pagination-arrow {
+    padding: 0 15px;
+    width: auto;
+}
+
+@media (max-width: 600px) {
+    .pagination-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
 }

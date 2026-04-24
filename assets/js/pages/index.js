@@ -25,7 +25,17 @@ async function getCachedProfile() {
 }
 
 // Paginación
-let maxRendered = 9;
+let maxRendered = window.innerWidth <= 600 ? 4 : 9; // 4 en móvil, 9 en escritorio (3x3)
+let currentPage = 1;
+
+// Ajustar maxRendered si cambian de tamaño (opcional pero recomendado)
+window.addEventListener('resize', () => {
+    const newMax = window.innerWidth <= 600 ? 4 : 9;
+    if (newMax !== maxRendered) {
+        maxRendered = newMax;
+        filtrarYRenderizar();
+    }
+});
 
 // Estado de Búsqueda Avanzada
 let filtrosAvanzados = {
@@ -514,40 +524,84 @@ function filtrarYRenderizar() {
         datosFiltrados = datosFiltrados.filter(p => p.apto_ninos === true);
     }
 
-    // Aplicar paginación (mostrar solo maxRendered)
-    const datosPaginados = datosFiltrados.slice(0, maxRendered);
+    // Aplicar paginación (Slicing por página)
+    const totalResultados = datosFiltrados.length;
+    const totalPaginas = Math.ceil(totalResultados / maxRendered);
+    
+    // Asegurar que la página actual no exceda el total si los filtros cambian
+    if (currentPage > totalPaginas && totalPaginas > 0) currentPage = totalPaginas;
+
+    const inicio = (currentPage - 1) * maxRendered;
+    const fin = inicio + maxRendered;
+    const datosPaginados = datosFiltrados.slice(inicio, fin);
 
     renderCards(datosPaginados);
     actualizarMiniMapaConFiltros(datosFiltrados); // El mapa muestra todos
     renderNearbySlider(datosFiltrados); // Carrusel de navegación por mapa
-    renderizarBotonCargarMas(datosFiltrados.length);
+    renderPagination(totalResultados); 
 }
 
-function renderizarBotonCargarMas(totalFiltrados) {
-    const contenedor = document.getElementById('contenedor-tarjetas');
-    let btnContainer = document.getElementById('btn-cargar-mas-container');
+/**
+ * Renderiza los botones de paginación numérica estilo Cartelera CDMX.
+ */
+function renderPagination(totalResultados) {
+    const contenedor = document.getElementById('pagination-container');
+    if (!contenedor) return;
+
+    const totalPaginas = Math.ceil(totalResultados / maxRendered);
     
-    if (totalFiltrados > maxRendered) {
-        if (!btnContainer) {
-            btnContainer = document.createElement('div');
-            btnContainer.id = 'btn-cargar-mas-container';
-            btnContainer.style.cssText = 'text-align: center; margin-top: 30px; width: 100%; display: flex; justify-content: center;';
-            
-            const btn = document.createElement('button');
-            btn.className = 'btn-primary';
-            btn.innerHTML = '<i class="fa-solid fa-plus"></i> Cargar más';
-            btn.onclick = () => {
-                maxRendered += 9;
-                filtrarYRenderizar();
-            };
-            
-            btnContainer.appendChild(btn);
-            contenedor.parentNode.insertBefore(btnContainer, contenedor.nextSibling);
-        }
-    } else {
-        if (btnContainer) btnContainer.remove();
+    if (totalPaginas <= 1) {
+        contenedor.innerHTML = '';
+        return;
     }
+
+    let html = '';
+
+    // Botón Anterior
+    html += `
+        <button class="pagination-btn pagination-arrow ${currentPage === 1 ? 'disabled' : ''}" 
+                onclick="cambiarPagina(${currentPage - 1})">
+            <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
+    `;
+
+    // Números de Página
+    for (let i = 1; i <= totalPaginas; i++) {
+        // Lógica para no mostrar demasiados números si hay muchas páginas
+        if (totalPaginas > 5) {
+            if (i > 1 && i < totalPaginas && Math.abs(i - currentPage) > 1) {
+                if (i === 2 || i === totalPaginas - 1) html += '<span style="color: #666">...</span>';
+                continue;
+            }
+        }
+
+        html += `
+            <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                    onclick="cambiarPagina(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    // Botón Siguiente
+    html += `
+        <button class="pagination-btn pagination-arrow ${currentPage === totalPaginas ? 'disabled' : ''}" 
+                onclick="cambiarPagina(${currentPage + 1})">
+            Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    `;
+
+    contenedor.innerHTML = html;
 }
+
+// Función global para que funcione con onclick
+window.cambiarPagina = function(num) {
+    currentPage = num;
+    filtrarYRenderizar();
+    // Scroll suave hacia arriba de la sección
+    document.getElementById('contenedor-tarjetas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
 
 /**
  * Habilita el desplazamiento por arrastre (drag-to-scroll) para el slider en desktop.
