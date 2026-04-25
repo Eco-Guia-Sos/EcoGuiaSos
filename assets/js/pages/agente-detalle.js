@@ -53,7 +53,7 @@ async function initAgentProfile() {
 function renderProfile(agente) {
     document.title = `${agente.nombre} | EcoGuía SOS`;
     document.getElementById('agent-name').innerHTML = `${agente.nombre} ${agente.is_verified ? '<i class="fa-solid fa-circle-check verified-badge"></i>' : ''}`;
-    document.getElementById('agent-avatar').src = agente.imagen || '/assets/img/kpop.webp';
+    document.getElementById('agent-avatar').src = agente.imagen_url || agente.imagen || agente.avatar_url || '/assets/img/kpop.webp';
     document.getElementById('agent-banner').src = agente.banner_img || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=2013&auto=format&fit=crop';
     document.getElementById('agent-specialty').innerText = `${agente.categoria || agente.especialidad || 'Agente de Cambio'} | ${agente.organizacion || 'Independiente'}`;
     document.getElementById('agent-desc').innerText = agente.descripcion || 'Sin descripción disponible.';

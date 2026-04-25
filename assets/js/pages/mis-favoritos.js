@@ -88,7 +88,7 @@ function renderCards(data, container, type) {
         const html = `
             <article class="dash-card" onclick="window.location.href='/pages/${detailPage}?id=${p.id}'" style="cursor: pointer;">
                 <div style="position:relative;">
-                    <img src="${p.imagen || '/assets/img/kpop.webp'}" alt="${p.nombre}" class="dash-card-img" onerror="this.src='/assets/img/kpop.webp'">
+                    <img src="${p.imagen_url || p.imagen || '/assets/img/kpop.webp'}" alt="${p.nombre}" class="dash-card-img" onerror="this.src='/assets/img/kpop.webp'">
                     <span class="badge-pill" style="position:absolute; top:10px; right:10px; background:var(--primary-color);">${type.toUpperCase()}</span>
                 </div>
                 <div class="dash-card-body">

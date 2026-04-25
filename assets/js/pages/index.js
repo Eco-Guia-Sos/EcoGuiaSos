@@ -255,7 +255,7 @@ function parseSupabaseRow(row, tipo) {
         categoria: row.categoria || 'General',
         ubicacion: row.ubicacion || 'CDMX',
         mapa_url: row.mapa_url || null,
-        imagen: row.imagen || '/assets/img/kpop.webp',
+        imagen: row.imagen_url || row.imagen || '/assets/img/kpop.webp',
         descripcion: row.descripcion || 'Sin descripción.',
         tipo: tipo,
         coordenadas: (row.lat && row.lng) ? { lat: row.lat, lng: row.lng } : null,

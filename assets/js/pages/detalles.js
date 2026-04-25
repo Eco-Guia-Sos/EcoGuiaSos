@@ -92,10 +92,12 @@ async function loadSubEvents(lugarId) {
                 fTxt = d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             }
 
+            const evImg = ev.imagen_url || ev.imagen || '/assets/img/kpop.webp';
+
             container.innerHTML += `
                 <div class="mini-event-card hover-glow" onclick="window.location.href='/pages/eventos.html?id=${ev.id}'" style="min-width: 160px; max-width: 180px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.3s; padding-bottom: 5px;">
                     <div style="height: 100px; width: 100%; overflow: hidden;">
-                        <img src="${ev.imagen || '/assets/img/kpop.webp'}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" alt="${sanitize(ev.nombre)}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="${evImg}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" alt="${sanitize(ev.nombre)}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                     </div>
                     <div style="padding: 12px;">
                         <h4 style="font-size: 0.9rem; margin: 0 0 6px 0; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${sanitize(ev.nombre)}">${sanitize(ev.nombre)}</h4>
@@ -118,8 +120,9 @@ function renderData(item, type) {
     document.getElementById('detail-title').innerText = item.nombre;
     const breadcrumb = document.getElementById('breadcrumb-current');
     if (breadcrumb) breadcrumb.innerText = item.nombre;
-    document.getElementById('detail-poster').src = item.imagen || '/assets/img/kpop.webp';
-    document.getElementById('hero-bg-blur').style.backgroundImage = `url('${item.imagen || '/assets/img/kpop.webp'}')`;
+    const itemImg = item.imagen_url || item.imagen || '/assets/img/kpop.webp';
+    document.getElementById('detail-poster').src = itemImg;
+    document.getElementById('hero-bg-blur').style.backgroundImage = `url('${itemImg}')`;
     
     const badge = document.getElementById('detail-type-badge');
     badge.innerText = type === 'evento' ? 'EVENTO ECOLÓGICO' : 'LUGAR SUSTENTABLE';
@@ -242,7 +245,7 @@ async function renderActorSection(actorId) {
         actorSection.innerHTML = `
             <h3 style="font-size: 1.1rem; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Publicado por:</h3>
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <img src="${actor.avatar_url || '/assets/img/kpop.webp'}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
+                <img src="${actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
                 <div style="flex-grow: 1;">
                     <h4 style="margin: 0; color: white; font-size: 1.2rem;">${actor.nombre_completo || 'Agente de Cambio'}</h4>
                     <p style="margin: 3px 0 0 0; color: var(--primary-color); font-size: 0.9rem;">${actor.especialidad || 'Líder Ambiental'}</p>
