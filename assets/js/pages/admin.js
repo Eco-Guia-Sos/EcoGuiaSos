@@ -291,6 +291,27 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 const { data } = await supabase.from('perfiles').select('*').eq('rol', 'user').order('created_at', { ascending: false });
                 if (data) allItems = data.map(x => ({...x, nombre: x.nombre_completo, categoria: 'Voluntario', tipo_orig: 'perfiles'}));
             }
+            else if (filter === 'seguidores') {
+                // Para el Admin muestra TODOS los seguidores en la plataforma
+                // Para el Actor muestra SOLO los que lo siguen a ÉL
+                let query = supabase
+                    .from('seguimientos_actores')
+                    .select('follower_id, perfiles:follower_id(nombre_completo, email)');
+                
+                if (esActor) {
+                    query = query.eq('actor_id', session.user.id);
+                }
+
+                const { data, error } = await query;
+                if (!error && data) {
+                    allItems = data.map(row => ({
+                        id: row.follower_id,
+                        nombre: row.perfiles?.nombre_completo || 'Usuario',
+                        categoria: row.perfiles?.email || 'Seguidor',
+                        tipo_orig: 'perfiles'
+                    }));
+                }
+            }
 
             renderTablaRows(allItems);
         } catch (err) {

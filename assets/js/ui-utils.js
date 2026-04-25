@@ -84,6 +84,7 @@ export function setupAuthObserver() {
             if (loginBtn) loginBtn.style.display = 'none';
 
             // 3. Enriquecer con datos de DB en segundo plano (no bloquea UI)
+            console.log('[Auth] Consultando perfil en DB para:', user.email);
             supabase
                 .from('perfiles')
                 .select('nombre_completo, rol')
@@ -91,15 +92,19 @@ export function setupAuthObserver() {
                 .single()
                 .then(({ data: profile, error }) => {
                     if (!error && profile) {
-                        console.log('[Auth] Perfil DB cargado. Rol:', profile.rol);
+                        const detectedRole = (profile.rol || 'user').trim().toLowerCase();
+                        console.log('[Auth] Rol detectado en DB:', detectedRole);
+                        
                         if (profile.nombre_completo) {
                             const dbName = profile.nombre_completo.split(' ')[0];
                             authBtn.innerHTML = `<i class="fa-solid fa-user-circle"></i> ${dbName} <i class="fa-solid fa-chevron-down" style="font-size:0.7rem; margin-left:5px;"></i>`;
                         }
-                        if (profile.rol) {
-                            user.role_assigned = profile.rol;
-                            setupUserDropdown(authBtn, user); // Re-crear con rol correcto de DB
-                        }
+                        
+                        // Actualizar rol y re-renderizar dropdown
+                        user.role_assigned = detectedRole;
+                        setupUserDropdown(authBtn, user); 
+                    } else if (error) {
+                        console.warn('[Auth] Error consultando perfil:', error.message);
                     }
                 })
                 .catch(err => console.warn('[Auth] DB perfil fetch falló:', err));
@@ -160,8 +165,9 @@ function setupUserDropdown(authBtn, user) {
     `;
 
     // ROLE CHECK: Only show "Mi Panel" (Admin) if role is 'actor' or 'admin'
-    const role = (user.role_assigned || 'public').toLowerCase();
-    const isAdmin = (role === 'actor' || role === 'admin' || user.email === 'ecoguiasos@gmail.com');
+    const role = (user.role_assigned || 'public').trim().toLowerCase();
+    const isAdmin = (role === 'actor' || role === 'admin' || (user.email && user.email.toLowerCase() === 'ecoguiasos@gmail.com'));
+    console.log(`[Auth] Renderizando dropdown. Rol: ${role} isAdmin: ${isAdmin} Email: ${user.email}`);
     const isSubpage = window.location.pathname.includes('/pages/');
     const adminPath = isSubpage ? '../admin.html' : './admin.html';
     const favPath = isSubpage ? './mis-favoritos.html' : './pages/mis-favoritos.html';
@@ -228,7 +234,7 @@ window.handleMainLogout = async (e) => {
         console.warn('[Auth] Error al avisar salida al servidor:', err);
     } finally {
         // 2. PURGA TOTAL de LocalStorage (Lo más importante)
-        const keysToRemove = [];
+        const keysToRemove = ['eco_user_role', 'eco_user_name'];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             // Borrar cualquier llave de Supabase (por defecto o nuestra custom)

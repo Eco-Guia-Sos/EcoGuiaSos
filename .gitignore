@@ -47,3 +47,11 @@ comprimir_assets.py
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# Temporary data files
+*_data.json
+supabase_schema_live.json
+table_counts.json
+contenido_data.json
+eventos_data.json
+lugares_data.json

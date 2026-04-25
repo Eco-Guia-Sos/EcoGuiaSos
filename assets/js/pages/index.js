@@ -57,9 +57,9 @@ function initIndex() {
         setupNavbar();
         setupAuthObserver();
 
-        // ✅ OPTIMIZACIÓN: Cargar datos inmediatamente sin esperar Auth.
+        console.log('[Inicio] 🟢 Cargando datos y perfil (Mapa)...');
         cargarDatosDeSupabase();
-        getCachedProfile(); // Pre-cargar perfil para el mapa
+        getCachedProfile().then(p => console.log('[Inicio] 👤 Perfil para mapa listo:', p?.rol || 'visitante')); 
 
         // Escuchar cambios de Auth solo para actualizar la UI (permisos en cards)
         supabase.auth.onAuthStateChange(async (event, session) => {
