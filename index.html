@@ -45,6 +45,9 @@
         <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet'>
     </noscript>
     <script defer src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -217,12 +220,12 @@
                 <div class="search-col">
                     <h3>¿Qué buscas?</h3>
                     <div class="category-pills-grid">
-                        <button class="cat-pill active" data-cat="all">🌍 Todo</button>
-                        <button class="cat-pill" data-cat="Taller">🎨 Talleres</button>
-                        <button class="cat-pill" data-cat="Voluntariado">🌱 Voluntarios</button>
-                        <button class="cat-pill" data-cat="Parque">🌳 Parques</button>
-                        <button class="cat-pill" data-cat="Huerto">🌿 Huertos</button>
-                        <button class="cat-pill" data-cat="General">📍 General</button>
+                        <button class="cat-pill active" data-cat="all"><i data-lucide="globe"></i> Todo</button>
+                        <button class="cat-pill" data-cat="Taller"><i data-lucide="palette"></i> Talleres</button>
+                        <button class="cat-pill" data-cat="Voluntariado"><i data-lucide="sprout"></i> Voluntarios</button>
+                        <button class="cat-pill" data-cat="Parque"><i data-lucide="trees"></i> Parques</button>
+                        <button class="cat-pill" data-cat="Huerto"><i data-lucide="leaf"></i> Huertos</button>
+                        <button class="cat-pill" data-cat="General"><i data-lucide="map-pin"></i> General</button>
                     </div>
                 </div>
 
@@ -448,6 +451,15 @@
 
     <!-- JS Module -->
     <script type="module" src="./assets/js/pages/index.js"></script>
+
+    <!-- Inicializar Lucide -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -18,6 +18,9 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         /* Specific overrides for Documentales */
         .intro-text { text-align: center; max-width: 700px; margin: 0 auto 40px auto; color: #ccc; font-size: 1.05rem; line-height: 1.6; }
@@ -138,6 +141,15 @@
 
     <!-- JS Module -->
     <script type="module" src="../assets/js/pages/documentales.js"></script>
+
+    <!-- Inicializar Lucide -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 
 </html>

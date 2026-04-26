@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/detalles.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="dark-theme">
     <!-- Navbar (Cargado por ui-utils.js) -->
@@ -168,5 +171,14 @@
     <!-- Scripts -->
     <script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
     <script type="module" src="../assets/js/pages/detalles.js"></script>
+
+    <!-- Inicializar Lucide -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 </html>

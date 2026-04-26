@@ -10,10 +10,12 @@ export function setupNavbar() {
     if (hamburger && navMenu) {
         hamburger.addEventListener('click', () => {
             navMenu.classList.toggle('active');
+            // Lucide maneja mejor los cambios reemplazando el atributo data-lucide
             const icon = hamburger.querySelector('i');
             if (icon) {
-                icon.classList.toggle('fa-bars');
-                icon.classList.toggle('fa-xmark');
+                const current = icon.getAttribute('data-lucide');
+                icon.setAttribute('data-lucide', current === 'menu' ? 'x' : 'menu');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
     }
@@ -24,10 +26,11 @@ export function showLoader(containerId, message = 'Buscando información...') {
     if (container) {
         container.innerHTML = `
             <div class="loader-text">
-                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <i data-lucide="loader-2" class="spin"></i>
                 <p>${message}</p>
             </div>
         `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 }
 
@@ -71,7 +74,8 @@ export function setupAuthObserver() {
 
             user.role_assigned = meta.rol || meta.role || 'user';
 
-            authBtn.innerHTML = `<i class="fa-solid fa-user-circle"></i> ${greetingName} <i class="fa-solid fa-chevron-down" style="font-size:0.7rem; margin-left:5px;"></i>`;
+            authBtn.innerHTML = `<i data-lucide="user"></i> ${greetingName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             authBtn.classList.add('nav-user-dropdown-btn');
             authBtn.href = "#";
 
@@ -97,7 +101,8 @@ export function setupAuthObserver() {
                         
                         if (profile.nombre_completo) {
                             const dbName = profile.nombre_completo.split(' ')[0];
-                            authBtn.innerHTML = `<i class="fa-solid fa-user-circle"></i> ${dbName} <i class="fa-solid fa-chevron-down" style="font-size:0.7rem; margin-left:5px;"></i>`;
+                            authBtn.innerHTML = `<i data-lucide="user"></i> ${dbName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
+                            if (typeof lucide !== 'undefined') lucide.createIcons();
                         }
                         
                         // Actualizar rol y re-renderizar dropdown
@@ -154,7 +159,7 @@ function setupUserDropdown(authBtn, user) {
     const userHeader = `
         <div class="dropdown-user-header">
             <div class="user-avatar-small">
-                <i class="fa-solid fa-circle-user"></i>
+                <i data-lucide="user"></i>
             </div>
             <div class="user-info-text">
                 <span class="user-display-name">Hola de nuevo</span>
@@ -176,19 +181,20 @@ function setupUserDropdown(authBtn, user) {
         ${userHeader}
         ${isAdmin ? `
             <a href="${adminPath}" class="dropdown-item">
-                <i class="fa-solid fa-gauge-high"></i> Mi Panel
+                <i data-lucide="layout-dashboard"></i> Mi Panel
             </a>
         ` : ''}
         <a href="${favPath}" class="dropdown-item">
-            <i class="fa-solid fa-star"></i> Mis Favoritos
+            <i data-lucide="star"></i> Mis Favoritos
         </a>
         <div class="dropdown-divider"></div>
         <a href="#" onclick="handleMainLogout(event)" class="dropdown-item logout">
-            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+            <i data-lucide="log-out"></i> Cerrar Sesión
         </a>
     `;
 
     document.body.appendChild(dropdown);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     authBtn.onclick = (e) => {
         e.preventDefault();
@@ -299,9 +305,9 @@ export function showToast(message, type = 'success') {
         warning: '#f39c12'
     };
     const icons = {
-        success: 'fa-circle-check',
-        error: 'fa-circle-xmark',
-        warning: 'fa-circle-exclamation'
+        success: 'check-circle',
+        error: 'x-circle',
+        warning: 'alert-circle'
     };
 
     toast.className = `toast-notification fade-in`;
@@ -322,11 +328,12 @@ export function showToast(message, type = 'success') {
     `;
 
     toast.innerHTML = `
-        <i class="fa-solid ${icons[type]}" style="color: ${colors[type]}; font-size: 1.2rem;"></i>
+        <i data-lucide="${icons[type]}" style="color: ${colors[type]}; width: 20px; height: 20px;"></i>
         <span>${message}</span>
     `;
 
     toastContainer.appendChild(toast);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     setTimeout(() => {
         toast.style.opacity = '0';

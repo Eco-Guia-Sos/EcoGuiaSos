@@ -19,6 +19,9 @@
 
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="dark-theme">
@@ -218,6 +221,15 @@
     
     <!-- JS Module -->
     <script type="module" src="../assets/js/pages/nosotros.js"></script>
+
+    <!-- Inicializar Lucide -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 
 </html>

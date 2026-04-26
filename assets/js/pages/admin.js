@@ -20,30 +20,24 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
     const tbody = document.getElementById('tabla-registros');
     const adminMainContent = document.getElementById('admin-main-content');
 
-    // Mobile Sidebar Toggle
-    const mobileToggle = document.getElementById('mobile-toggle');
+    // Sidebar Logic (Unified)
     const adminSidebar = document.getElementById('admin-sidebar');
     const sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
-    if (mobileToggle && adminSidebar && sidebarBackdrop) {
-        mobileToggle.addEventListener('click', () => {
-            adminSidebar.classList.toggle('active');
-            sidebarBackdrop.classList.toggle('active');
-        });
-
-        sidebarBackdrop.addEventListener('click', () => {
-            adminSidebar.classList.remove('active');
-            sidebarBackdrop.classList.remove('active');
-        });
-
-        // Close sidebar on menu item click (mobile only)
-        document.querySelectorAll('.admin-menu a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    adminSidebar.classList.remove('active');
-                    sidebarBackdrop.classList.remove('active');
-                }
-            });
+    // Desktop Sidebar Toggle
+    const desktopToggle = document.getElementById('desktop-sidebar-toggle');
+    if (desktopToggle) {
+        desktopToggle.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-collapsed');
+            
+            // Toggle Icon
+            const icon = desktopToggle.querySelector('i');
+            if (document.body.classList.contains('sidebar-collapsed')) {
+                icon.setAttribute('data-lucide', 'panel-left-open');
+            } else {
+                icon.setAttribute('data-lucide', 'panel-left-close');
+            }
+            lucide.createIcons();
         });
     }
 
@@ -207,29 +201,29 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
         hubMenuGrid.innerHTML = '';
         const sections = {
             colibri: [
-                { id: 'agua', label: 'Agua y Cuenca', icon: 'fa-droplet' },
-                { id: 'cursos', label: 'Cursos', icon: 'fa-chalkboard-user' },
-                { id: 'ecotecnias', label: 'Ecotecnias', icon: 'fa-solar-panel' },
-                { id: 'lecturas', label: 'Lecturas', icon: 'fa-book-open' },
-                { id: 'documentales', label: 'Cine/Documental', icon: 'fa-film' },
-                { id: 'firmas', label: 'Firmas/Peticiones', icon: 'fa-pen-nib' }
+                { id: 'agua', label: 'Agua y Cuenca', icon: 'droplets' },
+                { id: 'cursos', label: 'Cursos', icon: 'presentation' },
+                { id: 'ecotecnias', label: 'Ecotecnias', icon: 'leaf' },
+                { id: 'lecturas', label: 'Lecturas', icon: 'book-open' },
+                { id: 'documentales', label: 'Cine/Documental', icon: 'clapperboard' },
+                { id: 'firmas', label: 'Firmas/Peticiones', icon: 'pen-tool' }
             ],
             ajolote: [
-                { id: 'convocatoria', label: 'Convocatorias', icon: 'fa-bullhorn' },
-                { id: 'voluntariados', label: 'Voluntariados', icon: 'fa-handshake-angle' },
-                { id: 'agentes', label: 'Agentes de Cambio', icon: 'fa-users' },
-                { id: 'eventos', label: 'Eventos de Comunidad', icon: 'fa-calendar-day' }
+                { id: 'convocatoria', label: 'Convocatorias', icon: 'megaphone' },
+                { id: 'voluntariados', label: 'Voluntariados', icon: 'hand-helping' },
+                { id: 'agentes', label: 'Agentes de Cambio', icon: 'users-2' },
+                { id: 'eventos', label: 'Eventos de Comunidad', icon: 'calendar-days' }
             ],
             lobo: [
-                { id: 'fondos', label: 'Fondos y Apoyos', icon: 'fa-hand-holding-dollar' },
-                { id: 'normativa', label: 'Normativa Ambiental', icon: 'fa-scale-balanced' }
+                { id: 'fondos', label: 'Fondos y Apoyos', icon: 'banknote' },
+                { id: 'normativa', label: 'Normativa Ambiental', icon: 'scale' }
             ]
         };
 
         (sections[hub] || []).forEach(sec => {
             const card = document.createElement('div');
             card.className = 'hub-card';
-            card.innerHTML = `<i class="fa-solid ${sec.icon}"></i><h4>${sec.label}</h4>`;
+            card.innerHTML = `<i data-lucide="${sec.icon}"></i><h4>${sec.label}</h4>`;
             card.onclick = () => {
                 currentSection = sec.id;
                 hubMenuView.classList.add('hidden');
@@ -242,6 +236,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
             };
             hubMenuGrid.appendChild(card);
         });
+        lucide.createIcons();
     }
 
     async function cargarDatos(filter = 'all') {
@@ -339,18 +334,232 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 <td>
                     <div style="display: flex; gap: 8px;">
                         ${item.tipo_orig === 'perfiles' ? `
-                            <button onclick="window.editarPerfil('${item.id}')" class="btn-admin" style="padding: 4px 8px; font-size: 0.75rem;"><i class="fa-solid fa-user-pen"></i> Info</button>
-                            ${item.rol === 'actor' ? `<button onclick="window.gestionarPermisos('${item.id}')" class="btn-admin" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--color-eco); color: var(--color-eco);"><i class="fa-solid fa-key"></i></button>` : ''}
+                            <button onclick="window.editarPerfil('${item.id}')" class="btn-admin-action edit" title="Editar Info"><i data-lucide="user-cog"></i></button>
+                            ${item.rol === 'actor' ? `<button onclick="window.gestionarPermisos('${item.id}')" class="btn-admin-action permissions" title="Permisos"><i data-lucide="key"></i></button>` : ''}
+                            <button onclick="window.eliminarRegistro('${item.id}', 'perfiles', '${sanitize(item.nombre)}')" class="btn-admin-action delete" title="Eliminar"><i data-lucide="trash-2"></i></button>
                         ` : `
-                            <button class="btn-admin" style="padding: 4px 8px; color: #5bc2f7;"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-admin" style="padding: 4px 8px; color: #ff5252;"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="window.editarRegistro('${item.id}', '${item.tipo_orig}')" class="btn-admin-action edit" title="Editar"><i data-lucide="pencil"></i></button>
+                            <button onclick="window.eliminarRegistro('${item.id}', '${item.tipo_orig}', '${sanitize(item.nombre)}')" class="btn-admin-action delete" title="Eliminar"><i data-lucide="trash-2"></i></button>
                         `}
                     </div>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+        lucide.createIcons();
     }
+
+    // ========== LOGICA DE ELIMINACIÓN UNIVERSAL ==========
+    window.eliminarRegistro = async (id, tipo, nombre) => {
+        if (tipo === 'perfiles' && id === session.user.id) {
+            return showToast('No puedes eliminar tu propia cuenta.', 'warning');
+        }
+
+        const modalDelete = document.getElementById('modal-confirm-delete');
+        const textDelete = document.getElementById('delete-confirm-text');
+        const btnConfirm = document.getElementById('btn-confirm-delete');
+        const btnCancel = document.getElementById('btn-cancel-delete');
+
+        textDelete.textContent = `¿Estás seguro de que deseas eliminar "${nombre}"?`;
+        modalDelete.classList.remove('hidden');
+        lucide.createIcons(); // Para el icono de alerta
+
+        return new Promise((resolve) => {
+            btnConfirm.onclick = async () => {
+                modalDelete.classList.add('hidden');
+                
+                let tabla = tipo === 'evento' ? 'eventos' : (tipo === 'lugar' ? 'lugares' : tipo);
+                if (tipo === 'contenido_secciones') tabla = 'contenido_secciones';
+
+                try {
+                    console.log(`[Admin] Intentando eliminar de tabla: ${tabla}, ID: ${id}`);
+                    const { error } = await supabase.from(tabla).delete().eq('id', id);
+                    
+                    if (error) {
+                        console.error('[Admin] Error de Supabase:', error);
+                        // Mensaje amigable para errores de llaves foráneas
+                        if (error.code === '23503') {
+                            showToast('❌ No se puede eliminar: Este usuario tiene registros vinculados (seguidores, eventos, etc.)', 'error');
+                        } else {
+                            showToast(`❌ Error: ${error.message}`, 'error');
+                        }
+                        resolve(false);
+                        return;
+                    }
+
+                    showToast('✅ Registro eliminado correctamente', 'success');
+                    cargarDatos(currentAdminFilter);
+                    resolve(true);
+                } catch (err) {
+                    console.error('[Admin] Error inesperado:', err);
+                    showToast('❌ Ocurrió un error inesperado al intentar eliminar.', 'error');
+                    resolve(false);
+                }
+            };
+
+            btnCancel.onclick = () => {
+                modalDelete.classList.add('hidden');
+                resolve(false);
+            };
+        });
+    };
+
+    window.editarRegistro = async (id, tipo) => {
+        if (tipo === 'eventos' || tipo === 'evento') {
+            const { data, error } = await supabase.from('eventos').select('*').eq('id', id).single();
+            if (data) {
+                const modalEvento = document.getElementById('modal-nuevo-evento');
+                const formEvento = document.getElementById('form-nuevo-evento');
+                
+                // Reset y marcar como edición
+                formEvento.reset();
+                modalEvento.dataset.editingId = id;
+                document.querySelector('#modal-nuevo-evento h2').textContent = 'Editar Evento';
+                document.getElementById('btn-submit-evento').textContent = 'Actualizar Evento';
+                
+                // Cargar datos básicos
+                document.getElementById('ev-nombre').value = data.nombre || '';
+                document.getElementById('ev-descripcion').value = data.descripcion || '';
+                document.getElementById('ev-categoria').value = data.categoria || '';
+                document.getElementById('ev-fecha-inicio').value = data.fecha_inicio ? data.fecha_inicio.substring(0, 16) : '';
+                document.getElementById('ev-fecha-fin').value = data.fecha_fin ? data.fecha_fin.substring(0, 16) : '';
+                document.getElementById('ev-ubicacion').value = data.ubicacion || '';
+                document.getElementById('ev-gmaps').value = data.mapa_url || '';
+                document.getElementById('ev-lat').value = data.lat || '';
+                document.getElementById('ev-lng').value = data.lng || '';
+                document.getElementById('ev-reg-link').value = data.reg_link || '';
+                
+                // Imagen
+                if (data.imagen_url) {
+                    document.getElementById('ev-imagen-url').value = data.imagen_url;
+                    const preview = document.getElementById('ev-image-preview');
+                    preview.style.backgroundImage = `url(${data.imagen_url})`;
+                    preview.classList.remove('hidden');
+                }
+
+                // Cargar sedes antes de abrir
+                await cargarSedesEvento();
+                document.getElementById('ev-sede').value = data.lugar_id || '';
+
+                // Redes Sociales
+                const socialContainer = document.getElementById('ev-social-inputs');
+                socialContainer.innerHTML = '';
+                document.querySelectorAll('#ev-social-selector .social-btn').forEach(b => b.classList.remove('active'));
+                
+                const socialNetworks = ['fb', 'ig', 'wa', 'x', 'yt', 'web'];
+                socialNetworks.forEach(net => {
+                    const val = data[`social_${net}`];
+                    if (val) {
+                        const btn = document.querySelector(`#ev-social-selector .social-btn[data-net="social_${net}"]`);
+                        if (btn) {
+                            btn.classList.add('active');
+                            const div = document.createElement('div');
+                            div.className = 'social-input-group form-group';
+                            div.dataset.net = `social_${net}`;
+                            const iconClass = btn.querySelector('i').className;
+                            div.innerHTML = `
+                                <div class="input-wrapper">
+                                    <i class="${iconClass}"></i>
+                                    <input type="text" value="${val}" data-net="social_${net}" required>
+                                </div>
+                            `;
+                            socialContainer.appendChild(div);
+                        }
+                    }
+                });
+
+                modalEvento.classList.remove('hidden');
+            }
+        } else if (tipo === 'lugares' || tipo === 'lugar' || tipo === 'lugare') {
+            const { data, error } = await supabase.from('lugares').select('*').eq('id', id).single();
+            if (data) {
+                const modalLugar = document.getElementById('modal-nuevo-lugar');
+                const formLugar = document.getElementById('form-nuevo-lugar');
+                
+                // Reset y marcar como edición
+                formLugar.reset();
+                modalLugar.dataset.editingId = id;
+                document.querySelector('#modal-nuevo-lugar h2').textContent = 'Editar Lugar / Sede';
+                document.getElementById('btn-submit-lugar').textContent = 'Actualizar Lugar';
+                
+                // Cargar datos básicos
+                document.getElementById('pl-nombre').value = data.nombre || '';
+                document.getElementById('pl-descripcion').value = data.descripcion || '';
+                document.getElementById('pl-categoria').value = data.categoria || '';
+                document.getElementById('pl-ubicacion').value = data.ubicacion || '';
+                document.getElementById('pl-gmaps').value = data.mapa_url || '';
+                document.getElementById('pl-lat').value = data.lat || '';
+                document.getElementById('pl-lng').value = data.lng || '';
+                document.getElementById('pl-reg-link').value = data.reg_link || '';
+                
+                // Imagen
+                if (data.imagen) { // La columna se llama 'imagen' en lugares
+                    document.getElementById('pl-imagen-url').value = data.imagen;
+                    const preview = document.getElementById('pl-image-preview');
+                    preview.style.backgroundImage = `url(${data.imagen})`;
+                    preview.classList.remove('hidden');
+                }
+
+                // Redes Sociales
+                const socialContainer = document.getElementById('pl-social-inputs');
+                if (socialContainer) {
+                    socialContainer.innerHTML = '';
+                    document.querySelectorAll('#pl-social-selector .social-btn').forEach(b => b.classList.remove('active'));
+                    
+                    const socialNetworks = ['fb', 'ig', 'wa', 'x', 'yt', 'web'];
+                    socialNetworks.forEach(net => {
+                        const val = data[`social_${net}`];
+                        if (val) {
+                            const btn = document.querySelector(`#pl-social-selector .social-btn[data-net="social_${net}"]`);
+                            if (btn) {
+                                btn.classList.add('active');
+                                const div = document.createElement('div');
+                                div.className = 'social-input-group form-group';
+                                div.dataset.net = `social_${net}`;
+                                const iconClass = btn.querySelector('i').className;
+                                div.innerHTML = `
+                                    <div class="input-wrapper">
+                                        <i class="${iconClass}"></i>
+                                        <input type="text" value="${val}" data-net="social_${net}" required>
+                                    </div>
+                                `;
+                                socialContainer.appendChild(div);
+                            }
+                        }
+                    });
+                }
+
+                modalLugar.classList.remove('hidden');
+            }
+        } else if (tipo === 'contenido_secciones') {
+            const { data, error } = await supabase.from('contenido_secciones').select('*').eq('id', id).single();
+            if (data) {
+                const modalContent = document.getElementById('modal-nuevo');
+                const formContent = document.getElementById('form-nuevo');
+                
+                formContent.reset();
+                modalContent.dataset.editingId = id;
+                document.getElementById('modal-title-text').textContent = 'Editar Contenido';
+                document.getElementById('btn-submit-form').textContent = 'Actualizar Registro';
+                
+                document.getElementById('input-nombre').value = data.titulo || '';
+                document.getElementById('input-descripcion').value = data.descripcion || '';
+                document.getElementById('input-enlace').value = data.enlace || '';
+                
+                if (data.imagen_url) {
+                    document.getElementById('input-imagen-url').value = data.imagen_url;
+                    const preview = document.getElementById('image-preview');
+                    preview.style.backgroundImage = `url(${data.imagen_url})`;
+                    preview.classList.remove('hidden');
+                }
+                
+                switchFormType('contenido');
+                modalContent.classList.remove('hidden');
+            }
+        } else {
+            showToast('Función de edición en desarrollo para esta sección', 'info');
+        }
+    };
 
     // ========== GESTIÓN DE MODAL "NUEVO REGISTRO" (DOS SECCIONES) ==========
     const modalNuevo = document.getElementById('modal-nuevo');
@@ -395,6 +604,10 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
             const modalEvento = document.getElementById('modal-nuevo-evento');
             const formEvento = document.getElementById('form-nuevo-evento');
             formEvento.reset();
+            delete modalEvento.dataset.editingId;
+            document.querySelector('#modal-nuevo-evento h2').textContent = 'Crear Nuevo Evento';
+            document.getElementById('btn-submit-evento').textContent = 'Guardar Evento';
+
             document.getElementById('ev-image-preview').classList.add('hidden');
             document.getElementById('ev-image-preview').style.backgroundImage = '';
             cargarSedesEvento();
@@ -406,6 +619,10 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
             const modalLugar = document.getElementById('modal-nuevo-lugar');
             const formLugar = document.getElementById('form-nuevo-lugar');
             formLugar.reset();
+            delete modalLugar.dataset.editingId;
+            document.querySelector('#modal-nuevo-lugar h2').textContent = 'Crear Nuevo Lugar / Sede';
+            document.getElementById('btn-submit-lugar').textContent = 'Guardar Lugar';
+
             document.getElementById('pl-image-preview').classList.add('hidden');
             document.getElementById('pl-image-preview').style.backgroundImage = '';
             modalLugar.classList.remove('hidden');
@@ -413,7 +630,10 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
         }
 
         formNuevo.reset();
+        delete modalNuevo.dataset.editingId;
         document.getElementById('modal-title-text').textContent = "Nuevo Registro";
+        document.getElementById('btn-submit-form').textContent = 'Guardar Registro';
+        
         document.getElementById('image-preview').classList.add('hidden');
         document.getElementById('image-preview').style.backgroundImage = '';
         
@@ -726,11 +946,12 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
 
     formNuevo.onsubmit = async (e) => {
         e.preventDefault();
+        const editingId = modalNuevo.dataset.editingId;
         const btn = document.getElementById('btn-submit-form');
         const tipo = document.getElementById('input-tipo').value;
         
         btn.disabled = true;
-        btn.textContent = 'Guardando...';
+        btn.textContent = editingId ? 'Actualizando...' : 'Guardando...';
 
         try {
             let imageUrl = urlInput.value;
@@ -746,71 +967,77 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 imageUrl = publicUrl.publicUrl;
             }
 
-            const commonData = {
-                nombre: document.getElementById('input-nombre').value,
-                descripcion: document.getElementById('input-descripcion').value,
-                imagen_url: imageUrl,
-                owner_id: session.user.id,
-                estado: 'publicado'
+            const dataToSave = {
+                owner_id: session.user.id
             };
 
-            if (tipo === 'eventos') {
-                const { error } = await supabase.from('eventos').insert([{
-                    ...commonData,
-                    categoria: document.getElementById('input-categoria-evento').value,
-                    lugar_id: document.getElementById('input-sede').value,
-                    fecha_inicio: document.getElementById('input-fecha-inicio').value,
-                    fecha_fin: document.getElementById('input-fecha-fin').value,
-                    lat: document.getElementById('input-lat').value || null,
-                    lng: document.getElementById('input-lng').value || null
-                }]);
-                if (error) throw error;
-            } 
-            else if (tipo === 'lugares') {
-                const { error } = await supabase.from('lugares').insert([{
-                    ...commonData,
-                    categoria: document.getElementById('input-categoria-lugar').value,
-                    direccion: document.getElementById('input-direccion').value,
-                    lat: document.getElementById('input-lat').value || null,
-                    lng: document.getElementById('input-lng').value || null
-                }]);
-                if (error) throw error;
-            }
-            else if (tipo === 'contenido') {
-                // If it's content, we need the section/hub from currentAdminFilter
+            if (tipo === 'contenido') {
                 const parts = currentAdminFilter.split('_');
-                const { error } = await supabase.from('contenido_secciones').insert([{
-                    titulo: commonData.nombre,
-                    descripcion: commonData.descripcion,
-                    imagen_url: commonData.imagen_url,
+                Object.assign(dataToSave, {
+                    titulo: document.getElementById('input-nombre').value,
+                    descripcion: document.getElementById('input-descripcion').value,
+                    imagen_url: imageUrl,
                     enlace: document.getElementById('input-enlace').value,
                     seccion_id: parts[1],
                     parent_hub: parts[2],
-                    owner_id: commonData.owner_id,
                     estado: 'publicado'
-                }]);
-                if (error) throw error;
+                });
+
+                if (editingId) {
+                    const { error } = await supabase.from('contenido_secciones').update(dataToSave).eq('id', editingId);
+                    if (error) throw error;
+                    showToast('✅ Contenido actualizado correctamente');
+                } else {
+                    const { error } = await supabase.from('contenido_secciones').insert([dataToSave]);
+                    if (error) throw error;
+                    showToast('✅ Contenido guardado correctamente');
+                }
+            } 
+            else if (tipo === 'eventos' || tipo === 'lugares') {
+                // Estos suelen usar sus propios modales ahora, pero mantenemos compatibilidad por si acaso
+                const tabla = tipo === 'eventos' ? 'eventos' : 'lugares';
+                const commonData = {
+                    nombre: document.getElementById('input-nombre').value,
+                    descripcion: document.getElementById('input-descripcion').value,
+                    imagen_url: imageUrl,
+                    estado: 'publicado',
+                    categoria: tipo === 'eventos' ? document.getElementById('input-categoria-evento').value : document.getElementById('input-categoria-lugar').value,
+                    lat: document.getElementById('input-lat').value || null,
+                    lng: document.getElementById('input-lng').value || null
+                };
+
+                if (editingId) {
+                    const { error } = await supabase.from(tabla).update(commonData).eq('id', editingId);
+                    if (error) throw error;
+                    showToast('✅ Registro actualizado correctamente');
+                } else {
+                    commonData.owner_id = session.user.id;
+                    const { error } = await supabase.from(tabla).insert([commonData]);
+                    if (error) throw error;
+                    showToast('✅ Registro guardado correctamente');
+                }
             }
 
-            showToast('✅ Registro guardado correctamente');
             modalNuevo.classList.add('hidden');
             formNuevo.reset();
             cargarDatos(currentAdminFilter);
         } catch (err) {
-            console.error('Error guardando:', err);
-            showToast('❌ Error al guardar registro', 'error');
+            console.error('Error procesando registro:', err);
+            showToast('❌ Error al procesar el registro', 'error');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Guardar Registro';
+            btn.textContent = editingId ? 'Actualizar Registro' : 'Guardar Registro';
         }
     };
 
     // ========== SUBMIT NUEVO MODAL EVENTO ==========
     document.getElementById('form-nuevo-evento').onsubmit = async (e) => {
         e.preventDefault();
+        const modalEvento = document.getElementById('modal-nuevo-evento');
+        const editingId = modalEvento.dataset.editingId;
         const btn = document.getElementById('btn-submit-evento');
         btn.disabled = true;
-        btn.textContent = 'Guardando Evento...';
+        btn.textContent = editingId ? 'Actualizando...' : 'Guardando Evento...';
 
         try {
             let imageUrl = evUrlInput.value;
@@ -832,10 +1059,8 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 nombre: document.getElementById('ev-nombre').value,
                 descripcion: document.getElementById('ev-descripcion').value,
                 imagen_url: imageUrl,
-                owner_id: session.user.id, // THE ACTOR ID IS SAVED HERE
-                estado: 'publicado',
                 categoria: document.getElementById('ev-categoria').value,
-                lugar_id: document.getElementById('ev-sede').value,
+                lugar_id: document.getElementById('ev-sede').value || null,
                 fecha_inicio: document.getElementById('ev-fecha-inicio').value,
                 fecha_fin: document.getElementById('ev-fecha-fin').value,
                 ubicacion: document.getElementById('ev-ubicacion').value,
@@ -843,7 +1068,6 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 lat: document.getElementById('ev-lat').value || null,
                 lng: document.getElementById('ev-lng').value || null,
                 reg_link: document.getElementById('ev-reg-link').value || null,
-                // Redes
                 social_fb: getEvSocial('social_fb'),
                 social_ig: getEvSocial('social_ig'),
                 social_wa: getEvSocial('social_wa'),
@@ -852,21 +1076,29 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 social_web: getEvSocial('social_web')
             };
 
-            const { error } = await supabase.from('eventos').insert([eventData]);
-            if (error) throw error;
+            if (editingId) {
+                const { error } = await supabase.from('eventos').update(eventData).eq('id', editingId);
+                if (error) throw error;
+                showToast('✅ Evento actualizado correctamente');
+            } else {
+                eventData.owner_id = session.user.id;
+                eventData.estado = 'publicado';
+                const { error } = await supabase.from('eventos').insert([eventData]);
+                if (error) throw error;
+                showToast('✅ Evento creado correctamente');
+            }
 
-            showToast('✅ Evento creado correctamente');
-            document.getElementById('modal-nuevo-evento').classList.add('hidden');
-            document.getElementById('form-nuevo-evento').reset();
+            modalEvento.classList.add('hidden');
+            formEvento.reset();
             evSocialContainer.innerHTML = '';
             document.querySelectorAll('#ev-social-selector .social-btn').forEach(b => b.classList.remove('active'));
             cargarDatos('eventos');
         } catch (err) {
-            console.error('Error guardando evento:', err);
-            showToast('❌ Error al guardar el evento', 'error');
+            console.error('Error procesando evento:', err);
+            showToast('❌ Error al procesar el evento', 'error');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Guardar Evento';
+            btn.textContent = editingId ? 'Actualizar Evento' : 'Guardar Evento';
         }
     };
 
@@ -878,9 +1110,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
     // ========== SUBMIT NUEVO MODAL LUGAR ==========
     document.getElementById('form-nuevo-lugar').onsubmit = async (e) => {
         e.preventDefault();
+        const modalLugar = document.getElementById('modal-nuevo-lugar');
+        const editingId = modalLugar.dataset.editingId;
         const btn = document.getElementById('btn-submit-lugar');
+        const formLugar = document.getElementById('form-nuevo-lugar');
+
         btn.disabled = true;
-        btn.textContent = 'Guardando Lugar...';
+        btn.textContent = editingId ? 'Actualizando...' : 'Guardando Lugar...';
 
         try {
             let imageUrl = plUrlInput.value;
@@ -902,14 +1138,12 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 nombre: document.getElementById('pl-nombre').value,
                 descripcion: document.getElementById('pl-descripcion').value,
                 imagen: imageUrl, // Columna en BD se llama "imagen"
-                owner_id: session.user.id,
                 categoria: document.getElementById('pl-categoria').value,
                 ubicacion: document.getElementById('pl-ubicacion').value,
                 mapa_url: document.getElementById('pl-gmaps').value,
                 lat: document.getElementById('pl-lat').value || null,
                 lng: document.getElementById('pl-lng').value || null,
                 reg_link: document.getElementById('pl-reg-link').value || null,
-                // Redes
                 social_fb: getPlSocial('social_fb'),
                 social_ig: getPlSocial('social_ig'),
                 social_wa: getPlSocial('social_wa'),
@@ -918,21 +1152,28 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
                 social_web: getPlSocial('social_web')
             };
 
-            const { error } = await supabase.from('lugares').insert([placeData]);
-            if (error) throw error;
+            if (editingId) {
+                const { error } = await supabase.from('lugares').update(placeData).eq('id', editingId);
+                if (error) throw error;
+                showToast('✅ Lugar actualizado correctamente');
+            } else {
+                placeData.owner_id = session.user.id;
+                const { error } = await supabase.from('lugares').insert([placeData]);
+                if (error) throw error;
+                showToast('✅ Lugar creado correctamente');
+            }
 
-            showToast('✅ Lugar creado correctamente');
-            document.getElementById('modal-nuevo-lugar').classList.add('hidden');
-            document.getElementById('form-nuevo-lugar').reset();
+            modalLugar.classList.add('hidden');
+            formLugar.reset();
             if(plSocialContainer) plSocialContainer.innerHTML = '';
             document.querySelectorAll('#pl-social-selector .social-btn').forEach(b => b.classList.remove('active'));
             cargarDatos('lugares');
         } catch (err) {
-            console.error('Error guardando lugar:', err);
-            showToast('❌ Error al guardar el lugar', 'error');
+            console.error('Error procesando lugar:', err);
+            showToast('❌ Error al procesar el lugar', 'error');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Guardar Lugar';
+            btn.textContent = editingId ? 'Actualizar Lugar' : 'Guardar Lugar';
         }
     };
 
@@ -980,43 +1221,95 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
 
     window.gestionarPermisos = async (userId) => {
         currentPermsUserId = userId;
-        permsList.innerHTML = '<p style="grid-column: span 2;">Cargando permisos...</p>';
+        permsList.innerHTML = '<p style="grid-column: span 3; text-align: center;">Cargando permisos...</p>';
         permsModal.classList.remove('hidden');
 
         try {
             const { data: currentPerms } = await supabase.from('permisos_actores').select('seccion_id, parent_hub').eq('user_id', userId);
             
-            const allSections = [
-                { id: 'agua', label: 'Agua (Colibrí)', hub: 'colibri' },
-                { id: 'cursos', label: 'Cursos (Colibrí)', hub: 'colibri' },
-                { id: 'ecotecnias', label: 'Ecotecnias (Colibrí)', hub: 'colibri' },
-                { id: 'lecturas', label: 'Lecturas (Colibrí)', hub: 'colibri' },
-                { id: 'documentales', label: 'Cine (Colibrí)', hub: 'colibri' },
-                { id: 'firmas', label: 'Peticiones (Colibrí)', hub: 'colibri' },
-                { id: 'convocatoria', label: 'Convocatorias (Ajolote)', hub: 'ajolote' },
-                { id: 'voluntariados', label: 'Voluntariados (Ajolote)', hub: 'ajolote' },
-                { id: 'agentes', label: 'Agentes (Ajolote)', hub: 'ajolote' },
-                { id: 'eventos', label: 'Eventos (Ajolote)', hub: 'ajolote' },
-                { id: 'fondos', label: 'Fondos (Lobo)', hub: 'lobo' },
-                { id: 'normativa', label: 'Normativa (Lobo)', hub: 'lobo' }
-            ];
+            const hubs = {
+                colibri: {
+                    label: 'Hub Colibrí',
+                    color: '#72B04D',
+                    icon: 'bird',
+                    sections: [
+                        { id: 'agua', label: 'Agua y Cuenca' },
+                        { id: 'cursos', label: 'Cursos' },
+                        { id: 'ecotecnias', label: 'Ecotecnias' },
+                        { id: 'lecturas', label: 'Lecturas' },
+                        { id: 'documentales', label: 'Cine/Documental' },
+                        { id: 'firmas', label: 'Peticiones' }
+                    ]
+                },
+                ajolote: {
+                    label: 'Hub Ajolote',
+                    color: '#FF6B6B',
+                    icon: 'fish',
+                    sections: [
+                        { id: 'convocatoria', label: 'Convocatorias' },
+                        { id: 'voluntariados', label: 'Voluntariados' },
+                        { id: 'agentes', label: 'Agentes de Cambio' },
+                        { id: 'eventos', label: 'Eventos' }
+                    ]
+                },
+                lobo: {
+                    label: 'Hub Lobo',
+                    color: '#4D96FF',
+                    icon: 'wolf',
+                    sections: [
+                        { id: 'fondos', label: 'Fondos y Apoyos' },
+                        { id: 'normativa', label: 'Normativa Ambiental' }
+                    ]
+                }
+            };
 
             permsList.innerHTML = '';
-            allSections.forEach(sec => {
-                const hasPerm = currentPerms?.some(p => p.seccion_id === sec.id && p.parent_hub === sec.hub);
-                const div = document.createElement('label');
-                div.className = 'perm-item';
-                div.innerHTML = `
-                    <input type="checkbox" data-sec="${sec.id}" data-hub="${sec.hub}" ${hasPerm ? 'checked' : ''}>
-                    <span>${sec.label}</span>
+            
+            Object.keys(hubs).forEach(hubId => {
+                const hub = hubs[hubId];
+                const col = document.createElement('div');
+                col.className = `perm-column hub-${hubId}`;
+                col.style.setProperty('--hub-color', hub.color);
+                
+                let sectionHtml = '';
+                hub.sections.forEach(sec => {
+                    const hasPerm = currentPerms?.some(p => p.seccion_id === sec.id && p.parent_hub === hubId);
+                    sectionHtml += `
+                        <label class="perm-item">
+                            <input type="checkbox" data-sec="${sec.id}" data-hub="${hubId}" ${hasPerm ? 'checked' : ''}>
+                            <span>${sec.label}</span>
+                        </label>
+                    `;
+                });
+
+                col.innerHTML = `
+                    <div class="hub-header" style="color: ${hub.color}">
+                        <i data-lucide="${hub.icon}"></i>
+                        <span>${hub.label}</span>
+                    </div>
+                    <div class="hub-sections">
+                        ${sectionHtml}
+                    </div>
+                    <button type="button" class="btn-select-all" onclick="window.selectAllHub('${hubId}')">
+                        Seleccionar Todo
+                    </button>
                 `;
-                permsList.appendChild(div);
+                permsList.appendChild(col);
             });
+
+            lucide.createIcons();
 
         } catch (err) {
             console.error('Error al cargar permisos:', err);
             showToast('Error al cargar permisos', 'error');
         }
+    };
+
+    window.selectAllHub = (hubId) => {
+        const hubCol = document.querySelector(`.perm-column.hub-${hubId}`);
+        const checks = hubCol.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checks).every(c => c.checked);
+        checks.forEach(c => c.checked = !allChecked);
     };
 
     document.getElementById('btn-close-perms').onclick = () => permsModal.classList.add('hidden');
