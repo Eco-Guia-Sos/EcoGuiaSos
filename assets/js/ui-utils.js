@@ -1,5 +1,5 @@
 /* assets/js/ui-utils.js */
-import { supabase } from './supabase.js';
+import { supabase, supabaseUrl, supabaseKey } from './supabase.js';
 
 // Common UI behaviors like Navbar toggling
 
@@ -66,55 +66,93 @@ export function setupAuthObserver() {
             const user = session.user;
             const meta = user.user_metadata || {};
             
-            // 1. Mostrar nombre INMEDIATAMENTE desde metadata local
-            let greetingName = meta.nombre_completo?.split(' ')[0]
-                                || meta.full_name?.split(' ')[0] 
-                                || meta.name?.split(' ')[0]
-                                || user.email.split('@')[0];
+            // 1. Prioridad: Recuperar de LocalStorage para evitar parpadeos
+            const cachedName = localStorage.getItem('eco_user_name');
+            const cachedRole = localStorage.getItem('eco_user_role');
+            
+            // 2. Determinar nombre inicial (Metadata -> Email)
+            let rawName = meta.nombre_completo || meta.full_name || meta.name || user.email.split('@')[0];
+            // Si el nombre parece un email, lo limpiamos
+            let greetingName = (rawName.includes('@') ? rawName.split('@')[0] : rawName).split(' ')[0];
+            
+            // Usar cache si existe, si no, el calculado
+            const displayName = cachedName || greetingName;
+            user.role_assigned = cachedRole || meta.rol || meta.role || 'user';
 
-            user.role_assigned = meta.rol || meta.role || 'user';
+            console.log(`[Auth] UI Inicial: ${displayName} (${user.role_assigned}) - Cache: ${!!cachedName}`);
 
-            authBtn.innerHTML = `<i data-lucide="user"></i> ${greetingName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
+            // Actualizar Botón Nav
+            authBtn.innerHTML = `<i data-lucide="user"></i> ${displayName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
             if (typeof lucide !== 'undefined') lucide.createIcons();
             authBtn.classList.add('nav-user-dropdown-btn');
             authBtn.href = "#";
 
-            // 2. Activar dropdown INMEDIATAMENTE (antes de consultar DB)
-            setupUserDropdown(authBtn, user);
-            console.log('[Auth] ✅ UI y dropdown listos. Nombre:', greetingName);
+            // Activar dropdown
+            setupUserDropdown(authBtn, user, displayName);
 
-            // Ocultar el botón "Iniciar sesión" si ya hay sesión iniciada
+            // Ocultar el botón "Iniciar sesión"
             const loginBtn = document.getElementById('nav-login-btn');
             if (loginBtn) loginBtn.style.display = 'none';
 
-            // 3. Enriquecer con datos de DB en segundo plano (no bloquea UI)
-            console.log('[Auth] Consultando perfil en DB para:', user.email);
-            supabase
-                .from('perfiles')
-                .select('nombre_completo, rol')
-                .eq('id', user.id)
-                .single()
-                .then(({ data: profile, error }) => {
-                    if (!error && profile) {
+            // 3. Consulta DB para datos finales (Uso de fetch directo para mayor confiabilidad)
+            console.log('[Auth] Iniciando fetch de perfil DB (Directo)...');
+            
+            const fetchProfile = async () => {
+                const url = `${supabaseUrl}/rest/v1/perfiles?id=eq.${user.id}&select=nombre_completo,rol`;
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${session.access_token}`
+                    }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return data && data.length > 0 ? data[0] : null;
+            };
+
+            fetchProfile()
+                .then(profile => {
+                    if (profile) {
                         const detectedRole = (profile.rol || 'user').trim().toLowerCase();
-                        console.log('[Auth] Rol detectado en DB:', detectedRole);
                         
-                        if (profile.nombre_completo) {
-                            const dbName = profile.nombre_completo.split(' ')[0];
+                        // Lógica de nombre: NO sobreescribir con email si ya tenemos un nombre real
+                        let dbName = displayName; 
+                        const isEmailLike = (str) => str && (str.includes('@') || str.includes('+'));
+                        
+                        if (profile.nombre_completo && !isEmailLike(profile.nombre_completo)) {
+                            dbName = profile.nombre_completo.split(' ')[0];
+                        } else if (isEmailLike(displayName) && profile.nombre_completo && !isEmailLike(profile.nombre_completo)) {
+                            dbName = profile.nombre_completo.split(' ')[0];
+                        } 
+                        
+                        console.log(`[Auth] Datos DB recibidos: ${dbName} (${detectedRole})`);
+                        
+                        // Guardar en cache para persistencia entre páginas
+                        localStorage.setItem('eco_user_name', dbName);
+                        localStorage.setItem('eco_user_role', detectedRole);
+                        
+                        // Si el botón ya no existe en el DOM (navegación rápida), abortar
+                        if (!document.body.contains(authBtn)) return;
+
+                        // Actualizar UI si el rol cambió o el nombre es mejor
+                        if (dbName !== displayName || detectedRole !== user.role_assigned) {
+                            console.log('[Auth] Actualizando UI con datos finales');
+                            user.role_assigned = detectedRole;
                             authBtn.innerHTML = `<i data-lucide="user"></i> ${dbName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
                             if (typeof lucide !== 'undefined') lucide.createIcons();
+                            setupUserDropdown(authBtn, user, dbName);
                         }
-                        
-                        // Actualizar rol y re-renderizar dropdown
-                        user.role_assigned = detectedRole;
-                        setupUserDropdown(authBtn, user); 
-                    } else if (error) {
-                        console.warn('[Auth] Error consultando perfil:', error.message);
+                    } else {
+                        console.warn('[Auth] No se encontró perfil en DB para este ID');
                     }
                 })
-                .catch(err => console.warn('[Auth] DB perfil fetch falló:', err));
+                .catch(err => {
+                    console.error('[Auth] Error recuperando perfil:', err);
+                });
         } else {
             console.log('[Auth] Sin sesión - mostrando botón Súmate');
+            localStorage.removeItem('eco_user_name');
+            localStorage.removeItem('eco_user_role');
             authBtn.innerHTML = 'Súmate';
             authBtn.classList.remove('nav-user-dropdown-btn');
             const isSubpage = window.location.pathname.includes('/pages/');
@@ -146,7 +184,7 @@ export function setupAuthObserver() {
     });
 }
 
-function setupUserDropdown(authBtn, user) {
+function setupUserDropdown(authBtn, user, userName) {
     // Remove if already exists to avoid duplicates
     let dropdown = document.getElementById('user-dropdown-menu');
     if (dropdown) dropdown.remove();
@@ -162,7 +200,7 @@ function setupUserDropdown(authBtn, user) {
                 <i data-lucide="user"></i>
             </div>
             <div class="user-info-text">
-                <span class="user-display-name">Hola de nuevo</span>
+                <span class="user-display-name">${userName || 'Hola'}</span>
                 <span class="user-email-text">${user.email}</span>
             </div>
         </div>
@@ -172,16 +210,26 @@ function setupUserDropdown(authBtn, user) {
     // ROLE CHECK: Only show "Mi Panel" (Admin) if role is 'actor' or 'admin'
     const role = (user.role_assigned || 'public').trim().toLowerCase();
     const isAdmin = (role === 'actor' || role === 'admin' || (user.email && user.email.toLowerCase() === 'ecoguiasos@gmail.com'));
-    console.log(`[Auth] Renderizando dropdown. Rol: ${role} isAdmin: ${isAdmin} Email: ${user.email}`);
+    
+    // Rutas dinámicas basadas en la profundidad de la URL
     const isSubpage = window.location.pathname.includes('/pages/');
-    const adminPath = isSubpage ? '../admin.html' : './admin.html';
-    const favPath = isSubpage ? './mis-favoritos.html' : './pages/mis-favoritos.html';
+    const basePath = isSubpage ? '../' : './';
+    const adminPath = `${basePath}admin.html`;
+    const favPath = `${basePath}pages/mis-favoritos.html`;
+    const profilePath = `${basePath}pages/agente-detalle.html?actor_id=${user.id}`;
+
+    console.log(`[Auth] Dropdown: ${userName} (${role}) - isSubpage: ${isSubpage}`);
 
     dropdown.innerHTML = `
         ${userHeader}
         ${isAdmin ? `
             <a href="${adminPath}" class="dropdown-item">
                 <i data-lucide="layout-dashboard"></i> Mi Panel
+            </a>
+        ` : ''}
+        ${(role === 'actor' || role === 'admin') ? `
+            <a href="${profilePath}" class="dropdown-item">
+                <i data-lucide="user-circle"></i> Mi Perfil
             </a>
         ` : ''}
         <a href="${favPath}" class="dropdown-item">

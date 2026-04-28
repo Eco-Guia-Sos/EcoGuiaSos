@@ -8,8 +8,9 @@ async function initAgentProfile() {
 
     const params = new URLSearchParams(window.location.search);
     const agentId = params.get('id');
+    const actorId = params.get('actor_id');
 
-    if (!agentId) {
+    if (!agentId && !actorId) {
         window.location.href = 'agentes.html';
         return;
     }
@@ -18,25 +19,49 @@ async function initAgentProfile() {
     const content = document.getElementById('profile-content');
 
     try {
-        // 1. Obtener datos del agente
-        const { data: agente, error } = await supabase
-            .from('agentes')
-            .select('*')
-            .eq('id', agentId)
-            .single();
+        let agenteData = null;
+        let finalUserId = null;
 
-        if (error || !agente) throw new Error('Agente no encontrado');
+        if (agentId) {
+            // 1. Obtener datos desde la tabla 'agentes'
+            const { data: agente, error } = await supabase
+                .from('agentes')
+                .select('*')
+                .eq('id', agentId)
+                .single();
 
-        renderProfile(agente);
+            if (error || !agente) throw new Error('Agente no encontrado');
+            agenteData = agente;
+            finalUserId = agente.usuario_id;
+        } else if (actorId) {
+            // 2. Obtener datos desde la tabla 'perfiles' (Fallback)
+            const { data: perfil, error } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', actorId)
+                .single();
 
-        // 1.1 Configurar botón de seguimiento si hay usuario_id
-        if (agente.usuario_id) {
-            setupFollowLogic(agente.usuario_id);
+            if (error || !perfil) throw new Error('Perfil de actor no encontrado');
+            
+            // Mapear perfil a estructura de agente
+            agenteData = {
+                nombre: perfil.nombre_completo || 'Agente de Cambio',
+                imagen_url: perfil.avatar_url || perfil.imagen_url,
+                especialidad: perfil.especialidad || perfil.rol,
+                descripcion: perfil.descripcion || 'Este actor aún no ha configurado su descripción detallada.',
+                usuario_id: perfil.id,
+                is_verified: perfil.is_verified || false
+            };
+            finalUserId = perfil.id;
         }
 
-        // 2. Cargar eventos vinculados si tiene usuario_id
-        if (agente.usuario_id) {
-            await loadAgentEvents(agente.usuario_id);
+        renderProfile(agenteData);
+
+        // 1.1 Configurar botón de seguimiento
+        if (finalUserId) {
+            setupFollowLogic(finalUserId);
+            // 2. Cargar eventos vinculados
+            await loadAgentEvents(finalUserId);
         } else {
             showNoEvents();
         }

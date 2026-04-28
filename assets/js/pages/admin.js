@@ -189,7 +189,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
         tableContainer.classList.remove('hidden');
         tableTitle.textContent = `Registros: ${title}`;
         
-        if (view !== 'usuarios' && view !== 'voluntarios') {
+        if (view !== 'usuarios' && view !== 'voluntarios' && view !== 'seguidores') {
             btnNuevo.style.display = 'flex';
         }
         
@@ -246,10 +246,15 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
             let allItems = [];
             
             if (filter === 'all') {
-                const [eventsRes, placesRes] = await Promise.all([
-                    supabase.from('eventos').select('*').order('created_at', { ascending: false }),
-                    supabase.from('lugares').select('*').order('created_at', { ascending: false })
-                ]);
+                let qEvents = supabase.from('eventos').select('*').order('created_at', { ascending: false });
+                let qPlaces = supabase.from('lugares').select('*').order('created_at', { ascending: false });
+                
+                if (esActor) {
+                    qEvents = qEvents.eq('owner_id', session.user.id);
+                    qPlaces = qPlaces.eq('owner_id', session.user.id);
+                }
+
+                const [eventsRes, placesRes] = await Promise.all([qEvents, qPlaces]);
 
                 if (eventsRes.data) {
                     const mappedEvents = eventsRes.data.map(x => ({...x, nombre: x.nombre, categoria: x.categoria, tipo_orig: 'evento'}));
@@ -1179,24 +1184,51 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast } from '../ui-utils
 
 
     // User Profile logic
-    const profileModal = document.getElementById('profile-modal');
     window.editarPerfil = async (id) => {
-        const { data } = await supabase.from('perfiles').select('*').eq('id', id).single();
-        if (data) {
-            document.getElementById('prof-nombre').value = data.nombre_completo || '';
-            document.getElementById('prof-rol').value = data.rol || 'user';
-            document.getElementById('prof-telefono').value = data.telefono || '';
-            document.getElementById('prof-links').value = data.social_links || '';
-            profileModal.dataset.userId = id;
-            profileModal.classList.remove('hidden');
+        console.log('[Admin] Abriendo perfil para ID:', id);
+        const profileModal = document.getElementById('profile-modal');
+        if (!profileModal) {
+            console.error('[Admin] No se encontró el elemento #profile-modal');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase.from('perfiles').select('*').eq('id', id).single();
+            if (error) {
+                console.error('[Admin] Error al obtener perfil:', error);
+                showToast('Error al cargar datos del perfil', 'error');
+                return;
+            }
+
+            if (data) {
+                const nombreEl = document.getElementById('prof-nombre');
+                const rolEl = document.getElementById('prof-rol');
+                const telEl = document.getElementById('prof-telefono');
+                const linksEl = document.getElementById('prof-links');
+
+                if (nombreEl) nombreEl.value = data.nombre_completo || '';
+                if (rolEl) rolEl.value = data.rol || 'user';
+                if (telEl) telEl.value = data.telefono || '';
+                if (linksEl) linksEl.value = data.social_links || '';
+                
+                profileModal.dataset.userId = id;
+                profileModal.classList.remove('hidden');
+                console.log('[Admin] Modal de perfil mostrado correctamente');
+            } else {
+                showToast('No se encontró el perfil', 'warning');
+            }
+        } catch (err) {
+            console.error('[Admin] Error inesperado en editarPerfil:', err);
+            showToast('Ocurrió un error al abrir el perfil', 'error');
         }
     };
 
-    document.getElementById('btn-close-profile').onclick = () => profileModal.classList.add('hidden');
-    document.getElementById('btn-cancel-profile').onclick = () => profileModal.classList.add('hidden');
+    document.getElementById('btn-close-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
+    document.getElementById('btn-cancel-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
     
     document.getElementById('form-profile-edit').onsubmit = async (e) => {
         e.preventDefault();
+        const profileModal = document.getElementById('profile-modal');
         const id = profileModal.dataset.userId;
         const updates = {
             nombre_completo: document.getElementById('prof-nombre').value,

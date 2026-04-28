@@ -235,8 +235,8 @@ async function renderActorSection(actorId) {
             .single();
 
         // Buscamos el ID del agente para el enlace
-        const { data: agente } = await supabase.from('agentes').select('id').eq('usuario_id', actorId).single();
-        const profileLink = agente ? `/pages/agente-detalle.html?id=${agente.id}` : '#';
+        const { data: agente } = await supabase.from('agentes').select('id').eq('usuario_id', actorId).maybeSingle();
+        const profileLink = agente ? `/pages/agente-detalle.html?id=${agente.id}` : `/pages/agente-detalle.html?actor_id=${actorId}`;
 
         const actorSection = document.createElement('section');
         actorSection.className = 'info-section actor-card-lite';

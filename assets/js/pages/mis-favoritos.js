@@ -74,8 +74,21 @@ async function loadFavorites(userId) {
     const actorIds = follows?.map(f => f.actor_id) || [];
 
     if (actorIds.length > 0) {
-        const { data: actors } = await supabase.from('agentes').select('*').in('usuario_id', actorIds);
-        renderActors(actors, containers.actores);
+        // Buscamos en perfiles para tener los datos básicos
+        const { data: profiles } = await supabase.from('perfiles').select('*').in('id', actorIds);
+        
+        // También intentamos buscar si tienen un registro en 'agentes' para el link
+        const { data: agents } = await supabase.from('agentes').select('id, usuario_id').in('usuario_id', actorIds);
+        
+        const mappedActors = profiles.map(p => {
+            const agent = agents?.find(a => a.usuario_id === p.id);
+            return {
+                ...p,
+                agent_id: agent?.id
+            };
+        });
+
+        renderActors(mappedActors, containers.actores);
     } else {
         renderEmpty(containers.actores, 'No sigues a ningún agente aún.', 'fa-user-slash');
     }
@@ -105,11 +118,15 @@ function renderCards(data, container, type) {
 function renderActors(actors, container) {
     container.innerHTML = '';
     actors.forEach(actor => {
+        const profileLink = actor.agent_id 
+            ? `/pages/agente-detalle.html?id=${actor.agent_id}` 
+            : `/pages/agente-detalle.html?actor_id=${actor.id}`;
+            
         const html = `
-            <article class="dash-card" onclick="window.location.href='/pages/agente-detalle.html?id=${actor.id}'" style="cursor: pointer; text-align: center; padding: 30px 20px;">
-                <img src="${actor.imagen || '/assets/img/kpop.webp'}" style="width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--primary-color); object-fit: cover;">
-                <h3 style="margin-bottom: 5px; color: white; font-size: 1.2rem;">${actor.nombre || 'Agente'}</h3>
-                <p style="color: var(--primary-color); font-size: 0.9rem;">${actor.especialidad || actor.categoria || 'Líder Ambiental'}</p>
+            <article class="dash-card" onclick="window.location.href='${profileLink}'" style="cursor: pointer; text-align: center; padding: 30px 20px;">
+                <img src="${actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'}" style="width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--primary-color); object-fit: cover;">
+                <h3 style="margin-bottom: 5px; color: white; font-size: 1.2rem;">${actor.nombre_completo || actor.nombre || 'Agente'}</h3>
+                <p style="color: var(--primary-color); font-size: 0.9rem;">${actor.especialidad || actor.rol || 'Líder Ambiental'}</p>
             </article>
         `;
         container.innerHTML += html;

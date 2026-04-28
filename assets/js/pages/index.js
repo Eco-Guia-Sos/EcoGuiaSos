@@ -18,9 +18,16 @@ async function getCachedProfile() {
         const { data: { session } } = await supabase.auth.getSession();
         _cachedSession = session;
         if (!session) return null;
-        const { data: profile } = await supabase.from('perfiles').select('rol, imagen, nombre_completo').eq('id', session.user.id).single();
+        
+        // Usar fetchRawSupabaseTable para evitar problemas con el cliente de Supabase
+        const profileData = await fetchRawSupabaseTable(`perfiles?id=eq.${session.user.id}&select=rol,imagen,nombre_completo`);
+        const profile = profileData && profileData.length > 0 ? profileData[0] : null;
+        
         _cachedProfile = profile ? { ...profile, id: session.user.id } : null;
-    } catch (e) { _cachedProfile = null; }
+    } catch (e) { 
+        console.warn('[Index] Error obteniendo perfil:', e);
+        _cachedProfile = null; 
+    }
     return _cachedProfile;
 }
 
@@ -548,20 +555,15 @@ function renderPagination(totalResultados) {
     const contenedor = document.getElementById('pagination-container');
     if (!contenedor) return;
 
-    const totalPaginas = Math.ceil(totalResultados / maxRendered);
+    const totalPaginas = Math.ceil(totalResultados / maxRendered) || 1;
     
-    if (totalPaginas <= 1) {
-        contenedor.innerHTML = '';
-        return;
-    }
-
     let html = '';
 
     // Botón Anterior
     html += `
         <button class="pagination-btn pagination-arrow ${currentPage === 1 ? 'disabled' : ''}" 
                 onclick="cambiarPagina(${currentPage - 1})">
-            <i class="fa-solid fa-chevron-left"></i> Anterior
+            <i class="fa-solid fa-chevron-left"></i> <span>Anterior</span>
         </button>
     `;
 
@@ -570,7 +572,7 @@ function renderPagination(totalResultados) {
         // Lógica para no mostrar demasiados números si hay muchas páginas
         if (totalPaginas > 5) {
             if (i > 1 && i < totalPaginas && Math.abs(i - currentPage) > 1) {
-                if (i === 2 || i === totalPaginas - 1) html += '<span style="color: #666">...</span>';
+                if (i === 2 || i === totalPaginas - 1) html += '<span class="pagination-dots">...</span>';
                 continue;
             }
         }
@@ -587,7 +589,7 @@ function renderPagination(totalResultados) {
     html += `
         <button class="pagination-btn pagination-arrow ${currentPage === totalPaginas ? 'disabled' : ''}" 
                 onclick="cambiarPagina(${currentPage + 1})">
-            Siguiente <i class="fa-solid fa-chevron-right"></i>
+            <span>Siguiente</span> <i class="fa-solid fa-chevron-right"></i>
         </button>
     `;
 
