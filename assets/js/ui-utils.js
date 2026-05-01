@@ -90,6 +90,9 @@ export function setupAuthObserver() {
             // Activar dropdown
             setupUserDropdown(authBtn, user, displayName);
 
+            // 4. Inicializar Campanita de Notificaciones (NUEVO)
+            setupNotifications(user.id);
+
             // Ocultar el botón "Iniciar sesión"
             const loginBtn = document.getElementById('nav-login-btn');
             if (loginBtn) loginBtn.style.display = 'none';
@@ -329,6 +332,18 @@ export function sanitize(str) {
  * @param {string} message - El mensaje a mostrar
  * @param {string} type - 'success', 'error', 'warning'
  */
+export function formatearFechaRelativa(fecha) {
+    const ahora = new Date();
+    const f = new Date(fecha);
+    const dif = (ahora - f) / 1000; // segundos
+
+    if (dif < 60) return 'Hace un momento';
+    if (dif < 3600) return `Hace ${Math.floor(dif / 60)} min`;
+    if (dif < 86400) return `Hace ${Math.floor(dif / 3600)} horas`;
+    if (dif < 604800) return `Hace ${Math.floor(dif / 86400)} días`;
+    return f.toLocaleDateString();
+}
+
 export function showToast(message, type = 'success') {
     let toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
@@ -389,3 +404,125 @@ export function showToast(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
+/**
+ * Sistema de Notificaciones Global
+ */
+async function setupNotifications(userId) {
+    const navMenu = document.getElementById('nav-menu-list');
+    if (!navMenu) return;
+
+    // 1. Crear o buscar la campanita
+    let bellContainer = document.getElementById('nav-notif-container');
+    if (!bellContainer) {
+        bellContainer = document.createElement('div');
+        bellContainer.id = 'nav-notif-container';
+        bellContainer.className = 'nav-notif-item';
+        bellContainer.innerHTML = `
+            <a href="#" class="nav-notif-btn" id="notif-bell-btn">
+                <i data-lucide="bell"></i>
+                <span class="notif-badge hidden" id="notif-count-badge">0</span>
+            </a>
+            <div class="notif-dropdown hidden" id="notif-dropdown">
+                <div class="notif-dropdown-header">
+                    <span>Notificaciones</span>
+                    <button id="notif-mark-all">Marcar todas</button>
+                </div>
+                <div class="notif-dropdown-body" id="notif-list-body">
+                    <p class="notif-empty">Cargando...</p>
+                </div>
+            </div>
+        `;
+        
+        // Insertar en nav-container antes del hamburger
+        const hamburger = document.querySelector('.hamburger-menu');
+        const navContainer = document.querySelector('.nav-container');
+        if (hamburger && navContainer) {
+            navContainer.insertBefore(bellContainer, hamburger);
+        } else if (navMenu) {
+            navMenu.appendChild(bellContainer);
+        }
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    const bellBtn = document.getElementById('notif-bell-btn');
+    const dropdown = document.getElementById('notif-dropdown');
+    const badge = document.getElementById('notif-count-badge');
+    const listBody = document.getElementById('notif-list-body');
+
+    // Toggle Dropdown
+    bellBtn.onclick = (e) => {
+        e.preventDefault();
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) {
+            renderNotificacionesList(userId, listBody);
+        }
+    };
+
+    // Cerrar al click afuera
+    document.addEventListener('click', (e) => {
+        if (!bellContainer.contains(e.target)) dropdown.classList.add('hidden');
+    });
+
+    // Actualizar badge inicial
+    const updateBadge = async () => {
+        const { count, error } = await supabase
+            .from('notificaciones_usuarios')
+            .select('*', { count: 'exact', head: true })
+            .eq('usuario_id', userId)
+            .eq('leido', false);
+        
+        if (!error && count > 0) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    };
+
+    updateBadge();
+    // Podríamos poner un intervalo o Realtime de Supabase aquí
+}
+
+async function renderNotificacionesList(userId, container) {
+    container.innerHTML = '<p class="notif-empty">Buscando mensajes...</p>';
+    
+    try {
+        const { data, error } = await supabase
+            .from('notificaciones_usuarios')
+            .select(`
+                id, leido, created_at,
+                notificaciones (titulo, mensaje)
+            `)
+            .eq('usuario_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p class="notif-empty">No tienes notificaciones.</p>';
+            return;
+        }
+
+        container.innerHTML = data.map(n => `
+            <div class="notif-item-mini ${n.leido ? 'leida' : 'nueva'}" onclick="marcarLeida('${n.id}', this)">
+                <div class="notif-dot"></div>
+                <div class="notif-content">
+                    <h5>${n.notificaciones.titulo}</h5>
+                    <p>${n.notificaciones.mensaje}</p>
+                    <span>${new Date(n.created_at).toLocaleDateString()}</span>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        container.innerHTML = '<p class="notif-empty">Error al cargar.</p>';
+    }
+}
+
+window.marcarLeida = async (id, el) => {
+    await supabase.from('notificaciones_usuarios').update({ leido: true, leido_at: new Date() }).eq('id', id);
+    el.classList.remove('nueva');
+    el.classList.add('leida');
+};
