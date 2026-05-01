@@ -8,6 +8,11 @@
     margin: 0 auto;
 }
 
+/* Forzar fondo transparente/oscuro en páginas interiores con dark-theme (ej. Perfil Agente) para sobreescribir el blanco global */
+body.dark-theme .content-section {
+    background: transparent !important;
+}
+
 .intro-text {
     text-align: center;
     max-width: 750px;

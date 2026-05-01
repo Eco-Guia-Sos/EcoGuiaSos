@@ -187,7 +187,10 @@ async function fetchRawSupabaseTable(table) {
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, { headers });
+    const res = await fetch(`${supabaseUrl}/rest/v1/${table}`, { 
+        headers,
+        cache: 'no-store' // Previene fuertemente que el navegador devuelva respuestas viejas tras actualizaciones
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     return await res.json();
 }
