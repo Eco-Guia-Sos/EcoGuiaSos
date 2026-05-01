@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="./assets/css/global.css">
     <link rel="stylesheet" href="./assets/css/style.css">
     <link rel="stylesheet" href="./assets/css/fab.css">
+    <link rel="stylesheet" href="./assets/css/calendar.css">
 
     <!-- Preconnect para acelerar conexiones externas -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -210,6 +211,9 @@
                 <button type="button" class="btn-pill-map" id="btn-toggle-mapa-home">
                     Ver mapa
                 </button>
+                <button type="button" class="btn-pill-map" id="btn-toggle-calendario-home">
+                    Ver calendario
+                </button>
             </div>
         </div>
 
@@ -302,15 +306,42 @@
 
         <div id="pagination-container" class="pagination-container"></div>
 
+        <!-- SECCIÓN CALENDARIO (Hidden by default) -->
+        <section id="calendar-section" class="calendar-section hidden fade-in">
+            <div class="calendar-header">
+                <h2 id="calendar-month-year">Mayo 2026</h2>
+                <div class="calendar-nav">
+                    <button class="calendar-nav-btn" id="calendar-prev-month"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="calendar-nav-btn" id="calendar-next-month"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="calendar-grid-header calendar-grid">
+                <div class="calendar-weekday">Dom</div>
+                <div class="calendar-weekday">Lun</div>
+                <div class="calendar-weekday">Mar</div>
+                <div class="calendar-weekday">Mié</div>
+                <div class="calendar-weekday">Jue</div>
+                <div class="calendar-weekday">Vie</div>
+                <div class="calendar-weekday">Sáb</div>
+            </div>
+            <div id="calendar-days-grid" class="calendar-grid">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </section>
+
         <!-- Mini-Map Section (Desplegable) -->
-        <section class="home-map-section fade-in hidden-map" id="mapa-home-wrapper">
-            <div class="map-header-actions" style="padding: 15px; display: flex; justify-content: center;">
-                <a href="mapa.html" class="btn btn-primary shimmer-extra" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center;">
+        <section class="home-map-section fade-in hidden-map" id="mapa-home-wrapper" style="background: rgba(2, 6, 23, 0.95); padding: 20px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); margin: 0 15px 30px; position: relative; overflow: hidden;">
+            
+            <!-- Brillo de fondo sutil -->
+            <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(114, 176, 77, 0.05) 0%, transparent 60%); pointer-events: none; z-index: 0;"></div>
+
+            <div class="map-header-actions" style="position: relative; z-index: 1; padding: 15px; display: flex; justify-content: center; margin-bottom: 10px;">
+                <a href="mapa.html" class="btn btn-primary shimmer-extra" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center; border-radius: 12px; box-shadow: 0 10px 20px rgba(114, 176, 77, 0.3); font-weight: 700; letter-spacing: 1px;">
                     <i class="fa-solid fa-expand"></i> VER ATLAS COMPLETO
                 </a>
             </div>
 
-            <div class="mini-map-container">
+            <div class="mini-map-container" style="position: relative; z-index: 1; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);">
                 <div id="mini-map"></div>
 
                 <!-- PANEL LATERAL DE DETALLES INTEGRADO -->
@@ -342,6 +373,19 @@
             </div>
         </section>
     </main>
+
+    <!-- EVENT SHEET (Bottom Sheet para detalles de eventos del día) -->
+    <div id="event-sheet-overlay" class="event-sheet-overlay"></div>
+    <div id="event-sheet" class="event-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3 id="sheet-date-title">Eventos del día</h3>
+            <p id="sheet-date-subtitle">Selecciona un evento para ver más información</p>
+        </div>
+        <div id="sheet-event-list" class="sheet-event-list">
+            <!-- Se llena dinámicamente -->
+        </div>
+    </div>
 
     <section id="seccion-colibri" class="nivel-section">
         <div class="section-divider"></div>

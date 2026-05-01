@@ -233,59 +233,94 @@
 
             <!-- VISTA: MI PERFIL -->
             <div id="perfil-view" class="profile-view-container fade-in hidden">
-                <div class="profile-card-large glass-effect">
+                <div class="profile-card-large glass-effect" style="margin: 0 auto;">
                     <div class="profile-header-edit">
-                        <div class="profile-avatar-large" id="edit-avatar-preview">U</div>
+                        <div class="profile-pic-upload" style="width: 100px; height: 100px;">
+                            <div id="edit-avatar-preview" class="avatar-preview" style="border-radius: 30px; font-size: 2.5rem; font-weight: 800; background: var(--gradient-eco);">
+                                U
+                            </div>
+                            <label for="p-avatar-input" class="upload-btn">
+                                <i class="fa-solid fa-camera"></i>
+                            </label>
+                            <input type="file" id="p-avatar-input" accept="image/*" style="display: none;">
+                        </div>
                         <div class="profile-header-info">
-                            <h2 id="edit-profile-title">Mi Perfil</h2>
-                            <p id="edit-profile-subtitle">Gestiona tu información pública y de contacto.</p>
+                            <h2 style="color: white; margin-bottom: 4px;" id="edit-profile-title">Mi Perfil</h2>
+                            <p style="color: var(--admin-text-muted); font-size: 0.9rem;" id="edit-profile-subtitle">Gestiona tu información pública y de contacto.</p>
                         </div>
                     </div>
                     
                     <form id="form-perfil-full" class="modern-form">
                         <div class="form-section">
-                            <h3>Información Básica</h3>
+                            <h3><i data-lucide="user" style="width: 18px;"></i> Información Básica</h3>
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Nombre Completo</label>
-                                    <input type="text" id="p-nombre" placeholder="Tu nombre" required>
+                                    <input type="text" id="p-nombre" placeholder="Tu nombre" required style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px; outline: none;">
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono</label>
-                                    <input type="tel" id="p-telefono" placeholder="Ej: +52 ...">
+                                    <input type="tel" id="p-telefono" placeholder="Ej: +52 ..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px; outline: none;">
                                 </div>
                                 <div class="form-group full-width">
                                     <label>Biografía Corta</label>
-                                    <textarea id="p-bio" rows="3" placeholder="Cuéntanos un poco sobre ti o tu organización..."></textarea>
+                                    <textarea id="p-bio" rows="3" placeholder="Cuéntanos un poco sobre ti..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px; outline: none;"></textarea>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-section">
-                            <h3>Redes Sociales</h3>
+                            <h3><i data-lucide="share-2" style="width: 18px;"></i> Redes Sociales</h3>
                             <div class="social-inputs-grid">
                                 <div class="input-with-icon">
                                     <i class="fa-brands fa-facebook"></i>
-                                    <input type="url" id="p-fb" placeholder="Link Facebook">
+                                    <input type="url" id="p-fb" placeholder="Link Facebook" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px 12px 12px 44px; outline: none;">
                                 </div>
                                 <div class="input-with-icon">
                                     <i class="fa-brands fa-instagram"></i>
-                                    <input type="url" id="p-ig" placeholder="Link Instagram">
+                                    <input type="url" id="p-ig" placeholder="Link Instagram" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px 12px 12px 44px; outline: none;">
                                 </div>
                                 <div class="input-with-icon">
                                     <i class="fa-brands fa-x-twitter"></i>
-                                    <input type="url" id="p-x" placeholder="Link X (Twitter)">
+                                    <input type="url" id="p-x" placeholder="Link X (Twitter)" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px 12px 12px 44px; outline: none;">
                                 </div>
                                 <div class="input-with-icon">
                                     <i class="fa-solid fa-globe"></i>
-                                    <input type="url" id="p-web" placeholder="Sitio Web">
+                                    <input type="url" id="p-web" placeholder="Sitio Web" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px 12px 12px 44px; outline: none;">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn-admin btn-primary-admin" id="btn-save-perfil">
-                                <i data-lucide="save"></i> Guardar Cambios
+                        <div class="form-section">
+                            <h3><i data-lucide="shield-check" style="width: 18px;"></i> Seguridad de la Cuenta</h3>
+                            <div class="security-split-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
+                                    <h4 style="color: white; margin-bottom: 15px; font-size: 0.95rem;">Correo Electrónico</h4>
+                                    <div class="form-group">
+                                        <label>Actual: <span id="p-email-display-text" style="color: var(--admin-accent); font-weight: normal;">...</span></label>
+                                        <input type="email" id="p-new-email" placeholder="Nuevo correo electrónico" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px; margin-top: 10px;">
+                                    </div>
+                                    <button type="button" id="btn-update-email" class="btn-admin" style="width: 100%; margin-top: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border);">
+                                        Actualizar Correo
+                                    </button>
+                                </div>
+
+                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
+                                    <h4 style="color: white; margin-bottom: 15px; font-size: 0.95rem;">Contraseña</h4>
+                                    <div class="form-group">
+                                        <label>Nueva Contraseña</label>
+                                        <input type="password" id="p-new-password" placeholder="Mínimo 6 caracteres" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px; margin-top: 10px;">
+                                    </div>
+                                    <button type="button" id="btn-update-pass" class="btn-admin" style="width: 100%; margin-top: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border);">
+                                        Cambiar Contraseña
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="border-top: 1px solid var(--admin-border); padding-top: 20px; display: flex; justify-content: flex-end;">
+                            <button type="submit" class="btn-create-new" id="btn-save-perfil" style="width: auto; background: var(--admin-accent); color: white; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="save"></i> Guardar Datos Públicos
                             </button>
                         </div>
                     </form>
@@ -808,88 +843,103 @@
     <div id="permissions-modal" class="modal-overlay hidden">
         <div class="modal-content glass-effect permissions-modal-v2">
             <div class="modal-header">
-                <div class="header-icon-box">
-                    <i data-lucide="shield-check"></i>
-                </div>
+                <div class="header-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
                 <div>
                     <h2>Permisos Administrativos</h2>
-                    <p>Gestiona el acceso del actor a los diferentes Hubs y Secciones.</p>
+                    <p>Gestiona el acceso del actor.</p>
                 </div>
-                <button class="btn-close-modal" id="btn-close-perms"><i data-lucide="x"></i></button>
+                <button class="btn-close-modal" id="btn-close-perms"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
             <div class="modal-body" style="padding: 24px;">
-                <!-- SECCIÓN: PERMISOS DE FUNCIÓN (NUEVO) -->
-                <div class="functions-perms-v2" style="margin-bottom: 30px; padding: 15px; background: rgba(114, 176, 77, 0.05); border: 1px solid rgba(114, 176, 77, 0.1); border-radius: 12px;">
-                    <h3 style="font-size: 0.95rem; margin-bottom: 15px; color: var(--color-eco); display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="zap"></i> Funciones Especiales
-                    </h3>
-                    <div class="functions-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                        <label class="perm-item">
-                            <input type="checkbox" id="fn-eventos"> <span>Crear Eventos</span>
-                        </label>
-                        <label class="perm-item">
-                            <input type="checkbox" id="fn-lugares"> <span>Crear Lugares</span>
-                        </label>
-                        <label class="perm-item">
-                            <input type="checkbox" id="fn-notifs"> <span>Enviar Notificaciones</span>
-                        </label>
-                        <label class="perm-item">
-                            <input type="checkbox" id="fn-directorio"> <span>Visible en Directorio</span>
-                        </label>
-                        <label class="perm-item" style="grid-column: span 2; margin-top: 5px; color: #ff6b6b;">
-                            <input type="checkbox" id="fn-readonly"> <span>Modo Solo Lectura (Bloquea edición)</span>
-                        </label>
+                <div class="functions-perms-v2" style="margin-bottom: 20px; padding: 15px; background: rgba(114, 176, 77, 0.05); border-radius: 12px;">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--color-eco);">Funciones Especiales</h3>
+                    <div class="functions-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <label class="perm-item"><input type="checkbox" id="fn-eventos"> <span>Eventos</span></label>
+                        <label class="perm-item"><input type="checkbox" id="fn-lugares"> <span>Lugares</span></label>
+                        <label class="perm-item"><input type="checkbox" id="fn-notifs"> <span>Notificaciones</span></label>
+                        <label class="perm-item"><input type="checkbox" id="fn-directorio"> <span>Directorio</span></label>
+                        <label class="perm-item" style="grid-column: span 2; color: #ff6b6b;"><input type="checkbox" id="fn-readonly"> <span>Solo Lectura</span></label>
                     </div>
                 </div>
-
-                <h3 style="font-size: 0.95rem; margin-bottom: 15px; color: #888; display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="layout-grid"></i> Acceso a Hubs y Secciones
-                </h3>
-                <div id="permissions-list" class="permissions-grid-v2">
-                    <!-- Se poblará dinámicamente -->
-                </div>
+                <div id="permissions-list" class="permissions-grid-v2"></div>
             </div>
-
-            <div class="modal-footer" style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end; gap: 10px;">
+            <div class="modal-footer" style="padding: 20px; display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn btn-secondary" id="btn-cancel-perms">Cancelar</button>
-                <button class="btn btn-primary" id="btn-save-perms">Guardar Cambios</button>
+                <button class="btn btn-primary" id="btn-save-perms">Guardar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE PERFIL / INFO -->
     <div id="profile-modal" class="modal-overlay hidden">
-        <div class="modal-content glass-effect" style="max-width: 500px;">
+        <div class="modal-content glass-effect" style="max-width: 650px;">
             <div class="modal-header">
-                <h2>Información del Agente</h2>
-                <button class="btn-close-modal" id="btn-close-profile"><i data-lucide="x"></i></button>
+                <div class="header-icon-box"><i class="fa-solid fa-user-gear"></i></div>
+                <div>
+                    <h2>Gestión de Agente</h2>
+                    <p>Edita el perfil completo del usuario.</p>
+                </div>
+                <button class="btn-close-modal" id="btn-close-profile"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" style="padding: 25px;">
                 <form id="form-profile-edit">
-                    <div style="margin-bottom: 15px;">
-                        <label>Nombre Completo</label>
-                        <input type="text" id="prof-nombre" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                    <!-- Avatar Upload Section -->
+                    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                        <div class="profile-pic-upload" style="width: 120px; height: 120px;">
+                            <div id="prof-avatar-preview" class="avatar-preview" style="border-radius: 40px; font-size: 3rem; background: var(--gradient-eco);">
+                                U
+                            </div>
+                            <label for="prof-avatar-input" class="upload-btn">
+                                <i class="fa-solid fa-camera"></i>
+                            </label>
+                            <input type="file" id="prof-avatar-input" accept="image/*" style="display: none;">
+                        </div>
                     </div>
-                    <div style="margin-bottom: 15px;">
-                        <label>Rol</label>
-                        <select id="prof-rol" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
-                            <option value="admin">Administrador</option>
-                            <option value="actor">Actor / Agente</option>
-                            <option value="user">Usuario</option>
-                        </select>
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="prof-nombre" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="prof-telefono" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="form-group">
+                            <label>Rol en la Plataforma</label>
+                            <select id="prof-rol" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                                <option value="admin">Administrador</option>
+                                <option value="actor">Actor / Agente</option>
+                                <option value="user">Usuario</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sitio Web</label>
+                            <input type="url" id="prof-web" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="form-group full-width" style="grid-column: span 2;">
+                            <label>Biografía</label>
+                            <textarea id="prof-bio" rows="3" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;"></textarea>
+                        </div>
                     </div>
-                    <div style="margin-bottom: 15px;">
-                        <label>Teléfono</label>
-                        <input type="text" id="prof-telefono" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+
+                    <div class="social-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;">
+                        <div class="input-with-icon">
+                            <i class="fa-brands fa-facebook"></i>
+                            <input type="url" id="prof-fb" placeholder="Facebook" style="width:100%; padding:10px 10px 10px 40px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="input-with-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                            <input type="url" id="prof-ig" placeholder="Instagram" style="width:100%; padding:10px 10px 10px 40px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="input-with-icon">
+                            <i class="fa-brands fa-x-twitter"></i>
+                            <input type="url" id="prof-x" placeholder="X / Twitter" style="width:100%; padding:10px 10px 10px 40px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
                     </div>
-                    <div style="margin-bottom: 25px;">
-                        <label>Redes Sociales</label>
-                        <textarea id="prof-links" rows="3" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;"></textarea>
-                    </div>
-                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px; border-top: 1px solid var(--admin-border); padding-top: 20px;">
                         <button type="button" class="btn btn-secondary" id="btn-cancel-profile">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-user-profile">Actualizar Perfil</button>
                     </div>
                 </form>
             </div>

@@ -1,30 +1,42 @@
 <!DOCTYPE html>
-<html lang="es" class="theme-ajolote">
+<html lang="es" class="theme-ajolote dark-theme">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Convocatoria | EcoGuía SOS</title>
+    <meta name="description" content="Encuentra las convocatorias vigentes para proyectos, concursos y programas de apoyo ambiental.">
+
+    <!-- PWA -->
+    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#72B04D">
+
+    <!-- CSS Modules -->
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="../assets/css/interior-pages.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="interior-page">
-    <!-- NAVBAR (Estándar) -->
-    <nav class="navbar">
+
+<body class="dark-theme">
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
+    <nav class="main-nav">
         <div class="nav-container">
-            <a href="../index.html" class="logo-container">
-                <img src="../assets/gif/EGSlg.webp" alt="EcoGuía SOS Logo" class="nav-logo">
-                <span class="nav-title">EcoGuía SOS</span>
+            <a href="../index.html" class="nav-brand">
+                <img src="../assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
             </a>
-            
-            <button class="mobile-menu-toggle" id="menu-toggle" aria-label="Abrir menú">
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
                 <i class="fa-solid fa-bars"></i>
             </button>
 
-            <ul class="nav-menu" id="nav-menu">
+            <ul class="nav-menu" id="nav-menu-list">
                 <li><a href="../index.html" class="nav-blue-btn">Inicio</a></li>
                 <li><a href="nosotros.html" class="nav-purple-btn">Nosotros</a></li>
                 <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
@@ -56,35 +68,11 @@
         <p class="intro-text">Encuentra las convocatorias vigentes para proyectos, concursos y programas de apoyo ambiental.</p>
         
         <div class="card-grid-container" id="convocatoria-container">
-            <!-- Tarjeta de Convocatoria estilo Agente -->
-            <article class="agente-card generic-card fade-in hover-glow">
-                <img src="../assets/img/ajolote.webp" alt="Convocatoria Proyectos" class="agente-img">
-                <h3>Proyectos Locales 2025</h3>
-                <div class="agente-especialidad">Financiamiento Directo</div>
-                <div class="agente-org"><i class="fa-solid fa-bullhorn"></i> EcoGuía SOS</div>
-                <div class="agente-org"><i class="fa-solid fa-calendar"></i> Junio 2025</div>
-                <p class="agente-mini-desc">Buscamos proyectos de reforestación y gestión de agua en comunidades vulnerables.</p>
-                <div class="agente-actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
-                    <a href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">Ver Bases</a>
-                </div>
-            </article>
-
-            <!-- Tarjeta 2 -->
-            <article class="agente-card generic-card fade-in hover-glow">
-                <img src="../assets/img/kpop.webp" alt="Voluntariado" class="agente-img">
-                <h3>Guardianes del Ajolote</h3>
-                <div class="agente-especialidad">Convocatoria de Campo</div>
-                <div class="agente-org"><i class="fa-solid fa-users"></i> Xochimilco Vivo</div>
-                <div class="agente-org"><i class="fa-solid fa-calendar"></i> Mayo 2025</div>
-                <p class="agente-mini-desc">Únete a las brigadas de limpieza y monitoreo de canales en la zona chinampera.</p>
-                <div class="agente-actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
-                    <a href="#" class="btn btn-primary" style="width: 100%; display: block; text-align: center;">Postularse</a>
-                </div>
-            </article>
+            <!-- Interactivity handled by convocatoria.js -->
         </div>
     </main>
 
-    <!-- FOOTER INTERIOR -->
+    <!-- FOOTER INTERIOR (ÍNDICE VERDE) -->
     <footer class="footer-interior">
         <div class="footer-interior-content">
             <div class="footer-brand">
@@ -107,7 +95,18 @@
         </div>
     </footer>
 
-    <!-- Scripts -->
+    <!-- JS Module -->
     <script type="module" src="../assets/js/pages/convocatoria.js"></script>
+
+    <!-- Inicializar Lucide -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
+
 </html>
+

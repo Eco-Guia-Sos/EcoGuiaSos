@@ -1,6 +1,7 @@
 import { setupNavbar, setupAuthObserver, sanitize } from '../ui-utils.js';
 import { supabase, supabaseUrl, supabaseKey } from '../supabase.js';
 import { setupFAB } from '../components/fab-menu.js';
+import { setupCalendar } from '../calendar-logic.js';
 
 let todosLosProyectos = [];
 let filtroActual = 'evento';
@@ -68,23 +69,12 @@ function initIndex() {
         cargarDatosDeSupabase();
         getCachedProfile().then(p => console.log('[Inicio] 👤 Perfil para mapa listo:', p?.rol || 'visitante')); 
 
-        // Escuchar cambios de Auth solo para actualizar la UI (permisos en cards)
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                _cachedSession = session;
-                _cachedProfile = null; // Limpiar cache al cambiar de sesión
-                
-                if (session) {
-                    console.log('[Auth] Sesión detectada en index.js, obteniendo ubicación silenciosa en 1.5s...');
-                    setTimeout(() => obtenerUbicacionSilenciosa(), 1500);
-                }
-                
-                try {
-                    await getCachedProfile(); // Forzar carga de nuevo perfil
-                    console.log('[Auth] Perfil recargado exitosamente tras inicio de sesión.');
-                } catch(e) {
-                    console.warn('[Auth] Error recargando perfil:', e);
-                }
+        // setupAuthObserver en ui-utils.js ya maneja la sesión y la campanita.
+        // Solo necesitamos obtener la ubicación inicial si hay sesión.
+        supabase.auth.getSession().then(({data: {session}}) => {
+            if (session) {
+                console.log('[Auth] Sesión detectada en index.js, obteniendo ubicación silenciosa...');
+                setTimeout(() => obtenerUbicacionSilenciosa(), 1500);
             }
         });
 
@@ -96,6 +86,7 @@ function initIndex() {
     try {
         setupFAB();
         setupHomeMapaToggle();
+        setupHomeCalendarioToggle();
         setupAdvancedSearch();
     } catch (e) {
         console.error("EcoGuía: Error inicializando componentes secundarios:", e);
@@ -238,6 +229,7 @@ async function cargarDatosDeSupabase() {
         console.log('[Datos] ✅ Parseados — Eventos:', eventos.length, '| Lugares:', lugares.length);
 
         todosLosProyectos = [...eventos, ...lugares];
+        setupCalendar(todosLosProyectos); // Inicializar calendario con los datos
         filtrarYRenderizar();
     } catch (error) {
         console.error("[Datos] ❌ Error cargando datos desde Supabase (Fetch directo):", error);
@@ -910,6 +902,42 @@ function setupHomeMapaToggle() {
             document.getElementById('home-event-detail-panel')?.classList.add('hidden');
         });
     }
+}
+
+function setupHomeCalendarioToggle() {
+    const btn = document.getElementById('btn-toggle-calendario-home');
+    const calendarSection = document.getElementById('calendar-section');
+    const gridContainer = document.getElementById('contenedor-tarjetas');
+    const pagination = document.getElementById('pagination-container');
+    const mapWrapper = document.getElementById('mapa-home-wrapper');
+    const btnMap = document.getElementById('btn-toggle-mapa-home');
+
+    if (!btn || !calendarSection) return;
+
+    btn.addEventListener('click', () => {
+        const isHidden = calendarSection.classList.contains('hidden');
+        
+        if (isHidden) {
+            // Mostrar Calendario, ocultar Grid y Mapa
+            calendarSection.classList.remove('hidden');
+            if (gridContainer) gridContainer.classList.add('hidden');
+            if (pagination) pagination.classList.add('hidden');
+            if (mapWrapper) mapWrapper.classList.add('hidden-map');
+            
+            btn.innerText = 'Ver cuadrícula';
+            if (btnMap) btnMap.innerText = 'Ver mapa';
+            
+            // Scroll al calendario
+            calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            // Ocultar Calendario, volver a Grid
+            calendarSection.classList.add('hidden');
+            if (gridContainer) gridContainer.classList.remove('hidden');
+            if (pagination) pagination.classList.remove('hidden');
+            
+            btn.innerText = 'Ver calendario';
+        }
+    });
 }
 
 function setupMobileTooltips() {

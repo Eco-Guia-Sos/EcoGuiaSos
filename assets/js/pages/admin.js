@@ -80,8 +80,10 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 showHistoryView();
             } else if (view === 'perfil') {
                 showPerfilView();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             } else if (view === 'notificaciones') {
                 showNotificationsView();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             } else if (view === 'config') {
                 showConfigView();
             } else if (['colibri', 'ajolote', 'lobo'].includes(view)) {
@@ -100,6 +102,8 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     let currentAdminFilter = 'all';
     let currentHub = null;
     let currentSection = null;
+    let actorPerms = []; // Guardará { seccion_id, parent_hub }
+
 
     try {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -196,13 +200,14 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     async function updateHubsVisibility() {
         if (esAdmin) return; // Admin ve todo
 
-        // Obtener permisos del actor
+        // 1. Obtener permisos de Hubs/Secciones
         const { data: perms } = await supabase
             .from('permisos_actores')
-            .select('parent_hub')
+            .select('parent_hub, seccion_id')
             .eq('user_id', session.user.id);
         
-        const permittedHubs = perms ? perms.map(p => p.parent_hub) : [];
+        actorPerms = perms || [];
+        const permittedHubs = [...new Set(actorPerms.map(p => p.parent_hub))];
         
         ['colibri', 'ajolote', 'lobo'].forEach(hub => {
             const link = document.querySelector(`.admin-menu a[data-view="${hub}"]`);
@@ -216,12 +221,33 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             }
         });
 
-        // Ocultar la categoría completa si no hay hubs permitidos
+        // Ocultar la categoría Hubs si no hay acceso
         const hubCategory = document.getElementById('menu-category-hubs');
-        if (hubCategory) {
-            hubCategory.style.display = permittedHubs.length > 0 ? 'block' : 'none';
-        }
+        if (hubCategory) hubCategory.style.display = permittedHubs.length > 0 ? 'block' : 'none';
+
+        // 2. Obtener permisos de Funciones Especiales
+        const { data: fnPerms } = await supabase
+            .from('permisos_funciones')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+        const toggleLink = (view, condition) => {
+            const link = document.querySelector(`.admin-menu a[data-view="${view}"]`);
+            if (link) {
+                const li = link.closest('li');
+                if (li) li.style.display = condition ? 'block' : 'none';
+            }
+        };
+
+        // Si no hay registro de funciones, por defecto eventos/lugares/directorio suelen ser true para staff 
+        // pero aquí seremos estrictos si el admin ya configuró algo
+        toggleLink('eventos', fnPerms ? fnPerms.puede_crear_eventos : true);
+        toggleLink('lugares', fnPerms ? fnPerms.puede_crear_lugares : true);
+        toggleLink('notificaciones', fnPerms ? fnPerms.puede_enviar_notificaciones : false);
+        toggleLink('directorio', fnPerms ? fnPerms.visible_en_directorio : true);
     }
+
 
     function updateHeaderInfo(profile) {
         const sidebarName = document.getElementById('sidebar-user-name');
@@ -322,7 +348,11 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         h1Header.textContent = 'Configuraciones';
         pHeader.textContent = 'Gestiona tu perfil y preferencias de la plataforma.';
         const perfilView = document.getElementById('perfil-view');
-        if (perfilView) perfilView.classList.remove('hidden');
+        if (perfilView) {
+            perfilView.classList.remove('hidden');
+            cargarDatosPerfil(perfil);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
     }
 
     function showNotificationsView() {
@@ -332,8 +362,30 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         const view = document.getElementById('notificaciones-view');
         if (view) {
             view.classList.remove('hidden');
+            setupNotifCheckboxes();
             cargarHistorialNotificaciones();
         }
+    }
+
+    function setupNotifCheckboxes() {
+        const chkTodos = document.getElementById('n-dest-todos');
+        const chkActores = document.getElementById('n-dest-actores');
+        const chkVol = document.getElementById('n-dest-voluntariados');
+
+        if (!chkTodos) return;
+
+        chkTodos.addEventListener('change', () => {
+            const isChecked = chkTodos.checked;
+            chkActores.checked = isChecked;
+            chkVol.checked = isChecked;
+        });
+
+        [chkActores, chkVol].forEach(chk => {
+            chk.addEventListener('change', () => {
+                if (!chk.checked) chkTodos.checked = false;
+                if (chkActores.checked && chkVol.checked) chkTodos.checked = true;
+            });
+        });
     }
 
     async function cargarHistorialNotificaciones() {
@@ -359,23 +411,30 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 return;
             }
 
-            container.innerHTML = notifs.map(n => `
-                <div class="notif-item fade-in">
-                    <div class="notif-item-info">
-                        <h4>${sanitize(n.titulo)}</h4>
-                        <p>${sanitize(n.mensaje.substring(0, 60))}${n.mensaje.length > 60 ? '...' : ''}</p>
-                        <div style="display: flex; gap: 10px; margin-top: 6px; font-size: 0.7rem; color: var(--admin-text-muted);">
-                            <span><i class="fa-solid fa-users" style="font-size: 0.65rem;"></i> ${n.destinatarios.toUpperCase()}</span>
-                            <span><i class="fa-regular fa-clock" style="font-size: 0.65rem;"></i> ${formatearFechaRelativa(n.created_at)}</span>
-                            ${n.enlace_url ? `<a href="${n.enlace_url}" target="_blank" style="color:var(--admin-accent);"><i class="fa-solid fa-link" style="font-size: 0.65rem;"></i> Link</a>` : ''}
-                            ${n.archivo_url ? `<a href="${n.archivo_url}" target="_blank" style="color:#22c55e;"><i class="fa-solid fa-file-pdf" style="font-size: 0.65rem;"></i> Doc</a>` : ''}
-                        </div>
-                    </div>
-                    <div class="notif-status">
-                        <span style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 600;">ENVIADO</span>
+            container.innerHTML = notifs.map(n => {
+            const dests = n.destinatarios ? n.destinatarios.split(',') : ['todos'];
+            const isTodos = dests.includes('todos');
+            const isActores = dests.includes('actores') || isTodos;
+            const isVol = dests.includes('voluntariados') || isTodos;
+
+            return `
+            <div class="notif-item compact fade-in" style="cursor: pointer;" onclick="window.revisarNotificacion(${JSON.stringify(n).replace(/"/g, '&quot;')})">
+                <div class="notif-header-main" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.01);">
+                    <h4 style="font-size: 0.95rem; font-weight: 600; color: white; margin: 0; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-envelope-circle-check" style="color: var(--admin-accent); font-size: 0.8rem; opacity: 0.7;"></i>
+                        ${sanitize(n.titulo)}
+                    </h4>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: rgba(114, 176, 77, 0.15); color: var(--admin-accent); padding: 4px 10px; border-radius: 20px; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; border: 1px solid rgba(114, 176, 77, 0.2); text-transform: uppercase;">Enviado</span>
+                        <i class="fa-solid fa-up-right-from-square" style="font-size: 0.7rem; color: #64748b; opacity: 0.5;"></i>
                     </div>
                 </div>
-            `).join('');
+            </div>
+
+            `;
+        }).join('');
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
         } catch (err) {
             console.error('Error al cargar historial:', err);
@@ -383,7 +442,46 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         }
     }
 
+    window.eliminarNotificacion = async (id) => {
+        if (!confirm('¿Estás seguro de eliminar esta notificación? Se borrará para todos los destinatarios.')) return;
+
+        try {
+            // Primero eliminamos los registros de entrega (aunque Cascade debería encargarse, lo hacemos manual por seguridad)
+            await supabase.from('notificaciones_usuarios').delete().eq('notificacion_id', id);
+            
+            // Luego la notificación principal
+            const { error } = await supabase.from('notificaciones').delete().eq('id', id);
+            
+            if (error) throw error;
+
+            showToast('✅ Notificación eliminada correctamente');
+            cargarHistorialNotificaciones();
+        } catch (err) {
+            console.error('Error al eliminar:', err);
+            showToast('❌ Error al eliminar la notificación', 'error');
+        }
+    }
+
+    const btnCancelNotif = document.getElementById('btn-cancel-notif');
+
+    function limpiarFormNotif() {
+        document.getElementById('form-notif-send').reset();
+        document.getElementById('n-archivo-url').value = '';
+        document.getElementById('txt-file-name').textContent = 'Seleccionar archivo...';
+        document.getElementById('btn-clear-notif-file').classList.add('hidden');
+        if (typeof updateNotifFilePreview === 'function') updateNotifFilePreview(null);
+        if (btnCancelNotif) btnCancelNotif.classList.add('hidden');
+    }
+
+    if (btnCancelNotif) {
+        btnCancelNotif.onclick = () => {
+            limpiarFormNotif();
+            showToast('✅ Formulario limpiado', 'info');
+        };
+    }
+
     document.getElementById('form-notif-send').onsubmit = async (e) => {
+
         e.preventDefault();
         const btn = document.getElementById('btn-send-notif');
         const originalHtml = btn.innerHTML;
@@ -392,9 +490,15 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            const destSeleccionados = [];
+            if (document.getElementById('n-dest-todos').checked) destSeleccionados.push('todos');
+            if (document.getElementById('n-dest-actores').checked) destSeleccionados.push('actores');
+            if (document.getElementById('n-dest-voluntariados').checked) destSeleccionados.push('voluntariados');
+
+            const destinatariosStr = destSeleccionados.length > 0 ? destSeleccionados.join(',') : 'todos';
+
             const titulo = document.getElementById('n-titulo').value;
             const mensaje = document.getElementById('n-mensaje').value;
-            const destinatarios = document.getElementById('n-destinatarios').value;
             const enlace = document.getElementById('n-link').value;
             const archivo = document.getElementById('n-archivo-url').value;
 
@@ -402,7 +506,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 remitente_id: user.id,
                 titulo,
                 mensaje,
-                destinatarios: destinatarios,
+                destinatarios: destinatariosStr,
                 enlace_url: enlace || null,
                 archivo_url: archivo || null
             }).select().single();
@@ -410,34 +514,44 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             if (nError) throw nError;
 
             let userIds = [];
-            if (destinatarios === 'todos') {
+            const seleccionados = destinatariosStr.split(',');
+
+            if (seleccionados.includes('todos')) {
                 const { data } = await supabase.from('perfiles').select('id');
                 userIds = data.map(u => u.id);
-            } else if (destinatarios === 'actores') {
-                const { data } = await supabase.from('perfiles').select('id').eq('rol', 'actor');
-                userIds = data.map(u => u.id);
-            } else if (destinatarios === 'seguidores') {
-                const { data } = await supabase.from('seguimientos_actores').select('user_id').eq('actor_id', user.id);
-                userIds = data.map(u => u.user_id);
+            } else {
+                if (seleccionados.includes('actores')) {
+                    const { data } = await supabase.from('perfiles').select('id').eq('rol', 'actor');
+                    userIds = [...userIds, ...data.map(u => u.id)];
+                }
+                if (seleccionados.includes('voluntariados')) {
+                    const { data } = await supabase.from('perfiles').select('id').eq('rol', 'user');
+                    userIds = [...userIds, ...data.map(u => u.id)];
+                }
+                // Evitar duplicados si un usuario tiene varios roles (poco común pero posible)
+                userIds = [...new Set(userIds)];
             }
+
+            // --- NUEVO: Asegurar que los admins siempre reciban la notificación en su campana ---
+            const { data: admins } = await supabase.from('perfiles').select('id').eq('rol', 'admin');
+            if (admins && admins.length > 0) {
+                userIds = [...userIds, ...admins.map(a => a.id)];
+                userIds = [...new Set(userIds)]; // Limpiar duplicados de nuevo
+            }
+            // ----------------------------------------------------------------------------------
 
             if (userIds.length > 0) {
                 const delivery = userIds.map(uid => ({
                     notificacion_id: notif.id,
-                    usuario_id: uid
+                    usuario_id: uid,
+                    leido: false
                 }));
                 const { error: dError } = await supabase.from('notificaciones_usuarios').insert(delivery);
                 if (dError) throw dError;
             }
 
             showToast(`✅ Notificación enviada a ${userIds.length} usuarios`);
-            e.target.reset();
-            
-            // Reset visual del adjunto
-            document.getElementById('txt-file-name').textContent = 'Seleccionar archivo...';
-            document.getElementById('n-archivo-url').value = '';
-            const btnClear = document.getElementById('btn-clear-notif-file');
-            if (btnClear) btnClear.classList.add('hidden');
+            limpiarFormNotif();
 
             cargarHistorialNotificaciones();
 
@@ -449,6 +563,111 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             btn.innerHTML = originalHtml;
         }
     };
+
+    window.cargarNotifEnFormulario = (n) => {
+        document.getElementById('n-titulo').value = n.titulo;
+        document.getElementById('n-mensaje').value = n.mensaje;
+        document.getElementById('n-link').value = n.enlace_url || '';
+        document.getElementById('n-archivo-url').value = n.archivo_url || '';
+        
+        if (n.archivo_url) {
+            document.getElementById('txt-file-name').textContent = 'Archivo cargado';
+            document.getElementById('btn-clear-notif-file').classList.remove('hidden');
+            updateNotifFilePreview(n.archivo_url);
+        } else {
+            updateNotifFilePreview(null);
+        }
+
+        const dests = n.destinatarios ? n.destinatarios.split(',') : ['todos'];
+        const isTodos = dests.includes('todos');
+        
+        document.getElementById('n-dest-todos').checked = isTodos;
+        document.getElementById('n-dest-actores').checked = isTodos || dests.includes('actores');
+        document.getElementById('n-dest-voluntariados').checked = isTodos || dests.includes('voluntariados');
+        
+        // Efecto visual y scroll
+        const composer = document.querySelector('.notif-composer');
+        composer.style.boxShadow = '0 0 30px rgba(77, 150, 255, 0.3)';
+        setTimeout(() => composer.style.boxShadow = '', 2000);
+        
+        
+        composer.scrollIntoView({ behavior: 'smooth' });
+
+        // Mostrar botón de cancelar
+        if (document.getElementById('btn-cancel-notif')) {
+            document.getElementById('btn-cancel-notif').classList.remove('hidden');
+        }
+    };
+
+
+    window.revisarNotificacion = (n) => {
+        const body = document.getElementById('notif-review-body');
+        const modal = document.getElementById('notif-review-modal');
+        
+        const dests = n.destinatarios ? n.destinatarios.split(',') : ['todos'];
+        const isTodos = dests.includes('todos');
+        const isActores = dests.includes('actores') || isTodos;
+        const isVol = dests.includes('voluntariados') || isTodos;
+
+        body.innerHTML = `
+            <div style="margin-bottom: 25px;">
+                <h3 style="color: white; margin: 0 0 8px 0; font-size: 1.3rem;">${sanitize(n.titulo)}</h3>
+                <span style="font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-regular fa-calendar"></i> Enviado el ${new Date(n.created_at).toLocaleString('es-ES')}
+                </span>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 25px;">
+                <p style="color: #cbd5e1; font-size: 1rem; line-height: 1.7; white-space: pre-wrap; margin: 0;">${sanitize(n.mensaje)}</p>
+            </div>
+
+            ${n.archivo_url ? `
+                <div style="margin-bottom: 25px;">
+                    <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Archivo Adjunto</p>
+                    <div style="border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        ${n.archivo_url.match(/\.(jpeg|jpg|gif|png|webp|jfif|avif)($|\?)/i) ? 
+                            `<img src="${n.archivo_url}" style="width:100%; display:block; max-height: 400px; object-fit: contain;">` :
+                            `<div style="padding: 30px; text-align: center;"><i class="fa-solid fa-file-pdf" style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"></i><p style="color:white; margin:0;">Documento PDF</p></div>`
+                        }
+                    </div>
+                </div>
+            ` : ''}
+
+            <div style="margin-bottom: 25px;">
+                <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Audiencia Alcanzada</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div style="padding: 8px 14px; border-radius: 10px; background: ${isTodos ? 'rgba(114, 176, 77, 0.15)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${isTodos ? 'rgba(114, 176, 77, 0.3)' : 'rgba(255,255,255,0.05)'}; color: ${isTodos ? 'var(--admin-accent)' : '#64748b'}; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                        <i class="fa-solid ${isTodos ? 'fa-check-circle' : 'fa-circle'}"></i> Todos
+                    </div>
+                    <div style="padding: 8px 14px; border-radius: 10px; background: ${isActores ? 'rgba(114, 176, 77, 0.15)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${isActores ? 'rgba(114, 176, 77, 0.3)' : 'rgba(255,255,255,0.05)'}; color: ${isActores ? 'var(--admin-accent)' : '#64748b'}; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                        <i class="fa-solid ${isActores ? 'fa-check-circle' : 'fa-circle'}"></i> Actores
+                    </div>
+                    <div style="padding: 8px 14px; border-radius: 10px; background: ${isVol ? 'rgba(114, 176, 77, 0.15)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${isVol ? 'rgba(114, 176, 77, 0.3)' : 'rgba(255,255,255,0.05)'}; color: ${isVol ? 'var(--admin-accent)' : '#64748b'}; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                        <i class="fa-solid ${isVol ? 'fa-check-circle' : 'fa-circle'}"></i> Voluntarios
+                    </div>
+                </div>
+            </div>
+
+            ${n.enlace_url ? `
+                <div style="margin-top: 10px;">
+                    <a href="${n.enlace_url}" target="_blank" style="display: flex; align-items: center; gap: 10px; color: var(--admin-accent); text-decoration: none; font-weight: 600; background: rgba(114, 176, 77, 0.05); padding: 12px 18px; border-radius: 12px; border: 1px dashed rgba(114, 176, 77, 0.3); word-break: break-all;">
+                        <i class="fa-solid fa-link" style="flex-shrink: 0;"></i> 
+                        <span style="flex: 1;">Enlace de Acción: ${n.enlace_url}</span>
+                        <i class="fa-solid fa-external-link-alt" style="flex-shrink: 0; font-size: 0.8rem;"></i>
+                    </a>
+                </div>
+            ` : ''}
+
+        `;
+
+        document.getElementById('btn-notif-review-reuse').onclick = () => {
+            window.cargarNotifEnFormulario(n);
+            modal.classList.add('hidden');
+        };
+
+        modal.classList.remove('hidden');
+    };
+
 
     async function showConfigView() {
         resetViews();
@@ -616,7 +835,14 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         };
 
         (sections[hub] || []).forEach(sec => {
+            // Si es actor, filtrar por permisos específicos
+            if (esActor) {
+                const hasPerm = actorPerms.some(p => p.parent_hub === hub && p.seccion_id === sec.id);
+                if (!hasPerm) return;
+            }
+
             const card = document.createElement('div');
+
             card.className = 'hub-card';
             card.innerHTML = `<i data-lucide="${sec.icon}"></i><h4>${sec.label}</h4>`;
             card.onclick = () => {
@@ -814,8 +1040,47 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             document.getElementById('prof-nombre').value = data.nombre_completo || '';
             document.getElementById('prof-rol').value = data.rol || '';
             document.getElementById('prof-telefono').value = data.telefono || '';
+            document.getElementById('prof-bio').value = data.bio || '';
+            document.getElementById('prof-web').value = data.sitio_web || '';
+            
+            // Redes Sociales
+            const links = data.links_sociales || {};
+            document.getElementById('prof-fb').value = links.facebook || '';
+            document.getElementById('prof-ig').value = links.instagram || '';
+            document.getElementById('prof-x').value = links.twitter || '';
+
+            // Preview Avatar
+            const preview = document.getElementById('prof-avatar-preview');
+            if (data.avatar_url) {
+                preview.innerHTML = `<img src="${data.avatar_url}" style="width:100%; height:100%; object-fit:cover; border-radius:40px;">`;
+            } else {
+                preview.innerHTML = (data.nombre_completo || 'U').charAt(0).toUpperCase();
+            }
+
+            // Mostrar/Ocultar sección de seguridad según sea el usuario actual
+            const secSelf = document.getElementById('security-controls-self');
+            const secOther = document.getElementById('security-controls-other');
+            const secNote = document.getElementById('security-note-admin');
+
+            if (secSelf && secOther) {
+                if (id === session.user.id) {
+                    secSelf.style.display = 'block';
+                    secOther.style.display = 'none';
+                    document.getElementById('prof-email').value = session.user.email;
+                    if (secNote) secNote.innerText = "Nota: Solo puedes modificar tus propias credenciales.";
+                } else {
+                    secSelf.style.display = 'none';
+                    secOther.style.display = 'block';
+                    // Intentar obtener email del registro si existe
+                    form.dataset.targetEmail = data.email || '';
+                    if (secNote) secNote.innerText = "Nota: Por seguridad, como administrador solo puedes enviar un enlace de recuperación.";
+                }
+            }
 
             document.getElementById('profile-modal').classList.remove('hidden');
+
+
+
         } else {
             showToast('Edición en construcción para esta sección', 'info');
         }
@@ -972,24 +1237,113 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         };
     }
 
-    // --- Guardar PERFIL (Admin Edit) ---
+    // --- GESTIÓN DE PERFIL COMPLETA (ADMIN) ---
+    async function compressImage(file, { maxWidth = 800, quality = 0.7 } = {}) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                            type: 'image/webp',
+                            lastModified: Date.now()
+                        }));
+                    }, 'image/webp', quality);
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function uploadToSupabase(supabase, file) {
+        try {
+            const compressedFile = await compressImage(file);
+            const fileExt = 'webp';
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `avatares/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('imagenes-plataforma')
+                .upload(filePath, compressedFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('imagenes-plataforma').getPublicUrl(filePath);
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Error in uploadToSupabase:', error);
+            throw error;
+        }
+    }
+
+    // Manejar previsualización de nuevo avatar en modal de edición de agente
+    const profAvatarInput = document.getElementById('prof-avatar-input');
+    if (profAvatarInput) {
+        profAvatarInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('prof-avatar-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:40px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
     const formProfileEdit = document.getElementById('form-profile-edit');
     if (formProfileEdit) {
         formProfileEdit.onsubmit = async (e) => {
             e.preventDefault();
-            const btn = formProfileEdit.querySelector('button[type="submit"]');
-            const origHTML = btn.innerHTML;
+            const btn = document.getElementById('btn-save-user-profile');
+            const originalHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btn.disabled = true;
 
             try {
                 const editId = formProfileEdit.dataset.editId;
+                
+                // 1. Subir nueva imagen si se seleccionó
+                let avatarUrl = null;
+                const file = profAvatarInput.files[0];
+                if (file) {
+                    avatarUrl = await uploadToSupabase(supabase, file);
+                }
+
                 const payload = {
                     nombre_completo: document.getElementById('prof-nombre').value,
                     rol: document.getElementById('prof-rol').value,
                     telefono: document.getElementById('prof-telefono').value,
+                    bio: document.getElementById('prof-bio').value,
+                    sitio_web: document.getElementById('prof-web').value,
+                    links_sociales: {
+                        facebook: document.getElementById('prof-fb').value,
+                        instagram: document.getElementById('prof-ig').value,
+                        twitter: document.getElementById('prof-x').value
+                    },
                     updated_at: new Date()
                 };
+
+                if (avatarUrl) payload.avatar_url = avatarUrl;
+
 
                 const { error } = await supabase.from('perfiles').update(payload).eq('id', editId);
                 if (error) throw error;
@@ -1003,8 +1357,95 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 console.error(err);
                 showToast('❌ Error al actualizar perfil', 'error');
             } finally {
-                btn.innerHTML = origHTML;
+                btn.innerHTML = originalHtml;
                 btn.disabled = false;
+            }
+        };
+    }
+
+    // --- SEGURIDAD: Actualizar EMAIL/PASS desde el Modal de Perfil ---
+    const btnProfUpdateEmail = document.getElementById('btn-prof-update-email');
+    if (btnProfUpdateEmail) {
+        btnProfUpdateEmail.onclick = async () => {
+            const newEmail = document.getElementById('prof-email').value;
+            const editId = formProfileEdit.dataset.editId;
+            
+            if (editId !== session.user.id) {
+                showToast('⚠️ Solo puedes cambiar tu propio correo', 'info');
+                return;
+            }
+            if (!newEmail || newEmail === session.user.email) return;
+
+            btnProfUpdateEmail.disabled = true;
+            try {
+                const { error } = await supabase.auth.updateUser({ email: newEmail });
+                if (error) throw error;
+                showToast('✅ Correo actualizado. Revisa ambos correos para confirmar.');
+            } catch (err) {
+                showToast('❌ Error: ' + err.message, 'error');
+            } finally {
+                btnProfUpdateEmail.disabled = false;
+            }
+        };
+    }
+
+    const btnProfUpdatePass = document.getElementById('btn-prof-update-pass');
+    if (btnProfUpdatePass) {
+        btnProfUpdatePass.onclick = async () => {
+            const newPass = document.getElementById('prof-password').value;
+            const editId = formProfileEdit.dataset.editId;
+
+            if (editId !== session.user.id) {
+                showToast('⚠️ Solo puedes cambiar tu propia contraseña', 'info');
+                return;
+            }
+            if (!newPass || newPass.length < 6) {
+                showToast('⚠️ La contraseña debe tener al menos 6 caracteres', 'info');
+                return;
+            }
+
+            btnProfUpdatePass.disabled = true;
+            try {
+                const { error } = await supabase.auth.updateUser({ password: newPass });
+                if (error) throw error;
+                showToast('✅ Contraseña actualizada correctamente');
+                document.getElementById('prof-password').value = '';
+            } catch (err) {
+                showToast('❌ Error: ' + err.message, 'error');
+            } finally {
+                btnProfUpdatePass.disabled = false;
+            }
+        };
+    }
+
+
+    // --- SEGURIDAD: Enviar Enlace de Recuperación (para otros usuarios) ---
+    const btnProfSendReset = document.getElementById('btn-prof-send-reset');
+    if (btnProfSendReset) {
+        btnProfSendReset.onclick = async () => {
+            const form = document.getElementById('form-profile-edit');
+            let targetEmail = form.dataset.targetEmail;
+            
+            if (!targetEmail || targetEmail === 'undefined' || targetEmail === '') {
+                targetEmail = prompt("No tenemos el correo de este usuario en la base de datos de perfiles. Por favor, ingrésalo para enviar el enlace:");
+                if (!targetEmail) return;
+            }
+
+            btnProfSendReset.disabled = true;
+            const originalHtml = btnProfSendReset.innerHTML;
+            btnProfSendReset.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+                    redirectTo: window.location.origin + '/admin.html',
+                });
+                if (error) throw error;
+                showToast('✅ Enlace de recuperación enviado a ' + targetEmail);
+            } catch (err) {
+                showToast('❌ Error: ' + err.message, 'error');
+            } finally {
+                btnProfSendReset.disabled = false;
+                btnProfSendReset.innerHTML = originalHtml;
             }
         };
     }
@@ -1027,6 +1468,14 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         document.getElementById('p-nombre').value = p.nombre_completo || '';
         document.getElementById('p-telefono').value = p.telefono || '';
         document.getElementById('p-bio').value = p.bio || '';
+        
+        const preview = document.getElementById('edit-avatar-preview');
+        if (p.avatar_url) {
+            preview.innerHTML = `<img src="${p.avatar_url}" style="width:100%; height:100%; object-fit:cover; border-radius:30px;">`;
+        } else {
+            preview.innerHTML = (p.nombre_completo || 'U').charAt(0).toUpperCase();
+        }
+
         const emailText = document.getElementById('p-email-display-text');
         if (emailText) emailText.textContent = session.user.email || '...';
         
@@ -1042,6 +1491,34 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     const btnUploadNotif = document.getElementById('btn-upload-notif');
     const inputNotifFile = document.getElementById('n-file');
     let isUploadingNotif = false;
+
+    function updateNotifFilePreview(url) {
+        const previewCont = document.getElementById('n-file-preview');
+        const previewImg = document.getElementById('n-preview-img');
+        const previewFileInfo = document.getElementById('n-preview-file-info');
+        const previewFileName = document.getElementById('n-preview-file-name');
+
+        if (!previewCont) return;
+
+        if (!url) {
+            previewCont.classList.add('hidden');
+            return;
+        }
+
+        previewCont.classList.remove('hidden');
+        const isImage = url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) || url.includes('image');
+
+        if (isImage) {
+            previewImg.src = url;
+            previewImg.classList.remove('hidden');
+            previewFileInfo.classList.add('hidden');
+        } else {
+            previewImg.classList.add('hidden');
+            previewFileInfo.classList.remove('hidden');
+            const name = url.split('/').pop().split('?')[0];
+            previewFileName.textContent = name.length > 25 ? name.substring(0, 22) + '...' : name;
+        }
+    }
 
     if (btnUploadNotif && inputNotifFile) {
         btnUploadNotif.addEventListener('click', (e) => {
@@ -1074,6 +1551,8 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 document.getElementById('n-archivo-url').value = data.publicUrl;
                 txt.textContent = `📎 ${file.name}`;
                 
+                updateNotifFilePreview(data.publicUrl);
+                
                 const btnClear = document.getElementById('btn-clear-notif-file');
                 if (btnClear) btnClear.classList.remove('hidden');
                 
@@ -1098,6 +1577,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             document.getElementById('n-archivo-url').value = '';
             document.getElementById('txt-file-name').textContent = 'Seleccionar archivo...';
             document.getElementById('n-file').value = '';
+            updateNotifFilePreview(null);
             btnClearNotifFile.classList.add('hidden');
             showToast('🗑️ Adjunto eliminado', 'info');
         };
@@ -1150,6 +1630,21 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         };
     }
 
+    // Manejar previsualización de nuevo avatar en "Mi Perfil"
+    const pAvatarInput = document.getElementById('p-avatar-input');
+    if (pAvatarInput) {
+        pAvatarInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('edit-avatar-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:30px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
     document.getElementById('form-perfil-full').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-save-perfil');
@@ -1158,6 +1653,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...';
 
         try {
+            // 1. Subir nueva imagen si se seleccionó
+            let avatarUrl = null;
+            const file = pAvatarInput.files[0];
+            if (file) {
+                avatarUrl = await uploadToSupabase(supabase, file);
+            }
+
             const updates = {
                 nombre_completo: document.getElementById('p-nombre').value,
                 telefono: document.getElementById('p-telefono').value,
@@ -1171,13 +1673,16 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 updated_at: new Date()
             };
 
+            if (avatarUrl) updates.avatar_url = avatarUrl;
+
             // Solo actualizar Datos de Perfil (Public)
             const { error: profileError } = await supabase.from('perfiles').update(updates).eq('id', session.user.id);
             if (profileError) throw profileError;
 
             showToast('✅ Datos públicos actualizados');
             perfil = { ...perfil, ...updates };
-            updateHeaderInfo(perfil);
+            // Actualizar la UI del header si existe
+            if (typeof updateHeaderInfo === 'function') updateHeaderInfo(perfil);
             
         } catch (err) {
             console.error(err);
@@ -1188,10 +1693,154 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         }
     };
 
-    // Finalize: Permission management (Simplified for prod)
-    window.gestionarPermisos = (userId) => {
-        document.getElementById('permissions-modal').classList.remove('hidden');
-        // Logic for checkboxes would go here (similar to V2)
+    // ========== GESTIÓN DE PERMISOS (MODERNIZADO) ==========
+    const permsModal = document.getElementById('permissions-modal');
+    const permsList = document.getElementById('permissions-list');
+    let currentPermsUserId = null;
+
+    window.gestionarPermisos = async (userId) => {
+        currentPermsUserId = userId;
+        permsList.innerHTML = '<p style="grid-column: span 3; text-align: center; padding: 40px;">Cargando permisos...</p>';
+        permsModal.classList.remove('hidden');
+
+        try {
+            // 1. Cargar Permisos de Hubs/Secciones
+            const { data: currentPerms } = await supabase.from('permisos_actores').select('seccion_id, parent_hub').eq('user_id', userId);
+            
+            // 2. Cargar Permisos de Funciones (Resiliente a 404/406)
+            let fnPerms = null;
+            try {
+                // Usamos maybeSingle() para evitar errores si no hay filas o si hay problemas de schema cache
+                const { data, error } = await supabase.from('permisos_funciones').select('*').eq('user_id', userId).maybeSingle();
+                if (!error) fnPerms = data;
+            } catch (e) {
+                console.warn('[Admin] Tabla permisos_funciones no disponible o error 406:', e);
+            }
+
+
+            // Setear switches de funciones
+            const fnEventos = document.getElementById('fn-eventos');
+            const fnLugares = document.getElementById('fn-lugares');
+            const fnNotifs = document.getElementById('fn-notifs');
+            const fnDirectorio = document.getElementById('fn-directorio');
+            const fnReadonly = document.getElementById('fn-readonly');
+
+            if (fnEventos) fnEventos.checked = fnPerms ? fnPerms.puede_crear_eventos : true;
+            if (fnLugares) fnLugares.checked = fnPerms ? fnPerms.puede_crear_lugares : true;
+            if (fnNotifs) fnNotifs.checked = fnPerms ? fnPerms.puede_enviar_notificaciones : false;
+            if (fnDirectorio) fnDirectorio.checked = fnPerms ? fnPerms.visible_en_directorio : true;
+            if (fnReadonly) fnReadonly.checked = fnPerms ? fnPerms.modo_solo_lectura : false;
+
+            
+            const hubs = {
+                colibri: { label: 'Hub Colibrí', color: '#72B04D', icon: 'feather', sections: [
+                    { id: 'agua', label: 'Agua y Cuenca' }, { id: 'cursos', label: 'Cursos' }, { id: 'ecotecnias', label: 'Ecotecnias' },
+                    { id: 'lecturas', label: 'Lecturas' }, { id: 'documentales', label: 'Cine/Documental' }, { id: 'firmas', label: 'Peticiones' }
+                ]},
+                ajolote: { label: 'Hub Ajolote', color: '#FF6B6B', icon: 'component', sections: [
+                    { id: 'convocatoria', label: 'Convocatorias' }, { id: 'voluntariados', label: 'Voluntariados' },
+                    { id: 'agentes', label: 'Agentes de Cambio' }, { id: 'eventos', label: 'Eventos' }
+                ]},
+                lobo: { label: 'Hub Lobo', color: '#4D96FF', icon: 'dog', sections: [
+                    { id: 'fondos', label: 'Fondos y Apoyos' }, { id: 'normativa', label: 'Normativa Ambiental' }
+                ]}
+            };
+
+            permsList.innerHTML = '';
+            
+            Object.keys(hubs).forEach(hubId => {
+                const hub = hubs[hubId];
+                const col = document.createElement('div');
+                col.className = `perm-column hub-${hubId}`;
+                col.style.setProperty('--hub-color', hub.color);
+                
+                let sectionHtml = '';
+                hub.sections.forEach(sec => {
+                    const hasPerm = currentPerms?.some(p => p.seccion_id === sec.id && p.parent_hub === hubId);
+                    sectionHtml += `
+                        <label class="perm-item">
+                            <input type="checkbox" data-sec="${sec.id}" data-hub="${hubId}" ${hasPerm ? 'checked' : ''}>
+                            <span>${sec.label}</span>
+                        </label>
+                    `;
+                });
+
+                col.innerHTML = `
+                    <div class="hub-header" style="color: ${hub.color}">
+                        <i data-lucide="${hub.icon}"></i>
+                        <span>${hub.label}</span>
+                    </div>
+                    <div class="hub-sections">
+                        ${sectionHtml}
+                    </div>
+                `;
+                permsList.appendChild(col);
+            });
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        } catch (err) {
+            console.error('Error al cargar permisos:', err);
+            showToast('Error al cargar permisos', 'error');
+        }
+    };
+
+    document.getElementById('btn-close-perms').onclick = () => permsModal.classList.add('hidden');
+    document.getElementById('btn-cancel-perms').onclick = () => permsModal.classList.add('hidden');
+
+    document.getElementById('btn-save-perms').onclick = async () => {
+        const btn = document.getElementById('btn-save-perms');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...';
+
+        try {
+            // 1. Guardar Permisos de Hubs/Secciones
+            const checks = permsList.querySelectorAll('input[type="checkbox"]');
+            const newPerms = Array.from(checks)
+                .filter(c => c.checked)
+                .map(c => ({
+                    user_id: currentPermsUserId,
+                    seccion_id: c.dataset.sec,
+                    parent_hub: c.dataset.hub
+                }));
+
+            await supabase.from('permisos_actores').delete().eq('user_id', currentPermsUserId);
+            if (newPerms.length > 0) {
+                const { error } = await supabase.from('permisos_actores').insert(newPerms);
+                if (error) throw error;
+            }
+
+            // 2. Guardar Permisos de Funciones (UPSERT)
+            const fnUpdates = {
+                user_id: currentPermsUserId,
+                puede_crear_eventos: document.getElementById('fn-eventos').checked,
+                puede_crear_lugares: document.getElementById('fn-lugares').checked,
+                puede_enviar_notificaciones: document.getElementById('fn-notifs').checked,
+                visible_en_directorio: document.getElementById('fn-directorio').checked,
+                modo_solo_lectura: document.getElementById('fn-readonly').checked,
+                updated_at: new Date()
+            };
+
+            // 2. Guardar Permisos de Funciones (Resiliente a 404)
+            try {
+                const { error: fnError } = await supabase.from('permisos_funciones').upsert(fnUpdates);
+                if (fnError && fnError.code !== 'PGRST116') { // Ignorar si es error de tabla no encontrada o similar
+                    console.error('[Admin] Error al guardar funciones:', fnError);
+                }
+            } catch (e) {
+                console.warn('[Admin] Falló el guardado en permisos_funciones (posible tabla faltante)');
+            }
+
+
+            showToast('✅ Permisos actualizados correctamente');
+            permsModal.classList.add('hidden');
+        } catch (err) {
+            console.error('Error al guardar permisos:', err);
+            showToast('❌ Error al guardar cambios', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+        }
     };
 
     // --- LÓGICA DE MENSAJERÍA PARA SEGUIDORES ---
@@ -1269,5 +1918,47 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             }
         };
     }
+
+    // ========== ASIGNAR ACCIÓN AL LÁPIZ DE LA TABLA ==========
+    // Reemplazamos la función editarPerfil que viene del listado
+    window.editarPerfil = async (id) => {
+        const profileModal = document.getElementById('profile-modal');
+        const formProfileEdit = document.getElementById('form-profile-edit');
+        
+        try {
+            const { data, error } = await supabase.from('perfiles').select('*').eq('id', id).single();
+            if (error) throw error;
+
+            if (data) {
+                formProfileEdit.dataset.editId = id;
+                document.getElementById('prof-nombre').value = data.nombre_completo || '';
+                document.getElementById('prof-rol').value = data.rol || 'actor';
+                document.getElementById('prof-telefono').value = data.telefono || '';
+                document.getElementById('prof-bio').value = data.bio || '';
+                document.getElementById('prof-web').value = data.sitio_web || '';
+                
+                const links = data.links_sociales || {};
+                document.getElementById('prof-fb').value = links.facebook || '';
+                document.getElementById('prof-ig').value = links.instagram || '';
+                document.getElementById('prof-x').value = links.twitter || '';
+                
+                // Mostrar avatar actual
+                const preview = document.getElementById('prof-avatar-preview');
+                if (data.avatar_url) {
+                    preview.innerHTML = `<img src="${data.avatar_url}" style="width:100%; height:100%; object-fit:cover; border-radius:40px;">`;
+                } else {
+                    preview.innerHTML = (data.nombre_completo || 'U').charAt(0).toUpperCase();
+                }
+                
+                profileModal.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Error al cargar perfil', 'error');
+        }
+    };
+
+    document.getElementById('btn-close-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
+    document.getElementById('btn-cancel-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
 
 })();

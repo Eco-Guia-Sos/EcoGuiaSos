@@ -159,6 +159,13 @@ async function setupFollowLogic(actorId) {
     if (!btn) return;
 
     const userId = session.user.id;
+    
+    // No permitir seguirse a sí mismo
+    if (userId === actorId) {
+        btn.style.display = 'none';
+        return;
+    }
+
     btn.style.display = 'block';
 
     let isFollowing = false;

@@ -59,6 +59,17 @@
                 <h2>Crea tu Cuenta</h2>
                 <p>Únete como voluntario para recibir noticias y participar.</p>
                 
+                <div class="profile-pic-upload">
+                    <label for="reg-avatar">
+                        <div class="avatar-preview" id="reg-avatar-preview">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Añadir Foto</span>
+                        </div>
+                    </label>
+                    <input type="file" id="reg-avatar" accept="image/png, image/jpeg, image/webp" hidden>
+                </div>
+
+                
                 <div class="input-group">
                     <label for="reg-name">Nombre Completo</label>
                     <div class="input-wrapper">
@@ -113,6 +124,17 @@
             <form id="form-actor-request" class="auth-form">
                 <h2>Solicitud de Actor</h2>
                 <p>Cuéntanos sobre tu organización para darte permisos de publicación.</p>
+                
+                <div class="profile-pic-upload">
+                    <label for="actor-avatar">
+                        <div class="avatar-preview" id="actor-avatar-preview">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>Logo / Foto</span>
+                        </div>
+                    </label>
+                    <input type="file" id="actor-avatar" accept="image/png, image/jpeg, image/webp" hidden>
+                </div>
+
                 
                 <div class="input-group">
                     <label for="actor-name">Nombre o Razón Social</label>

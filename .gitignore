@@ -39,6 +39,7 @@ memory/
 awesome-skills/
 scratch/
 *.sql
+!supabase/migrations/*.sql
 .env.bak
 comprimir_assets.py
 

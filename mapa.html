@@ -47,52 +47,220 @@
         }
 
         .search-bar {
-            background: rgba(15, 20, 25, 0.85);
-            -webkit-backdrop-filter: blur(15px);
-            backdrop-filter: blur(15px);
+            background: rgba(2, 6, 23, 0.8);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 25px;
             border-radius: 50px;
             display: flex;
             align-items: center;
             gap: 12px;
-            width: 350px;
+            width: 380px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus-within {
+            border-color: var(--color-eco);
+            box-shadow: 0 0 20px rgba(114, 176, 77, 0.3);
+            width: 420px;
+        }
+
+        .territory-filters {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .custom-select {
+            background: rgba(2, 6, 23, 0.85);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            appearance: none;
+            -webkit-appearance: none;
+            min-width: 150px;
+        }
+
+        .custom-select:hover {
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .custom-select:focus {
+            border-color: var(--color-eco);
+            box-shadow: 0 0 15px rgba(114, 176, 77, 0.3);
+        }
+
+        .custom-select option {
+            background: #0f172a;
+            color: white;
+        }
+
+        .custom-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        /* Carrusel Inferior de Eventos */
+        .map-events-tray {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            pointer-events: none; /* Dejar pasar clics al mapa si no hay nada */
+            scrollbar-width: none;
+        }
+
+        .map-events-tray::-webkit-scrollbar {
+            display: none;
+        }
+
+        .map-events-tray > * {
+            pointer-events: auto;
+        }
+
+        .map-event-card {
+            min-width: 280px;
+            max-width: 280px;
+            background: rgba(2, 6, 23, 0.8);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            display: flex;
+            padding: 12px;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .map-event-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--color-eco);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .map-event-card img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .map-event-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .map-event-info h4 {
+            margin: 0;
+            color: white;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .map-event-info p {
+            margin: 4px 0;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+        }
+
+        .map-event-dist {
+            color: var(--color-eco) !important;
+            font-weight: 700;
+            font-size: 0.75rem !important;
         }
 
         .search-bar input {
             background: transparent;
             border: none;
-            color: white;
+            color: #ffffff;
             flex: 1;
             outline: none;
-            font-size: 0.95rem;
+            font-size: 1rem;
+            font-weight: 500;
         }
 
         .map-btn {
-            width: 50px;
-            height: 50px;
-            background: rgba(15, 20, 25, 0.85);
+            width: 55px;
+            height: 55px;
+            background: rgba(15, 23, 42, 0.85);
             -webkit-backdrop-filter: blur(15px);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-radius: 18px;
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
         }
 
         .map-btn:hover {
             background: var(--color-eco);
-            transform: scale(1.05);
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 15px 30px rgba(114, 176, 77, 0.4);
+            border-color: rgba(255,255,255,0.4);
         }
 
         .map-btn.active {
             background: var(--color-eco);
+            box-shadow: 0 0 20px var(--color-eco);
+        }
+
+        .atlas-title {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            text-align: right;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .atlas-title h1 {
+            font-size: 2.2rem;
+            font-weight: 900;
+            margin: 0;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+        }
+
+        .atlas-title p {
+            margin: 0;
+            color: var(--color-eco);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         /* MapLibre Popup Styling */
@@ -163,14 +331,30 @@
 </head>
 <body class="dark-theme">
 
+    <div class="atlas-title">
+        <h1>ATLAS TERRITORIAL</h1>
+        <p>EcoGuía SOS | México</p>
+    </div>
+
     <div class="map-overlay">
-        <a href="/index.html" class="map-btn" title="Volver al inicio">
-            <i class="fa-solid fa-arrow-left"></i>
-        </a>
-        
-        <div class="search-bar">
-            <i class="fa-solid fa-magnifying-glass" style="color: var(--color-eco);"></i>
-            <input type="text" id="map-search" placeholder="Buscar iniciativas ecológicas...">
+        <div style="display: flex; gap: 15px; width: 100%; align-items: center;">
+            <a href="/index.html" class="map-btn" title="Volver al inicio">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass" style="color: rgba(255,255,255,0.4);"></i>
+                <input type="text" id="map-search-input" placeholder="Buscar iniciativas ecológicas...">
+            </div>
+
+            <div class="territory-filters">
+                <select id="select-estado" class="custom-select">
+                    <option value="">Todo México</option>
+                </select>
+                <select id="select-municipio" class="custom-select" disabled>
+                    <option value="">Municipio / Delegación</option>
+                </select>
+            </div>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -181,6 +365,11 @@
                 <i class="fa-solid fa-layer-group"></i>
             </div>
         </div>
+    </div>
+
+    <!-- Carrusel de Eventos Inferior -->
+    <div id="map-events-carousel" class="map-events-tray">
+        <!-- Se llena dinámicamente -->
     </div>
 
     <!-- PANEL LATERAL DE DETALLES (ESTILO CARTELERA) -->

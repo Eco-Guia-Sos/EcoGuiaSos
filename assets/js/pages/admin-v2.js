@@ -1,6 +1,6 @@
 /* assets/js/pages/admin.js */
 import { supabase } from '../supabase.js';
-import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRelativa } from '../ui-utils.js';
+import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRelativa, uploadToSupabase } from '../ui-utils.js';
 
 // Scripts with type="module" are automatically deferred, no need for DOMContentLoaded wrapper.
 (async () => {
@@ -272,6 +272,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             perfilView.classList.remove('hidden');
             // Recargar datos por si acaso
             cargarDatosPerfil(perfil);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
     }
 
@@ -284,6 +285,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         if (view) {
             view.classList.remove('hidden');
             cargarHistorialNotificaciones();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
     }
 
@@ -1374,7 +1376,6 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             const dataToSave = {
                 owner_id: session.user.id
             };
-
             if (tipo === 'contenido') {
                 const parts = currentAdminFilter.split('_');
                 Object.assign(dataToSave, {
@@ -1603,16 +1604,36 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 const nombreEl = document.getElementById('prof-nombre');
                 const rolEl = document.getElementById('prof-rol');
                 const telEl = document.getElementById('prof-telefono');
-                const linksEl = document.getElementById('prof-links');
+                const bioEl = document.getElementById('prof-bio');
+                const webEl = document.getElementById('prof-web');
+                const fbEl = document.getElementById('prof-fb');
+                const igEl = document.getElementById('prof-ig');
+                const xEl = document.getElementById('prof-x');
 
                 if (nombreEl) nombreEl.value = data.nombre_completo || '';
-                if (rolEl) rolEl.value = data.rol || 'user';
+                if (rolEl) rolEl.value = data.rol || 'actor';
                 if (telEl) telEl.value = data.telefono || '';
-                if (linksEl) linksEl.value = data.social_links || '';
+                if (bioEl) bioEl.value = data.bio || '';
+                if (webEl) webEl.value = data.sitio_web || '';
+                
+                const links = data.links_sociales || {};
+                if (fbEl) fbEl.value = links.facebook || '';
+                if (igEl) igEl.value = links.instagram || '';
+                if (xEl) xEl.value = links.twitter || '';
+                
+                // Mostrar avatar actual
+                const preview = document.getElementById('prof-avatar-preview');
+                if (preview) {
+                    if (data.avatar_url) {
+                        preview.innerHTML = `<img src="${data.avatar_url}" style="width:100%; height:100%; object-fit:cover; border-radius:40px;">`;
+                    } else {
+                        preview.innerHTML = (data.nombre_completo || 'U').charAt(0).toUpperCase();
+                    }
+                }
                 
                 profileModal.dataset.userId = id;
                 profileModal.classList.remove('hidden');
-                console.log('[Admin] Modal de perfil mostrado correctamente');
+                console.log('[Admin] Modal de gestión de agente mostrado');
             } else {
                 showToast('No se encontró el perfil', 'warning');
             }
@@ -1625,21 +1646,76 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     document.getElementById('btn-close-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
     document.getElementById('btn-cancel-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
     
+    // Manejar previsualización de nuevo avatar en modal
+    const avatarInput = document.getElementById('prof-avatar-input');
+    if (avatarInput) {
+        avatarInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('prof-avatar-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:40px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
     document.getElementById('form-profile-edit').onsubmit = async (e) => {
         e.preventDefault();
         const profileModal = document.getElementById('profile-modal');
         const id = profileModal.dataset.userId;
-        const updates = {
-            nombre_completo: document.getElementById('prof-nombre').value,
-            rol: document.getElementById('prof-rol').value,
-            telefono: document.getElementById('prof-telefono').value,
-            social_links: document.getElementById('prof-links').value
-        };
-        const { error } = await supabase.from('perfiles').update(updates).eq('id', id);
-        if (!error) {
-            showToast('Perfil actualizado');
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...';
+
+        try {
+            // 1. Subir nueva imagen si se seleccionó
+            let avatarUrl = null;
+            const file = avatarInput.files[0];
+            if (file) {
+                avatarUrl = await uploadToSupabase(supabase, file);
+            }
+
+            const updates = {
+                nombre_completo: document.getElementById('prof-nombre').value,
+                rol: document.getElementById('prof-rol').value,
+                telefono: document.getElementById('prof-telefono').value,
+                bio: document.getElementById('prof-bio').value,
+                sitio_web: document.getElementById('prof-web').value,
+                links_sociales: {
+                    facebook: document.getElementById('prof-fb').value,
+                    instagram: document.getElementById('prof-ig').value,
+                    twitter: document.getElementById('prof-x').value
+                },
+                updated_at: new Date()
+            };
+
+            if (avatarUrl) updates.avatar_url = avatarUrl;
+
+            if (avatarUrl) updates.avatar_url = avatarUrl;
+
+            const { error } = await supabase.from('perfiles').update(updates).eq('id', id);
+            if (error) throw error;
+
+            showToast('✅ Perfil actualizado correctamente');
             profileModal.classList.add('hidden');
-            cargarDatos('usuarios');
+            
+            // Si el perfil editado es el del propio admin/actor logueado, recargar la página para ver cambios en navbar
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && user.id === id) {
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                cargarDatos('usuarios');
+            }
+        } catch (err) {
+            console.error('Error al actualizar perfil:', err);
+            showToast('❌ Error al actualizar perfil', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     };
 
@@ -1651,7 +1727,21 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         document.getElementById('p-nombre').value = perfil.nombre_completo || '';
         document.getElementById('p-telefono').value = perfil.telefono || '';
         document.getElementById('p-bio').value = perfil.bio || '';
-        document.getElementById('edit-avatar-preview').textContent = (perfil.nombre_completo || 'U').charAt(0).toUpperCase();
+        
+        const preview = document.getElementById('edit-avatar-preview');
+        if (perfil.avatar_url) {
+            preview.innerHTML = `<img src="${perfil.avatar_url}" style="width:100%; height:100%; object-fit:cover; border-radius:30px;">`;
+        } else {
+            preview.innerHTML = (perfil.nombre_completo || 'U').charAt(0).toUpperCase();
+        }
+
+        // Mostrar email actual
+        const emailDisplay = document.getElementById('p-email-display-text');
+        if (emailDisplay) {
+            supabase.auth.getUser().then(({ data: { user } }) => {
+                if (user) emailDisplay.textContent = user.email;
+            });
+        }
         
         // Cargar redes sociales desde metadatos si existen
         if (perfil.links_sociales) {
@@ -1660,6 +1750,21 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             document.getElementById('p-x').value = perfil.links_sociales.twitter || '';
             document.getElementById('p-web').value = perfil.links_sociales.web || '';
         }
+    }
+
+    // Manejar previsualización en vista "Mi Perfil"
+    const pAvatarInput = document.getElementById('p-avatar-input');
+    if (pAvatarInput) {
+        pAvatarInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('edit-avatar-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:30px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
     }
 
     document.getElementById('form-perfil-full').onsubmit = async (e) => {
@@ -1671,6 +1776,14 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            
+            // 1. Subir nueva imagen si se seleccionó
+            let avatarUrl = null;
+            const file = pAvatarInput.files[0];
+            if (file) {
+                avatarUrl = await uploadToSupabase(supabase, file);
+            }
+
             const updates = {
                 nombre_completo: document.getElementById('p-nombre').value,
                 telefono: document.getElementById('p-telefono').value,
@@ -1684,16 +1797,15 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 updated_at: new Date()
             };
 
+            if (avatarUrl) updates.avatar_url = avatarUrl;
+
             const { error } = await supabase.from('perfiles').update(updates).eq('id', user.id);
             if (error) throw error;
 
-            showToast('✅ Perfil actualizado correctamente');
+            showToast('✅ Cambios guardados con éxito');
             
-            // Actualizar sidebar en tiempo real
-            document.getElementById('sidebar-name').textContent = updates.nombre_completo;
-            document.getElementById('sidebar-avatar').textContent = updates.nombre_completo.charAt(0).toUpperCase();
-            document.getElementById('edit-avatar-preview').textContent = updates.nombre_completo.charAt(0).toUpperCase();
-
+            // Recargar para ver cambios en sidebar y navbar
+            setTimeout(() => window.location.reload(), 1000);
         } catch (err) {
             console.error('Error al actualizar perfil:', err);
             showToast('❌ Error al guardar cambios', 'error');
@@ -1702,6 +1814,49 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             btn.innerHTML = originalHtml;
         }
     };
+
+    // --- LÓGICA DE SEGURIDAD (EMAIL/PASS) ---
+    const btnUpdateEmail = document.getElementById('btn-update-email');
+    if (btnUpdateEmail) {
+        btnUpdateEmail.onclick = async () => {
+            const newEmail = document.getElementById('p-new-email').value;
+            if (!newEmail) return showToast('⚠️ Ingresa el nuevo correo', 'warning');
+            
+            btnUpdateEmail.disabled = true;
+            btnUpdateEmail.textContent = 'Procesando...';
+
+            const { error } = await supabase.auth.updateUser({ email: newEmail });
+            if (error) {
+                showToast(`❌ Error: ${error.message}`, 'error');
+            } else {
+                showToast('✅ Se ha enviado un correo de confirmación a ambas direcciones');
+                document.getElementById('p-new-email').value = '';
+            }
+            btnUpdateEmail.disabled = false;
+            btnUpdateEmail.textContent = 'Actualizar Correo';
+        };
+    }
+
+    const btnUpdatePass = document.getElementById('btn-update-pass');
+    if (btnUpdatePass) {
+        btnUpdatePass.onclick = async () => {
+            const newPass = document.getElementById('p-new-password').value;
+            if (!newPass || newPass.length < 6) return showToast('⚠️ Mínimo 6 caracteres', 'warning');
+            
+            btnUpdatePass.disabled = true;
+            btnUpdatePass.textContent = 'Procesando...';
+
+            const { error } = await supabase.auth.updateUser({ password: newPass });
+            if (error) {
+                showToast(`❌ Error: ${error.message}`, 'error');
+            } else {
+                showToast('✅ Contraseña actualizada correctamente');
+                document.getElementById('p-new-password').value = '';
+            }
+            btnUpdatePass.disabled = false;
+            btnUpdatePass.textContent = 'Cambiar Contraseña';
+        };
+    }
 
     // ========== GESTIÓN DE PERMISOS (MODERNIZADO) ==========
     const permsModal = document.getElementById('permissions-modal');
@@ -1836,7 +1991,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             showToast('❌ Error al guardar cambios', 'error');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Guardar Cambios';
+            btn.textContent = 'Guardar';
         }
     };
     // --- LÓGICA DE MENSAJERÍA PARA SEGUIDORES ---

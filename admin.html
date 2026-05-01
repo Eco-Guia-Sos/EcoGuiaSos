@@ -230,7 +230,15 @@
             <div id="perfil-view" class="profile-view-container fade-in hidden">
                 <div class="profile-card-large glass-effect" style="margin: 0 auto;">
                     <div class="profile-header-edit">
-                        <div class="profile-avatar-large" id="edit-avatar-preview">U</div>
+                        <div class="profile-pic-upload" style="width: 100px; height: 100px;">
+                            <div id="edit-avatar-preview" class="avatar-preview" style="border-radius: 30px; font-size: 2.5rem; font-weight: 800; background: var(--gradient-eco);">
+                                U
+                            </div>
+                            <label for="p-avatar-input" class="upload-btn">
+                                <i class="fa-solid fa-camera"></i>
+                            </label>
+                            <input type="file" id="p-avatar-input" accept="image/*" style="display: none;">
+                        </div>
                         <div class="profile-header-info">
                             <h2 style="color: white; margin-bottom: 4px;" id="edit-profile-title">Mi Perfil</h2>
                             <p style="color: var(--admin-text-muted); font-size: 0.9rem;" id="edit-profile-subtitle">Gestiona tu información pública y de contacto.</p>
@@ -330,11 +338,23 @@
                             </div>
                             <div class="form-group">
                                 <label>Destinatarios</label>
-                                <select id="n-destinatarios" style="width: 100%; background: #1a2a3a; border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px; outline: none; cursor: pointer;">
-                                    <option value="todos">Todos los Usuarios</option>
-                                    <option value="actores">Solo Actores</option>
-                                    <option value="seguidores">Solo mis Seguidores</option>
-                                </select>
+                                <div class="notif-recipients-grid">
+                                    <label class="notif-recipient-check">
+                                        <input type="checkbox" id="n-dest-todos" value="todos">
+                                        <span class="check-icon"><i class="fa-solid fa-check"></i></span>
+                                        <span class="check-label"><i class="fa-solid fa-users"></i> Todos</span>
+                                    </label>
+                                    <label class="notif-recipient-check">
+                                        <input type="checkbox" id="n-dest-actores" value="actores">
+                                        <span class="check-icon"><i class="fa-solid fa-check"></i></span>
+                                        <span class="check-label"><i class="fa-solid fa-star"></i> Actores</span>
+                                    </label>
+                                    <label class="notif-recipient-check">
+                                        <input type="checkbox" id="n-dest-voluntariados" value="voluntariados">
+                                        <span class="check-icon"><i class="fa-solid fa-check"></i></span>
+                                        <span class="check-label"><i class="fa-solid fa-hand-holding-heart"></i> Voluntariados</span>
+                                    </label>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Mensaje</label>
@@ -359,13 +379,25 @@
                                         <i data-lucide="x" style="width: 18px;"></i>
                                     </button>
                                 </div>
+                                <!-- Vista previa del archivo -->
+                                <div id="n-file-preview" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--admin-border); text-align: center;">
+                                    <img id="n-preview-img" src="" alt="Vista previa" class="hidden" style="max-width: 100%; max-height: 150px; border-radius: 8px; object-fit: contain;">
+                                    <div id="n-preview-file-info" class="hidden" style="color: var(--admin-text-muted); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                        <i class="fa-solid fa-file-pdf" style="font-size: 1.5rem; color: #ef4444;"></i>
+                                        <span id="n-preview-file-name">documento.pdf</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-actions" style="margin-top: 20px;">
-                                <button type="submit" class="btn-create-new" id="btn-send-notif" style="width: 100%; background: var(--admin-accent); color: white; justify-content: center;">
+                            <div class="form-actions" style="margin-top: 20px; display: flex; gap: 12px;">
+                                <button type="submit" class="btn-create-new" id="btn-send-notif" style="flex: 2; background: var(--admin-accent); color: white; justify-content: center; font-weight: 700;">
                                     <i data-lucide="bell-ring"></i> Enviar Ahora
+                                </button>
+                                <button type="button" id="btn-cancel-notif" class="btn-admin hidden" style="flex: 1; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); justify-content: center; display: flex; align-items: center; gap: 8px; border-radius: 10px; cursor: pointer; transition: all 0.3s;">
+                                    <i data-lucide="rotate-ccw" style="width: 16px;"></i> Cancelar
                                 </button>
                             </div>
                         </form>
+
                     </div>
 
                     <div class="notif-history glass-effect">
@@ -633,16 +665,15 @@
         </div>
     </div>
 
-    <!-- MODAL PERMISOS -->
     <div id="permissions-modal" class="modal-overlay hidden">
         <div class="modal-content glass-effect permissions-modal-v2">
             <div class="modal-header">
-                <div class="header-icon-box"><i data-lucide="shield-check"></i></div>
+                <div class="header-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
                 <div>
                     <h2>Permisos Administrativos</h2>
                     <p>Gestiona el acceso del actor.</p>
                 </div>
-                <button class="btn-close-modal" id="btn-close-perms"><i data-lucide="x"></i></button>
+                <button class="btn-close-modal" id="btn-close-perms"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" style="padding: 24px;">
                 <div class="functions-perms-v2" style="margin-bottom: 20px; padding: 15px; background: rgba(114, 176, 77, 0.05); border-radius: 12px;">
@@ -664,34 +695,121 @@
         </div>
     </div>
 
-    <!-- MODAL PERFIL AGENTE -->
     <div id="profile-modal" class="modal-overlay hidden">
-        <div class="modal-content glass-effect" style="max-width: 500px;">
+        <div class="modal-content glass-effect" style="max-width: 650px;">
             <div class="modal-header">
-                <h2>Información del Agente</h2>
-                <button class="btn-close-modal" id="btn-close-profile"><i data-lucide="x"></i></button>
+                <div class="header-icon-box"><i class="fa-solid fa-user-gear"></i></div>
+                <div>
+                    <h2>Gestión de Agente</h2>
+                    <p>Edita el perfil completo del usuario.</p>
+                </div>
+                <button class="btn-close-modal" id="btn-close-profile"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" style="padding: 25px;">
                 <form id="form-profile-edit">
-                    <div style="margin-bottom: 15px;">
-                        <label>Nombre</label>
-                        <input type="text" id="prof-nombre" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                    <!-- Avatar Upload Section -->
+                    <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                        <div class="profile-pic-upload" style="width: 120px; height: 120px;">
+                            <div id="prof-avatar-preview" class="avatar-preview" style="border-radius: 40px; font-size: 3rem; background: var(--gradient-eco);">
+                                U
+                            </div>
+                            <label for="prof-avatar-input" class="upload-btn">
+                                <i class="fa-solid fa-camera"></i>
+                            </label>
+                            <input type="file" id="prof-avatar-input" accept="image/*" style="display: none;">
+                        </div>
                     </div>
-                    <div style="margin-bottom: 15px;">
-                        <label>Rol</label>
-                        <select id="prof-rol" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
-                            <option value="admin">Administrador</option>
-                            <option value="actor">Actor</option>
-                            <option value="user">Usuario</option>
-                        </select>
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="prof-nombre" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="prof-telefono" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="form-group">
+                            <label>Rol en la Plataforma</label>
+                            <select id="prof-rol" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                                <option value="admin">Administrador</option>
+                                <option value="actor">Actor / Agente</option>
+                                <option value="user">Usuario</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sitio Web</label>
+                            <input type="url" id="prof-web" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
                     </div>
-                    <div style="margin-bottom: 20px;">
-                        <label>Teléfono</label>
-                        <input type="text" id="prof-telefono" style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+
+                    <!-- NUEVA SECCIÓN DE SEGURIDAD EN MODAL -->
+                    <div class="form-section security-section-admin" style="margin-bottom: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <h3 style="font-size: 0.9rem; color: var(--admin-accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-shield-halved"></i> Seguridad de la Cuenta
+                        </h3>
+                        
+                        <!-- Controles para el usuario actual -->
+                        <div id="security-controls-self" style="display: none;">
+                            <div class="security-split-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group">
+                                    <label>Nuevo Correo Electrónico</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="email" id="prof-email" placeholder="nuevo@correo.com" style="flex: 1; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                                        <button type="button" class="btn-admin" id="btn-prof-update-email" style="padding: 0 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--admin-border); color: white;"><i class="fa-solid fa-envelope"></i></button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Nueva Contraseña</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="password" id="prof-password" placeholder="••••••••" style="flex: 1; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                                        <button type="button" class="btn-admin" id="btn-prof-update-pass" style="padding: 0 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--admin-border); color: white;"><i class="fa-solid fa-lock"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Controles para el Admin editando a otro -->
+                        <div id="security-controls-other" style="display: none; background: rgba(114, 176, 77, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed var(--admin-accent);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="color: white; font-weight: 500; margin-bottom: 4px;">Asistencia de Acceso</p>
+                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted);">El usuario recibirá un correo para restablecer su propia contraseña.</p>
+                                </div>
+                                <button type="button" class="btn-admin" id="btn-prof-send-reset" style="background: var(--admin-accent); color: black; border: none; font-weight: 600; padding: 10px 20px;">
+                                    <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                </button>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;" id="security-note-admin">Nota: Por seguridad, las contraseñas no se muestran y deben ser gestionadas por el propio usuario.</p>
                     </div>
-                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+
+
+                    <div class="form-group full-width" style="margin-bottom: 20px;">
+                        <label>Biografía</label>
+                        <textarea id="prof-bio" rows="3" style="width:100%; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;"></textarea>
+                    </div>
+
+
+                    <div class="social-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px;">
+                        <div class="input-with-icon">
+                            <i class="fa-brands fa-facebook"></i>
+                            <input type="url" id="prof-fb" placeholder="Facebook" style="width:100%; padding:10px 10px 10px 40px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="input-with-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                            <input type="url" id="prof-ig" placeholder="Instagram" style="width:100%; padding:10px 10px 10px 40px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                        <div class="input-with-icon">
+                            <i class="fa-brands fa-x-twitter"></i>
+                            <input type="url" id="prof-x" placeholder="X / Twitter" style="width:100%; padding:10px 10px 10px 40px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px; border-top: 1px solid var(--admin-border); padding-top: 20px;">
                         <button type="button" class="btn btn-secondary" id="btn-cancel-profile">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-user-profile">Actualizar Perfil</button>
                     </div>
                 </form>
             </div>
@@ -754,5 +872,29 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         });
     </script>
+    <!-- MODAL: REVISIÓN DE NOTIFICACIÓN -->
+    <div id="notif-review-modal" class="modal hidden">
+        <div class="modal-content glass-effect" style="max-width: 500px; padding: 0; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header" style="padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+                <h2 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; color: white;">
+                    <i class="fa-solid fa-magnifying-glass-chart" style="color: var(--admin-accent);"></i> Revisar Notificación
+                </h2>
+                <button type="button" onclick="document.getElementById('notif-review-modal').classList.add('hidden')" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div id="notif-review-body" style="padding: 25px; max-height: 70vh; overflow-y: auto;">
+                <!-- Contenido dinámico -->
+            </div>
+
+            <div class="modal-footer notif-review-footer" style="padding: 15px 25px; background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 12px;">
+                <button id="btn-notif-review-reuse" class="btn-admin" style="flex: 1; background: var(--admin-accent); color: black; font-weight: 700; border: none; padding: 12px; border-radius: 10px; cursor: pointer;">
+                    <i class="fa-solid fa-rotate-right"></i> Cargar para Editar
+                </button>
+                <button type="button" onclick="document.getElementById('notif-review-modal').classList.add('hidden')" class="btn-admin btn-notif-review-close" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 10px; cursor: pointer;">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
+
