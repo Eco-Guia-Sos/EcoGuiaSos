@@ -68,31 +68,96 @@ html {
 /* BARRA DE NAVEGACIÓN - Movida a global.css */
 
 /* HERO PRINCIPAL */
-.hero-section#particles-js {
+.hero-section {
     position: relative;
     height: auto;
     min-height: auto;
-    /* Cambiado para quitar el espacio en blanco inferior */
     padding: 3rem 1.5rem 0;
-    /* Ajustado para que abrace al contenido */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: #333;
-    background-color: #f9f9f9;
+    color: white;
+    background: radial-gradient(circle at center, #1b4d1b 0%, #0d1f0d 70%, #050a05 100%);
     box-sizing: border-box;
-    z-index: 2;
+    z-index: 100; /* Asegura que el hero y sus menús estén por encima de la sección blanca */
+    overflow: visible; /* IMPORTANTE: permitir que los hijos salgan del contenedor */
 }
 
-.hero-section#particles-js>.particles-js-canvas-el {
+/* Letras ECOGUIASOS con efecto brillante */
+.nav-brand h1 {
+    font-size: 1.7rem;
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    font-family: var(--font-heading);
+    color: #ffffff !important;
+    position: relative;
+    
+    /* Efecto Brillante/Glow */
+    background: linear-gradient(
+        to right, 
+        #ffffff 20%, 
+        #72B04D 40%, 
+        #72B04D 60%, 
+        #ffffff 80%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine-glow 4s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(114, 176, 77, 0.6));
+}
+
+@keyframes shine-glow {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+
+/* Fondo de partículas para la sección de contenido */
+.content-section {
+    position: relative;
+    overflow: visible;
+    width: 100%; /* Ancho total para expandir el fondo blanco */
+    margin: 0; /* Sin márgenes laterales para pegar a los bordes */
+    padding: 3rem 0 4rem;
+    background-color: #ffffff; /* Blanco sólido puro */
+    margin-top: 0; /* Corte perfecto sin solapamiento */
+    z-index: 50;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.03); /* Sombra muy tenue para separar secciones */
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+}
+
+/* Contenedores internos para mantener el ancho de lectura cómodo */
+.content-section > div, 
+.content-section > section, 
+.content-section > .card-grid-container {
+    width: 100%;
+    max-width: 1300px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+#particles-main {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: 0;
+    pointer-events: none;
+    opacity: 1; /* Opacidad total para que se vean sobre blanco */
+}
+
+.content-section > *:not(#particles-main) {
+    position: relative;
+    z-index: 1;
 }
 
 .hero-content {
@@ -146,8 +211,9 @@ html {
 }
 
 .slide-content-overlay {
-    position: relative;
-    z-index: 1;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
     color: white;
     text-align: center;
     padding: 2rem;
@@ -155,7 +221,8 @@ html {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Fondo negro para legibilidad */
+    backdrop-filter: blur(2px); /* Toque premium */
 }
 
 .slide-badge {
@@ -172,6 +239,7 @@ html {
 .slide-content-overlay h2 {
     font-size: 2.2rem;
     margin: 0 0 1rem 0;
+    font-weight: 800;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
 
@@ -180,6 +248,21 @@ html {
     margin-bottom: 1.5rem;
     max-width: 600px;
     text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+    line-height: 1.4;
+}
+
+/* Asegurar que las flechas de Swiper estén siempre encima y clickeables */
+.swiper-button-next,
+.swiper-button-prev {
+    z-index: 100 !important;
+    color: #ffffff !important;
+    pointer-events: auto !important; /* Asegurar que reciban clics */
+    cursor: pointer !important;
+}
+
+/* Ocultar preloader si se queda trabado */
+.swiper-lazy-preloader {
+    display: none !important;
 }
 
 .swiper-pagination-bullet {
@@ -876,14 +959,18 @@ html {
 /* LISTA DESPLEGABLE */
 .tooltip-list {
     display: none;
+    position: absolute; /* Sobrepone en lugar de empujar */
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: white;
     color: #333;
     width: 100%;
     min-width: 220px;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-    margin-top: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Sombra más profunda para destacar */
+    z-index: 10000; /* Aún más alto que el hero */
+    margin-top: 10px;
     text-align: left;
     overflow: hidden;
 }
@@ -894,18 +981,9 @@ html {
 }
 
 @media (min-width: 1025px) {
-
-    /* TOOLTIP Y FLECHA EN DESKTOP (Basado en clics, igual que móvil) */
     .tooltip-list {
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
         width: max-content;
-        margin-top: 10px;
     }
-
-    /* Eliminado .mobile-info-toggle { display: none; } para que la flecha sea visible en PC */
 }
 
 @keyframes slideDown {
@@ -951,15 +1029,7 @@ html {
 }
 
 
-/* CONTENIDO PRINCIPAL */
-.content-section {
-    max-width: 1300px;
-    /* Ancho aumentado para soportar 3 columnas cómodas */
-    margin: 2rem auto;
-    padding: 0 1.5rem;
-    position: relative;
-    z-index: 1;
-}
+/* CONTENIDO PRINCIPAL - Estilos consolidados arriba */
 
 /* Toggle */
 .toggle-container {

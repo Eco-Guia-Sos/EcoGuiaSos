@@ -926,14 +926,14 @@ function setupMobileTooltips() {
 
 function iniciarParticulas() {
     if (typeof particlesJS !== 'undefined') {
-        particlesJS("particles-js", {
+        particlesJS("particles-main", {
             "particles": {
                 "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
                 "color": { "value": ["#72B04D", "#0077b6", "#FFD700", "#E74C3C"] },
                 "shape": { "type": "circle" },
                 "opacity": { "value": 0.6, "random": true },
                 "size": { "value": 8, "random": true },
-                "line_linked": { "enable": true, "distance": 180, "color": "#cccccc", "opacity": 0.4, "width": 1 },
+                "line_linked": { "enable": true, "distance": 180, "color": "#72B04D", "opacity": 0.3, "width": 1 },
                 "move": { "enable": true, "speed": 3.5, "direction": "out", "random": true, "out_mode": "out" }
             },
             "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false }, "onclick": { "enable": false }, "resize": true } },
@@ -946,13 +946,22 @@ function iniciarCarrusel() {
     if (typeof Swiper !== 'undefined') {
         new Swiper('.hero-carousel', { 
             loop: true, 
-            autoplay: { delay: 5000 }, 
+            autoplay: { 
+                delay: 5000,
+                disableOnInteraction: false 
+            }, 
             pagination: { el: '.swiper-pagination', clickable: true }, 
             navigation: {
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
             },
-            effect: 'fade'
+            effect: 'fade',
+            fadeEffect: {
+                crossFade: true
+            },
+            watchSlidesProgress: true,
+            observer: true,
+            observeParents: true
         });
     }
 }
