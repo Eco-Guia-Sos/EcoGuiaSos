@@ -39,6 +39,43 @@
             pointer-events: none;
         }
 
+        .map-overlay-container {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .map-overlay-top-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .drawer-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .drawer-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            transform: scale(1.1);
+        }
+
         .map-right-controls {
             position: absolute;
             top: 240px; /* Debajo de los controles de zoom de MapLibre */
@@ -124,12 +161,7 @@
 
         /* Carrusel Inferior de Eventos */
         .map-events-tray {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            z-index: 1000;
+            flex: 1;
             display: flex;
             gap: 15px;
             overflow-x: auto;
@@ -138,6 +170,7 @@
             scrollbar-width: none;
             user-select: none; /* Evitar seleccionar texto al arrastrar */
             cursor: grab;
+            padding: 10px 0;
         }
 
         .map-events-tray:active {
@@ -286,10 +319,12 @@
             text-shadow: 0 0 10px rgba(114, 176, 77, 0.3);
         }
 
-        /* Empujar controles de zoom debajo del título */
-        .maplibregl-ctrl-top-right {
-            top: 130px !important;
-            right: 20px !important;
+        /* Empujar controles de zoom debajo del título solo en pantallas grandes */
+        @media (min-width: 1101px) {
+            .maplibregl-ctrl-top-right {
+                top: 130px !important;
+                right: 20px !important;
+            }
         }
 
         #map-container {
@@ -513,12 +548,15 @@
         /* === CAROUSEL ARROWS === */
         .carousel-wrapper {
             position: absolute;
-            bottom: 22px;
+            bottom: 20px;
             left: 0;
             width: 100%;
+            padding: 0 15px;
+            box-sizing: border-box;
             z-index: 1001;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             pointer-events: none;
         }
 
@@ -538,7 +576,7 @@
             pointer-events: auto;
             transition: all 0.2s ease;
             z-index: 1002;
-            margin: 0 8px;
+            margin: 0 4px;
         }
 
         .carousel-arrow:hover {
@@ -562,13 +600,103 @@
             to { box-shadow: 0 0 40px #72b04d, 0 0 80px rgba(114, 176, 77, 0.6), 0 0 20px #fff; }
         }
 
-        /* Mobile specific */
-        @media (max-width: 480px) {
-            .search-bar {
-                width: calc(100vw - 40px);
+        /* Mobile/Tablet specific responsive layout */
+        @media (max-width: 1100px) {
+            .atlas-title {
+                display: none; /* Ocultar título en tablets y PCs pequeñas para evitar colisiones */
             }
+
+            .map-overlay {
+                top: 15px;
+                left: 15px;
+                right: 15px;
+            }
+
+            .map-overlay-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .map-overlay-top-row {
+                display: flex;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .search-bar {
+                width: auto !important;
+                flex: 1;
+                padding: 10px 18px;
+            }
+
+            .territory-filters {
+                width: 100%;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .custom-select {
+                flex: 1;
+                min-width: 0;
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            .map-right-controls {
+                top: 180px; /* Bajar controles para no chocar con los filtros apilados */
+                right: 15px;
+            }
+
             .filter-panel-drawer {
-                width: calc(100vw - 40px);
+                width: calc(100vw - 30px);
+                left: 15px;
+                top: 70px;
+                box-sizing: border-box;
+            }
+
+            .map-side-panel {
+                top: auto !important;
+                bottom: 20px !important;
+                left: 50% !important;
+                width: calc(100vw - 30px) !important;
+                max-width: 420px !important;
+                transform: translateX(-50%) translateY(0) !important;
+                box-sizing: border-box;
+                z-index: 5000 !important;
+            }
+
+            .map-side-panel.hidden {
+                transform: translateX(-50%) translateY(150%) !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+
+            /* Reducir a la mitad el ancho de las tarjetas en vista telefónica */
+            .map-event-card {
+                min-width: 140px;
+                max-width: 140px;
+                flex-direction: column;
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .map-event-card img {
+                width: 100%;
+                height: 70px;
+                border-radius: 10px;
+            }
+
+            .map-event-info h4 {
+                font-size: 0.85rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .map-event-info p {
+                font-size: 0.75rem;
+                margin: 2px 0;
             }
         }
     </style>
@@ -581,14 +709,16 @@
     </div>
 
     <div class="map-overlay">
-        <div style="display: flex; gap: 15px; width: 100%; align-items: center;">
-            <a href="/index.html" class="map-btn" title="Volver al inicio">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
+        <div class="map-overlay-container">
+            <div class="map-overlay-top-row">
+                <a href="/index.html" class="map-btn" title="Volver al inicio">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
 
-            <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass" style="color: rgba(255,255,255,0.4);"></i>
-                <input type="text" id="map-search-input" placeholder="Buscar iniciativas ecológicas...">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass" style="color: rgba(255,255,255,0.4);"></i>
+                    <input type="text" id="map-search-input" placeholder="Buscar iniciativas ecológicas...">
+                </div>
             </div>
 
             <div class="territory-filters">
@@ -619,6 +749,9 @@
     <div id="filter-panel" class="filter-panel">
         <div class="filter-panel-backdrop" id="filter-backdrop"></div>
         <div class="filter-panel-drawer">
+            <button class="drawer-close-btn" id="drawer-close-btn" aria-label="Cerrar panel de filtros">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             <div class="filter-section">
                 <p class="filter-panel-title">🌎 Región</p>
                 <div class="region-chips" id="region-chips">
@@ -630,13 +763,13 @@
             </div>
             <div class="filter-section">
                 <p class="filter-panel-title">📍 Estado</p>
-                <select id="select-estado" class="filter-select">
+                <select id="drawer-select-estado" class="filter-select">
                     <option value="">Todo México</option>
                 </select>
             </div>
             <div class="filter-section">
                 <p class="filter-panel-title">🏙️ Municipio / Delegación</p>
-                <select id="select-municipio" class="filter-select" disabled>
+                <select id="drawer-select-municipio" class="filter-select" disabled>
                     <option value="">Selecciona un estado primero</option>
                 </select>
             </div>

@@ -15,131 +15,255 @@ const defaultLocation = [-102.5528, 23.6345]; // Centro de México [lng, lat] fo
 async function setupTerritorySelectors() {
     const selectEstado = document.getElementById('select-estado');
     const selectMunicipio = document.getElementById('select-municipio');
+    const drawerSelectEstado = document.getElementById('drawer-select-estado');
+    const drawerSelectMunicipio = document.getElementById('drawer-select-municipio');
     
-    if (!selectEstado || !selectMunicipio) return;
-
     try {
-        // 1. Cargar Estados desde el Servicio Interno
         const estados = await TerritoryService.getStates();
-
         if (estados) {
             estados.forEach(est => {
                 const opt = document.createElement('option');
-                opt.value = est.key; // Usamos 'key' (INEGI code)
+                opt.value = est.key;
                 opt.textContent = est.name;
                 opt.dataset.id = est.id;
-                // Si el servicio nos da el centroide, lo guardamos
                 if (est.centroid) opt.dataset.centroid = JSON.stringify(est.centroid);
-                selectEstado.appendChild(opt);
+                
+                if (selectEstado) selectEstado.appendChild(opt.cloneNode(true));
+                if (drawerSelectEstado) drawerSelectEstado.appendChild(opt);
             });
         }
 
-        // 2. Evento al cambiar Estado
-        selectEstado.addEventListener('change', async () => {
-            const stateKey = selectEstado.value;
+        const handleEstadoChange = async (targetSelect, syncSelect) => {
+            const stateKey = targetSelect.value;
+            if (syncSelect) syncSelect.value = stateKey; // Sincronizar el otro select
             
-            // Limpiar municipios
-            selectMunicipio.innerHTML = '<option value="">Municipio / Delegación</option>';
-            selectMunicipio.disabled = true;
+            // Limpiar municipios en ambos
+            if (selectMunicipio) {
+                selectMunicipio.innerHTML = '<option value="">Municipio / Delegación</option>';
+                selectMunicipio.disabled = true;
+            }
+            if (drawerSelectMunicipio) {
+                drawerSelectMunicipio.innerHTML = '<option value="">Selecciona un estado primero</option>';
+                drawerSelectMunicipio.disabled = true;
+            }
 
             if (!stateKey) {
                 map.flyTo({ center: defaultLocation, zoom: 5 });
                 highlightTerritory(null);
-                refreshMarkers(''); // Carga inicial
+                refreshMarkers('');
                 return;
             }
 
-            const selectedOpt = selectEstado.options[selectEstado.selectedIndex];
+            const selectedOpt = targetSelect.options[targetSelect.selectedIndex];
             const territoryId = selectedOpt.dataset.id;
+            const territoryName = selectedOpt.textContent;
             
-            // Pintar área
-            highlightTerritory(territoryId);
-
-            // Volar al estado
+            // Limpiar regiones activas si el usuario elige un estado a mano
+            document.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
+            
+            // Volar a las coordenadas del estado garantizado
             if (selectedOpt.dataset.centroid) {
-                const centroid = JSON.parse(selectedOpt.dataset.centroid);
-                if (centroid && centroid.coordinates) {
-                    map.flyTo({ center: centroid.coordinates, zoom: 7 });
-                }
+                try {
+                    const centroid = JSON.parse(selectedOpt.dataset.centroid);
+                    if (centroid && centroid.coordinates) {
+                        map.flyTo({ center: centroid.coordinates, zoom: 7, essential: true });
+                    }
+                } catch (e) { console.warn('[Atlas] Error parseando centroid de estado:', e); }
             }
 
-            // --- FILTRO ESPACIAL ---
-            try {
-                const localData = await TerritoryService.fetchEventsByTerritory(territoryId);
-                refreshMarkers('', localData); // Actualiza mapa y carrusel
-            } catch (e) { console.error('Error filtrando eventos:', e); }
+            // Si es un ID real de BD, pintar polígono y filtrar en servidor
+            if (territoryId && territoryId !== 'null' && territoryId !== 'undefined') {
+                highlightTerritory(territoryId, territoryName);
+                try {
+                    const localData = await TerritoryService.fetchEventsByTerritory(territoryId);
+                    refreshMarkers('', localData);
+                } catch (e) { 
+                    console.error('Error filtrando eventos por territorio:', e); 
+                    refreshMarkers(territoryName);
+                }
+            } else {
+                // Estado de fallback local: intentar dibujar polígono desde GeoJSON local
+                highlightTerritory(null, territoryName);
+                refreshMarkers(territoryName);
+            }
 
-            // 3. Cargar Municipios usando el Servicio
+            // Cargar municipios lazy
             const municipios = await TerritoryService.getMunicipalities(stateKey);
-
             if (municipios && municipios.length > 0) {
                 municipios.forEach(mun => {
                     const opt = document.createElement('option');
                     opt.value = mun.key;
                     opt.textContent = mun.name;
-                    opt.dataset.id = mun.id;
+                    opt.dataset.id = mun.id || 'null';
                     if (mun.centroid) opt.dataset.centroid = JSON.stringify(mun.centroid);
-                    selectMunicipio.appendChild(opt);
+                    
+                    if (selectMunicipio) selectMunicipio.appendChild(opt.cloneNode(true));
+                    if (drawerSelectMunicipio) drawerSelectMunicipio.appendChild(opt);
                 });
-                selectMunicipio.disabled = false;
+                if (selectMunicipio) selectMunicipio.disabled = false;
+                if (drawerSelectMunicipio) drawerSelectMunicipio.disabled = false;
             }
-        });
+        };
 
-        // 4. Evento al cambiar Municipio
-        selectMunicipio.addEventListener('change', async () => {
-            const selectedOpt = selectMunicipio.options[selectMunicipio.selectedIndex];
+        if (selectEstado) {
+            selectEstado.addEventListener('change', () => handleEstadoChange(selectEstado, drawerSelectEstado));
+        }
+        if (drawerSelectEstado) {
+            drawerSelectEstado.addEventListener('change', () => handleEstadoChange(drawerSelectEstado, selectEstado));
+        }
+
+        const handleMunicipioChange = async (targetMunSelect, syncMunSelect, parentSelectEstado) => {
+            if (syncMunSelect) syncMunSelect.value = targetMunSelect.value;
+            const selectedOpt = targetMunSelect.options[targetMunSelect.selectedIndex];
             
-            if (!selectedOpt.value) {
-                const stateOpt = selectEstado.options[selectEstado.selectedIndex];
-                if (stateOpt.value) {
+            if (!selectedOpt || !selectedOpt.value) {
+                // Si deselecciona municipio, volver al estado si hay uno
+                if (parentSelectEstado && parentSelectEstado.value) {
+                    const stateOpt = parentSelectEstado.options[parentSelectEstado.selectedIndex];
                     const stateId = stateOpt.dataset.id;
-                    highlightTerritory(stateId);
-                    const localData = await TerritoryService.fetchEventsByTerritory(stateId);
-                    refreshMarkers('', localData);
+                    if (stateOpt.dataset.centroid) {
+                        try {
+                            const centroid = JSON.parse(stateOpt.dataset.centroid);
+                            if (centroid && centroid.coordinates) {
+                                map.flyTo({ center: centroid.coordinates, zoom: 7 });
+                            }
+                        } catch (_) {}
+                    }
+                    if (stateId && stateId !== 'null' && stateId !== 'undefined') {
+                        highlightTerritory(stateId);
+                        const localData = await TerritoryService.fetchEventsByTerritory(stateId);
+                        refreshMarkers('', localData);
+                    } else {
+                        highlightTerritory(null);
+                        refreshMarkers(document.getElementById('map-search-input')?.value || '');
+                    }
                 } else {
-                    refreshMarkers();
+                    highlightTerritory(null);
+                    refreshMarkers(document.getElementById('map-search-input')?.value || '');
                 }
                 return;
             }
 
             const territoryId = selectedOpt.dataset.id;
-            highlightTerritory(territoryId);
 
-            if (selectedOpt.dataset.centroid) {
-                const centroid = JSON.parse(selectedOpt.dataset.centroid);
-                if (centroid && centroid.coordinates) {
-                    map.flyTo({ center: centroid.coordinates, zoom: 11 });
+            // Volar hacia el municipio o hacer zoom estimado
+            if (selectedOpt.dataset.centroid && selectedOpt.dataset.centroid !== 'undefined') {
+                try {
+                    const centroid = JSON.parse(selectedOpt.dataset.centroid);
+                    if (centroid && centroid.coordinates) {
+                        map.flyTo({ center: centroid.coordinates, zoom: 11, essential: true });
+                    }
+                } catch (_) {}
+            } else if (territoryId && territoryId !== 'null' && territoryId !== 'undefined') {
+                // Municipio en BD sin centroide cacheado — obtener geometría y centrar en ella
+                try {
+                    const geoData = await TerritoryService.getGeometry(territoryId);
+                    if (geoData?.geometry?.coordinates) {
+                        const coords = geoData.geometry.coordinates[0][0];
+                        if (Array.isArray(coords) && coords.length >= 2) {
+                            map.flyTo({ center: coords, zoom: 11, essential: true });
+                        }
+                    }
+                } catch (_) {
+                    console.info('[Atlas] Sin centroide para municipio, manteniendo vista actual.');
+                }
+            } else if (parentSelectEstado && parentSelectEstado.value) {
+                // Municipio de fallback estático sin centroide: acercar al estado con zoom 10 para dar feedback
+                const stateOpt = parentSelectEstado.options[parentSelectEstado.selectedIndex];
+                if (stateOpt && stateOpt.dataset.centroid) {
+                    try {
+                        const centroid = JSON.parse(stateOpt.dataset.centroid);
+                        if (centroid && centroid.coordinates) {
+                            map.flyTo({ center: centroid.coordinates, zoom: 10, essential: true });
+                        }
+                    } catch (_) {}
                 }
             }
 
-            // --- FILTRO ESPACIAL ---
-            try {
-                const localData = await TerritoryService.fetchEventsByTerritory(territoryId);
-                refreshMarkers('', localData); // Actualiza mapa y carrusel
-            } catch (e) { console.error('Error filtrando eventos:', e); }
-        });
+            const munName = selectedOpt.textContent;
+            if (territoryId && territoryId !== 'null' && territoryId !== 'undefined') {
+                highlightTerritory(territoryId);
+                try {
+                    const localData = await TerritoryService.fetchEventsByTerritory(territoryId);
+                    refreshMarkers('', localData);
+                } catch (e) { 
+                    console.error('Error filtrando eventos por municipio:', e);
+                    refreshMarkers(munName);
+                }
+            } else {
+                highlightTerritory(null);
+                refreshMarkers(munName);
+            }
+        };
+
+        if (selectMunicipio) {
+            selectMunicipio.addEventListener('change', () => handleMunicipioChange(selectMunicipio, drawerSelectMunicipio, selectEstado));
+        }
+        if (drawerSelectMunicipio) {
+            drawerSelectMunicipio.addEventListener('change', () => handleMunicipioChange(drawerSelectMunicipio, selectMunicipio, drawerSelectEstado));
+        }
 
     } catch (err) {
         console.error('[Atlas] Error configurando selectores:', err);
     }
 }
 
-// Función para pintar el área del territorio seleccionado
-async function highlightTerritory(territoryId) {
-    if (!map.getSource('selected-territory')) return;
+let _mexicoGeoJSON = null;
 
-    if (!territoryId) {
+// Función para pintar el área del territorio seleccionado de forma segura
+async function highlightTerritory(territoryId, territoryName = null) {
+    if (!map || !map.getSource('selected-territory')) return;
+
+    if (!territoryName && (!territoryId || territoryId === 'null' || territoryId === 'undefined')) {
         map.getSource('selected-territory').setData({ 'type': 'FeatureCollection', 'features': [] });
         return;
     }
 
     try {
-        const data = await TerritoryService.getGeometry(territoryId);
-        if (data) {
-            map.getSource('selected-territory').setData(data);
+        // 1. Intentar con el GeoJSON local (super rápido y sin costo de BD)
+        if (territoryName) {
+            if (!_mexicoGeoJSON) {
+                try {
+                    const res = await fetch('/assets/data/mexico-estados.geojson');
+                    _mexicoGeoJSON = await res.json();
+                } catch (e) {
+                    console.warn('[Atlas] No se pudo cargar el GeoJSON local:', e);
+                }
+            }
+            if (_mexicoGeoJSON && _mexicoGeoJSON.features) {
+                // Buscar por nombre parcial o exacto
+                const normalizedName = territoryName.toLowerCase().trim();
+                const feature = _mexicoGeoJSON.features.find(f => {
+                    const propName = (f.properties.name || f.properties.nomgeo || '').toLowerCase();
+                    return propName === normalizedName || 
+                           normalizedName.includes(propName) || 
+                           propName.includes(normalizedName.replace(' de ', ' '));
+                });
+                if (feature) {
+                    map.getSource('selected-territory').setData({
+                        'type': 'FeatureCollection',
+                        'features': [feature]
+                    });
+                    return; // Listo, no necesitamos BD
+                }
+            }
         }
+
+        // 2. Fallback a Supabase si tenemos un ID real y no lo encontró en el GeoJSON local
+        if (territoryId && territoryId !== 'null' && territoryId !== 'undefined') {
+            const data = await TerritoryService.getGeometry(territoryId);
+            if (data) {
+                map.getSource('selected-territory').setData(data);
+                return;
+            }
+        }
+        
+        // Limpiar si no se encontró nada
+        map.getSource('selected-territory').setData({ 'type': 'FeatureCollection', 'features': [] });
+
     } catch (err) {
-        console.error('[Atlas] Error al resaltar territorio:', err);
+        console.warn('[Atlas] Geometría no disponible para este territorio:', err.message);
+        map.getSource('selected-territory').setData({ 'type': 'FeatureCollection', 'features': [] });
     }
 }
 
@@ -201,11 +325,20 @@ async function loadTerritoryLayers() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+let _mapaInitialized = false;
+function initMapaPage() {
+    if (_mapaInitialized) return;
+    _mapaInitialized = true;
     initMap();
     setupControls();
     setupTerritorySelectors();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMapaPage);
+} else {
+    initMapaPage();
+}
 
 function initMap() {
     map = new maplibregl.Map({
@@ -287,7 +420,13 @@ function initMap() {
     const resetBtn = document.getElementById('reset-filter-btn');
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
-            refreshMarkers(); // Carga todo de nuevo
+            if (window.resetMapFilters) {
+                window.resetMapFilters();
+            } else {
+                refreshMarkers();
+                map.flyTo({ center: defaultLocation, zoom: 5 });
+                highlightTerritory(null);
+            }
         });
     }
 }
@@ -327,7 +466,8 @@ async function refreshMarkers(filterText = '', manualData = null) {
         if (filterText) {
             allData = allData.filter(item => 
                 item.nombre.toLowerCase().includes(filterText.toLowerCase()) ||
-                (item.categoria && item.categoria.toLowerCase().includes(filterText.toLowerCase()))
+                (item.categoria && item.categoria.toLowerCase().includes(filterText.toLowerCase())) ||
+                (item.ubicacion && item.ubicacion.toLowerCase().includes(filterText.toLowerCase()))
             );
         }
 
@@ -456,33 +596,75 @@ function setupControls() {
         locateBtn.classList.add('active');
         
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const { latitude, longitude } = position.coords;
                 const pos = [longitude, latitude];
 
-                map.flyTo({
-                    center: pos,
-                    zoom: 15,
-                    speed: 1.5,
-                    curve: 1
-                });
+                map.flyTo({ center: pos, zoom: 13, speed: 1.5, curve: 1 });
 
                 if (userMarker) {
                     userMarker.setLngLat(pos);
                 } else {
-                    userMarker = new maplibregl.Marker({
-                        color: "#0077b6",
-                        scale: 0.8
-                    })
-                    .setLngLat(pos)
-                    .addTo(map);
+                    userMarker = new maplibregl.Marker({ color: '#0077b6', scale: 0.8 })
+                        .setLngLat(pos)
+                        .addTo(map);
                 }
 
                 // Guardar coordenadas globales para el carrusel
                 userCoords = { lat: latitude, lng: longitude };
-                
-                // Refrescar carrusel para mostrar distancias
-                refreshMarkers(document.getElementById('map-search-input')?.value || '');
+
+                // === AUTO-DETECCIÓN DE ESTADO POR UBICACIÓN ===
+                try {
+                    const detectedState = await TerritoryService.detectStateFromCoords(latitude, longitude);
+                    if (detectedState) {
+                        console.log(`[Atlas] 📍 Estado detectado: ${detectedState.name} (${detectedState.code})`);
+
+                        // Sincronizar ambos selectores (barra superior y cajón móvil)
+                        const selEst = document.getElementById('select-estado');
+                        const dSelEst = document.getElementById('drawer-select-estado');
+                        if (selEst) selEst.value = detectedState.code;
+                        if (dSelEst) dSelEst.value = detectedState.code;
+
+                        // Cargar municipios lazy para este estado
+                        const municipios = await TerritoryService.getMunicipalities(detectedState.code);
+                        const selMun = document.getElementById('select-municipio');
+                        const dSelMun = document.getElementById('drawer-select-municipio');
+
+                        [selMun, dSelMun].forEach(sel => {
+                            if (!sel) return;
+                            sel.innerHTML = '<option value="">Municipio / Delegación</option>';
+                            municipios.forEach(mun => {
+                                const opt = document.createElement('option');
+                                opt.value = mun.key;
+                                opt.textContent = mun.name;
+                                opt.dataset.id = mun.id || '';
+                                if (mun.centroid) opt.dataset.centroid = JSON.stringify(mun.centroid);
+                                sel.appendChild(opt);
+                            });
+                            sel.disabled = municipios.length === 0;
+                        });
+
+                        // Resaltar polígono instantáneamente con el GeoJSON local
+                        highlightTerritory(detectedState.id || null, detectedState.name);
+
+                        // Refrescar marcadores filtrados por estado si tiene ID en BD, o textualmente por nombre si es fallback
+                        if (detectedState.id) {
+                            try {
+                                const localData = await TerritoryService.fetchEventsByTerritory(detectedState.id);
+                                refreshMarkers('', localData);
+                            } catch (_) {
+                                refreshMarkers(detectedState.name);
+                            }
+                        } else {
+                            refreshMarkers(detectedState.name);
+                        }
+                    } else {
+                        refreshMarkers(document.getElementById('map-search-input')?.value || '');
+                    }
+                } catch (err) {
+                    console.warn('[Atlas] Error detectando estado:', err);
+                    refreshMarkers(document.getElementById('map-search-input')?.value || '');
+                }
 
                 locateBtn.classList.remove('active');
             },
@@ -556,8 +738,11 @@ function renderEventsCarousel(data) {
     });
 }
 
-// Configurar botón para cerrar el Panel, Drag Scroll, Flechas y Panel de Filtros
-document.addEventListener('DOMContentLoaded', () => {
+let _uiEventsInitialized = false;
+function setupUIEventsMapa() {
+    if (_uiEventsInitialized) return;
+    _uiEventsInitialized = true;
+
     // --- Cerrar panel lateral ---
     const closeBtn = document.getElementById('close-side-panel');
     if (closeBtn) {
@@ -583,30 +768,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const carousel = document.getElementById('map-events-carousel');
 
     if (prevBtn && nextBtn && carousel) {
-        const scrollAmount = 310; // Ancho de una tarjeta + gap
-        prevBtn.addEventListener('click', () => carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' }));
-        nextBtn.addEventListener('click', () => carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' }));
+        prevBtn.addEventListener('click', () => {
+            const amt = window.innerWidth <= 768 ? 155 : 310;
+            carousel.scrollBy({ left: -amt, behavior: 'smooth' });
+        });
+        nextBtn.addEventListener('click', () => {
+            const amt = window.innerWidth <= 768 ? 155 : 310;
+            carousel.scrollBy({ left: amt, behavior: 'smooth' });
+        });
     }
 
     // --- PANEL DE FILTROS (abrir/cerrar) ---
     const filterBtn = document.getElementById('filter-btn');
     const filterPanel = document.getElementById('filter-panel');
     const filterBackdrop = document.getElementById('filter-backdrop');
+    const drawerCloseBtn = document.getElementById('drawer-close-btn');
 
     if (filterBtn && filterPanel) {
         filterBtn.addEventListener('click', () => filterPanel.classList.toggle('open'));
-        filterBackdrop.addEventListener('click', () => filterPanel.classList.remove('open'));
+        if (filterBackdrop) filterBackdrop.addEventListener('click', () => filterPanel.classList.remove('open'));
+        if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', () => filterPanel.classList.remove('open'));
     }
+
+    // Función auxiliar para limpiar selectores duales
+    const resetDualSelects = () => {
+        const selEst = document.getElementById('select-estado');
+        const selMun = document.getElementById('select-municipio');
+        const dSelEst = document.getElementById('drawer-select-estado');
+        const dSelMun = document.getElementById('drawer-select-municipio');
+
+        if (selEst) selEst.value = '';
+        if (dSelEst) dSelEst.value = '';
+        
+        if (selMun) {
+            selMun.innerHTML = '<option value="">Municipio / Delegación</option>';
+            selMun.disabled = true;
+        }
+        if (dSelMun) {
+            dSelMun.innerHTML = '<option value="">Selecciona un estado primero</option>';
+            dSelMun.disabled = true;
+        }
+    };
 
     // --- CHIPS DE REGIÓN ---
     document.querySelectorAll('.region-chip').forEach(chip => {
         chip.addEventListener('click', async () => {
-            // Toggle activo
             const isActive = chip.classList.contains('active');
             document.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
 
             if (isActive) {
-                // Desactivar: volver a vista completa
                 refreshMarkers('');
                 return;
             }
@@ -616,12 +826,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const regionData = await TerritoryService.fetchEventsByRegion(regionId);
-                refreshMarkers(null, regionData); // Actualiza mapa y carrusel
-                
-                // Limpiar selectores
-                document.getElementById('select-estado').value = '';
-                document.getElementById('select-municipio').innerHTML = '<option value="">Selecciona un estado primero</option>';
-                document.getElementById('select-municipio').disabled = true;
+                refreshMarkers(null, regionData);
+                resetDualSelects();
                 highlightTerritory(null);
             } catch (e) {
                 console.error('Error filtrando por región:', e);
@@ -629,18 +835,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Función global para resetear el mapa
+    window.resetMapFilters = () => {
+        document.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
+        resetDualSelects();
+        highlightTerritory(null);
+        if (map) map.flyTo({ center: defaultLocation, zoom: 5 });
+        refreshMarkers('');
+        if (filterPanel) filterPanel.classList.remove('open');
+    };
+
     // --- LIMPIAR FILTROS ---
     const clearBtn = document.getElementById('filter-clear-btn');
     if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            document.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
-            document.getElementById('select-estado').value = '';
-            document.getElementById('select-municipio').innerHTML = '<option value="">Selecciona un estado primero</option>';
-            document.getElementById('select-municipio').disabled = true;
-            highlightTerritory(null);
-            map.flyTo({ center: defaultLocation, zoom: 5 });
-            refreshMarkers('');
-            filterPanel.classList.remove('open');
-        });
+        clearBtn.addEventListener('click', window.resetMapFilters);
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupUIEventsMapa);
+} else {
+    setupUIEventsMapa();
+}

@@ -57,7 +57,10 @@ let filtrosAvanzados = {
     mascotas: false
 };
 
+let _indexInitialized = false;
 function initIndex() {
+    if (_indexInitialized) return;
+    _indexInitialized = true;
     console.log('[Inicio] 🚀 Inicializando página...');
     
     // 1. Critical Initialization (Auth/Navbar first)
@@ -1235,5 +1238,9 @@ function resetFiltros() {
     filtrarYRenderizar();
 }
 
-// Initialization (Immediate for type="module")
-initIndex();
+// Initialization with safe readyState check
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initIndex);
+} else {
+    initIndex();
+}
