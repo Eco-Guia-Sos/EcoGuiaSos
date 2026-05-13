@@ -54,5 +54,9 @@ function initComoUsar() {
     });
 }
 
-// Ejecutar al cargar el DOM
-document.addEventListener('DOMContentLoaded', initComoUsar);
+// Ejecutar al cargar el DOM o de inmediato si ya cargó
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initComoUsar);
+} else {
+    initComoUsar();
+}
