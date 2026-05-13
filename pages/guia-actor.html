@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Actor y Organización — EcoGuía SOS</title>
+    <meta name="description" content="Tutoriales de administración para organizaciones en EcoGuía SOS. Aprende a publicar eventos, subir imágenes al storage y georreferenciar actividades.">
+    
+    <!-- FAVICON Y TIPOGRAFÍA -->
+    <link rel="icon" type="image/webp" href="../assets/img/logo-app.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- ICONOS (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- HOJAS DE ESTILOS -->
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/guia.css">
+</head>
+<body class="dark-theme">
+
+    <!-- NAVBAR ESTANDARIZADA (Inyectada por ui-utils.js) -->
+    <nav class="navbar glass-effect" id="main-nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <img src="../assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
+            </a>
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="../index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="../pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
+                <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="guia-main-container">
+        
+        <!-- ENCABEZADO SUPERIOR -->
+        <header class="guia-hero" style="margin-bottom: 2rem;">
+            <h1>Guía para Actores y Organizaciones</h1>
+            <p>Domina el Panel de Administración central para publicar actividades, amplificar tu convocatoria y gestionar tu huella en nuestra comunidad.</p>
+        </header>
+
+        <!-- ALERTA DE PERMISOS -->
+        <div class="guia-alert">
+            <div class="guia-alert-content">
+                <i class="fa-solid fa-shield-halved"></i>
+                <p><strong>Aviso de seguridad:</strong> El acceso a estas funciones requiere validación previa en la base de datos (permiso de <em>Actor Oficial</em>).</p>
+            </div>
+            <a href="../auth.html?tab=signup" aria-label="Solicitar validación de cuenta de actor">Solicitar validación de cuenta</a>
+        </div>
+
+        <!-- PANEL DE VIDEOS TUTORIALES -->
+        <section class="videos-grid">
+            
+            <!-- TARJETA 1: SOLICITUD DE ACCESO -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">📋</span>
+                    <div>
+                        <h3>Solicitar acceso de Actor</h3>
+                        <p>Paso a paso para registrar tu colectivo o institución y el proceso de validación administrativa requerida.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer sobre solicitud de acceso">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 2: RECORRIDO POR EL PANEL -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🎛️</span>
+                    <div>
+                        <h3>Conocer el Panel Admin</h3>
+                        <p>Visión general de la barra lateral, gestión de sesiones seguras y el estado general de tus métricas de impacto.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer sobre secciones del panel">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 3: PUBLICACIÓN DE EVENTOS -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">📝</span>
+                    <div>
+                        <h3>Publicar un Evento</h3>
+                        <p>Cómo estructurar títulos atractivos, describir actividades, configurar fechas de inicio/fin y clasificar la categoría correctamente.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer formulario de eventos">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 4: SUBIDA DE IMÁGENES -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🖼️</span>
+                    <div>
+                        <h3>Subir imágenes al Storage</h3>
+                        <p>Aprende a adjuntar y previsualizar hasta 5 fotografías por evento para generar de forma automática el carrusel público.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer carga de imágenes">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 5: GEORREFERENCIACIÓN -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">📍</span>
+                    <div>
+                        <h3>Captura de Ubicación</h3>
+                        <p>Métodos para ingresar direcciones físicas y pegar enlaces de Google Maps para que el sistema extraiga las coordenadas precisas de latitud y longitud.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer sobre coordenadas en mapas">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 6: PROCESO DE PUBLICACIÓN -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🚀</span>
+                    <div>
+                        <h3>Publicación y Revisión</h3>
+                        <p>Conoce el ciclo de vida de los eventos: desde el estado 'Pendiente' tras presionar el botón, hasta su aprobación visible en los catálogos.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer ciclo de revisión">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 7: EDICIÓN DE PERFIL -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🌐</span>
+                    <div>
+                        <h3>Editar Perfil Público</h3>
+                        <p>Cómo actualizar tu logotipo institucional, redactar la misión de tu colectivo y vincular tus enlaces de redes sociales o sitio web.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer actualización de perfil">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 8: MANTENIMIENTO -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🗂️</span>
+                    <div>
+                        <h3>Gestionar Publicaciones</h3>
+                        <p>Accede a tu historial de eventos para aplicar correcciones rápidas de texto, modificar fechas o retirar actividades concluidas.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer historial de gestión">Leer guía</button>
+                </footer>
+            </article>
+
+        </section>
+
+        <!-- CTA INFERIOR -->
+        <footer class="guia-cta-footer">
+            <p>¿Eres un ciudadano interesado en sumarse a actividades en campo?</p>
+            <a href="./guia-usuario.html" class="link-switch-rol">
+                Consultar los tutoriales de exploración para Visitantes y Voluntarios <i class="fa-solid fa-circle-arrow-right"></i>
+            </a>
+        </footer>
+
+    </main>
+
+    <!-- FOOTER PREMIUM ESTANDARIZADO -->
+    <footer class="footer glass-effect">
+        <div class="footer-container">
+            <!-- Columna 1: Marca -->
+            <div class="footer-brand">
+                <div class="brand-title">
+                    <img src="../assets/img/logo-navbar.webp" alt="Logo" class="footer-mini-logo">
+                    <h2>EcoGuía SOS</h2>
+                </div>
+                <p>Conectando acciones ciudadanas y colectivas para restaurar nuestro entorno natural.</p>
+            </div>
+
+            <!-- Columna 2: Conecta (Redes) -->
+            <div class="footer-social">
+                <h4>Conecta con nosotros</h4>
+                <div class="social-icons-premium">
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="actor-hover" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS CORE -->
+    <script type="module" src="../assets/js/supabase.js"></script>
+    <script type="module" src="../assets/js/ui-utils.js"></script>
+    <script type="module" src="../assets/js/pages/como-usar.js"></script>
+</body>
+</html>

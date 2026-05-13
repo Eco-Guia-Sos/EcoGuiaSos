@@ -120,9 +120,80 @@ function renderData(item, type) {
     document.getElementById('detail-title').innerText = item.nombre;
     const breadcrumb = document.getElementById('breadcrumb-current');
     if (breadcrumb) breadcrumb.innerText = item.nombre;
-    const itemImg = item.imagen_url || item.imagen || '/assets/img/kpop.webp';
-    document.getElementById('detail-poster').src = itemImg;
-    document.getElementById('hero-bg-blur').style.backgroundImage = `url('${itemImg}')`;
+    
+    // Slider de imágenes
+    const track = document.getElementById('slider-track');
+    const btnPrev = document.getElementById('slider-prev');
+    const btnNext = document.getElementById('slider-next');
+    const dotsContainer = document.getElementById('slider-dots');
+    
+    // Determinar las imágenes (prioriza array 'imagenes', fallback a 'imagen_url')
+    let images = item.imagenes || [];
+    if (!Array.isArray(images)) images = [];
+    if (images.length === 0 && (item.imagen_url || item.imagen)) {
+        images.push(item.imagen_url || item.imagen);
+    }
+    if (images.length === 0) {
+        images.push('/assets/img/kpop.webp'); // Default
+    }
+
+    // Inicializar slider
+    if (track) {
+        track.innerHTML = '';
+        if (dotsContainer) dotsContainer.innerHTML = '';
+        
+        images.forEach((imgUrl, i) => {
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.flexShrink = '0';
+            track.appendChild(img);
+
+            if (dotsContainer && images.length > 1) {
+                const dot = document.createElement('div');
+                dot.style.width = '8px';
+                dot.style.height = '8px';
+                dot.style.borderRadius = '50%';
+                dot.style.background = i === 0 ? 'white' : 'rgba(255,255,255,0.4)';
+                dot.style.cursor = 'pointer';
+                dot.style.transition = '0.3s';
+                dot.onclick = () => goToSlide(i);
+                dotsContainer.appendChild(dot);
+            }
+        });
+
+        let currentSlide = 0;
+        const goToSlide = (index) => {
+            currentSlide = index;
+            track.style.transform = `translateX(-${index * 100}%)`;
+            if (dotsContainer) {
+                Array.from(dotsContainer.children).forEach((dot, i) => {
+                    dot.style.background = i === currentSlide ? 'white' : 'rgba(255,255,255,0.4)';
+                });
+            }
+        };
+
+        if (images.length > 1) {
+            if (btnPrev) {
+                btnPrev.style.display = 'flex';
+                btnPrev.onclick = () => {
+                    if (currentSlide > 0) goToSlide(currentSlide - 1);
+                    else goToSlide(images.length - 1); // Loop
+                };
+            }
+            if (btnNext) {
+                btnNext.style.display = 'flex';
+                btnNext.onclick = () => {
+                    if (currentSlide < images.length - 1) goToSlide(currentSlide + 1);
+                    else goToSlide(0); // Loop
+                };
+            }
+        }
+    }
+
+    document.getElementById('hero-bg-blur').style.backgroundImage = `url('${images[0]}')`;
     
     const badge = document.getElementById('detail-type-badge');
     badge.innerText = type === 'evento' ? 'EVENTO ECOLÓGICO' : 'LUGAR SUSTENTABLE';
@@ -234,9 +305,10 @@ async function renderActorSection(actorId) {
             .eq('id', actorId)
             .single();
 
-        // Buscamos el ID del agente para el enlace
-        const { data: agente } = await supabase.from('agentes').select('id').eq('usuario_id', actorId).maybeSingle();
-        const profileLink = agente ? `/pages/agente-detalle.html?id=${agente.id}` : `/pages/agente-detalle.html?actor_id=${actorId}`;
+        if (error || !actor) return;
+
+        // Simplificamos el link usando directamente el actorId
+        const profileLink = `/pages/agente-detalle.html?actor_id=${actorId}`;
 
         const actorSection = document.createElement('section');
         actorSection.className = 'info-section actor-card-lite';
@@ -293,7 +365,7 @@ async function setupSocialActions(itemId, type) {
         .eq('user_id', user.id)
         .eq('item_id', itemId)
         .eq('item_tipo', type)
-        .single();
+        .maybeSingle();
 
     if (favData) {
         isFavorite = true;
@@ -325,7 +397,7 @@ async function setupSocialActions(itemId, type) {
 }
 
 async function getFavId(userId, itemId, type) {
-    const { data } = await supabase.from('favoritos').select('id').eq('user_id', userId).eq('item_id', itemId).eq('item_tipo', type).single();
+    const { data } = await supabase.from('favoritos').select('id').eq('user_id', userId).eq('item_id', itemId).eq('item_tipo', type).maybeSingle();
     return data?.id;
 }
 
@@ -363,7 +435,7 @@ async function checkFollowStatus(actorId) {
         .select('id')
         .eq('user_id', session.user.id)
         .eq('actor_id', actorId)
-        .single();
+        .maybeSingle();
 
     if (followData) isFollowing = true;
     updateFollowUI(isFollowing);

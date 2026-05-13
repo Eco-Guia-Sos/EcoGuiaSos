@@ -1,9 +1,9 @@
 /* assets/css/calendar.css */
 
 .calendar-section {
-    width: 100%;
-    max-width: 1200px;
-    margin: 20px auto;
+    width: 90% !important; /* Un poco más estrecho para mayor margen */
+    max-width: 1050px !important; /* Reducido de 1100px para que respire más */
+    margin: 50px auto !important; /* Más separación vertical y centrado perfecto */
     padding: 35px;
     background: #020617; /* Más profundo */
     background: radial-gradient(circle at 0% 0%, rgba(114, 176, 77, 0.15) 0%, transparent 50%),
@@ -207,11 +207,13 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    display: none; /* Asegurar que no ocupe espacio ni sea visible */
 }
 
 .event-sheet-overlay.active {
     opacity: 1;
     visibility: visible;
+    display: block;
 }
 
 .event-sheet {
@@ -227,10 +229,12 @@
     transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     max-height: 85vh;
     overflow-y: auto;
+    display: none; /* Oculto por defecto */
 }
 
 .event-sheet.active {
     bottom: 0;
+    display: block;
 }
 
 .sheet-handle {
@@ -287,6 +291,7 @@
     
     .event-sheet.active {
         right: 0;
+        display: block; /* Mostrar como panel lateral */
     }
 }
 

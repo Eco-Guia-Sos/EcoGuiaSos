@@ -1,12 +1,15 @@
 /* assets/js/pages/mapa.js */
 import { supabase } from '../supabase.js';
+import { TerritoryService } from '../services/territory-service.js';
 
 // Exponer para comandos de consola administrativos
 window.supabase = supabase;
 
+const ARCGIS_API_KEY = 'AAPK63c1a8519cc64746b19a008c37d6e4990L-8UuS9XnO0mO9q60Q7oXoXoXoXoXoXoXoXo'; // Llave de acceso para mapas vectoriales
 let map;
-let userMarker;
-const defaultLocation = [-99.1332, 19.4326]; // CDMX [lng, lat] for MapLibre
+let markers = [];
+let userMarker = null;
+const defaultLocation = [-102.5528, 23.6345]; // Centro de México [lng, lat] for MapLibre
 
 // Nueva función para inicializar los selectores de territorio (INEGI)
 async function setupTerritorySelectors() {
@@ -16,95 +19,91 @@ async function setupTerritorySelectors() {
     if (!selectEstado || !selectMunicipio) return;
 
     try {
-        // 1. Obtener la capa de estados
-        const { data: layers } = await supabase
-            .from('territory_layers')
-            .select('id, level')
-            .in('level', ['estado', 'municipio']);
-
-        const stateLayer = layers?.find(l => l.level === 'estado');
-        const munLayer = layers?.find(l => l.level === 'municipio');
-
-        if (!stateLayer) return;
-
-        // 2. Cargar Estados
-        const { data: estados } = await supabase
-            .from('territories')
-            .select('id, name, code, centroid')
-            .eq('layer_id', stateLayer.id)
-            .order('name');
+        // 1. Cargar Estados desde el Servicio Interno
+        const estados = await TerritoryService.getStates();
 
         if (estados) {
             estados.forEach(est => {
                 const opt = document.createElement('option');
-                opt.value = est.code;
+                opt.value = est.key; // Usamos 'key' (INEGI code)
                 opt.textContent = est.name;
                 opt.dataset.id = est.id;
-                opt.dataset.centroid = JSON.stringify(est.centroid);
+                // Si el servicio nos da el centroide, lo guardamos
+                if (est.centroid) opt.dataset.centroid = JSON.stringify(est.centroid);
                 selectEstado.appendChild(opt);
             });
         }
 
-        // 3. Evento al cambiar Estado
+        // 2. Evento al cambiar Estado
         selectEstado.addEventListener('change', async () => {
-            const stateCode = selectEstado.value;
+            const stateKey = selectEstado.value;
             
             // Limpiar municipios
             selectMunicipio.innerHTML = '<option value="">Municipio / Delegación</option>';
             selectMunicipio.disabled = true;
 
-            if (!stateCode) {
+            if (!stateKey) {
                 map.flyTo({ center: defaultLocation, zoom: 5 });
                 highlightTerritory(null);
+                refreshMarkers(''); // Carga inicial
                 return;
             }
 
-            // Volar al estado y resaltarlo
             const selectedOpt = selectEstado.options[selectEstado.selectedIndex];
-            if (selectedOpt.dataset.id) {
-                highlightTerritory(selectedOpt.dataset.id);
-            }
+            const territoryId = selectedOpt.dataset.id;
+            
+            // Pintar área
+            highlightTerritory(territoryId);
 
+            // Volar al estado
             if (selectedOpt.dataset.centroid) {
                 const centroid = JSON.parse(selectedOpt.dataset.centroid);
-                // MapLibre usa [lng, lat], PostGIS ST_AsGeoJSON/centroid suele ser {type: "Point", coordinates: [lng, lat]}
                 if (centroid && centroid.coordinates) {
                     map.flyTo({ center: centroid.coordinates, zoom: 7 });
                 }
             }
 
-            // Cargar Municipios del estado seleccionado
-            if (munLayer) {
-                const { data: municipios } = await supabase
-                    .from('territories')
-                    .select('id, name, code, centroid')
-                    .eq('layer_id', munLayer.id)
-                    .eq('parent_code', stateCode)
-                    .order('name');
+            // --- FILTRO ESPACIAL ---
+            try {
+                const localData = await TerritoryService.fetchEventsByTerritory(territoryId);
+                refreshMarkers('', localData); // Actualiza mapa y carrusel
+            } catch (e) { console.error('Error filtrando eventos:', e); }
 
-                if (municipios && municipios.length > 0) {
-                    municipios.forEach(mun => {
-                        const opt = document.createElement('option');
-                        opt.value = mun.code;
-                        opt.textContent = mun.name;
-                        opt.dataset.id = mun.id;
-                        opt.dataset.centroid = JSON.stringify(mun.centroid);
-                        selectMunicipio.appendChild(opt);
-                    });
-                    selectMunicipio.disabled = false;
-                }
+            // 3. Cargar Municipios usando el Servicio
+            const municipios = await TerritoryService.getMunicipalities(stateKey);
+
+            if (municipios && municipios.length > 0) {
+                municipios.forEach(mun => {
+                    const opt = document.createElement('option');
+                    opt.value = mun.key;
+                    opt.textContent = mun.name;
+                    opt.dataset.id = mun.id;
+                    if (mun.centroid) opt.dataset.centroid = JSON.stringify(mun.centroid);
+                    selectMunicipio.appendChild(opt);
+                });
+                selectMunicipio.disabled = false;
             }
         });
 
         // 4. Evento al cambiar Municipio
-        selectMunicipio.addEventListener('change', () => {
-            const munCode = selectMunicipio.value;
-            if (!munCode) return;
-
+        selectMunicipio.addEventListener('change', async () => {
             const selectedOpt = selectMunicipio.options[selectMunicipio.selectedIndex];
-            if (selectedOpt.dataset.id) {
-                highlightTerritory(selectedOpt.dataset.id);
+            
+            if (!selectedOpt.value) {
+                const stateOpt = selectEstado.options[selectEstado.selectedIndex];
+                if (stateOpt.value) {
+                    const stateId = stateOpt.dataset.id;
+                    highlightTerritory(stateId);
+                    const localData = await TerritoryService.fetchEventsByTerritory(stateId);
+                    refreshMarkers('', localData);
+                } else {
+                    refreshMarkers();
+                }
+                return;
             }
+
+            const territoryId = selectedOpt.dataset.id;
+            highlightTerritory(territoryId);
 
             if (selectedOpt.dataset.centroid) {
                 const centroid = JSON.parse(selectedOpt.dataset.centroid);
@@ -112,6 +111,12 @@ async function setupTerritorySelectors() {
                     map.flyTo({ center: centroid.coordinates, zoom: 11 });
                 }
             }
+
+            // --- FILTRO ESPACIAL ---
+            try {
+                const localData = await TerritoryService.fetchEventsByTerritory(territoryId);
+                refreshMarkers('', localData); // Actualiza mapa y carrusel
+            } catch (e) { console.error('Error filtrando eventos:', e); }
         });
 
     } catch (err) {
@@ -129,10 +134,7 @@ async function highlightTerritory(territoryId) {
     }
 
     try {
-        const { data, error } = await supabase.rpc('get_territory_geojson', { t_id: territoryId });
-        
-        if (error) throw error;
-
+        const data = await TerritoryService.getGeometry(territoryId);
         if (data) {
             map.getSource('selected-territory').setData(data);
         }
@@ -208,31 +210,31 @@ document.addEventListener('DOMContentLoaded', () => {
 function initMap() {
     map = new maplibregl.Map({
         container: 'map-container',
-        // Estilo SATELITAL (ArcGIS World Imagery)
+        // Estilo Plano con Color (ArcGIS Streets) - Público y muy fluido
         style: {
             'version': 8,
             'sources': {
-                'raster-tiles': {
+                'osm-tiles': {
                     'type': 'raster',
                     'tiles': [
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
                     ],
                     'tileSize': 256,
-                    'attribution': 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                    'attribution': '&copy; OpenStreetMap contributors'
                 }
             },
             'layers': [
                 {
-                    'id': 'simple-tiles',
+                    'id': 'osm-layer',
                     'type': 'raster',
-                    'source': 'raster-tiles',
+                    'source': 'osm-tiles',
                     'minzoom': 0,
-                    'maxzoom': 22
+                    'maxzoom': 18
                 }
             ]
         },
         center: defaultLocation,
-        zoom: 11,
+        zoom: 5,
         antialias: true
     });
 
@@ -278,120 +280,138 @@ function initMap() {
         }, 1000);
     });
 
-    // Add navigation controls (zoom, orientation)
-    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+    // Mover controles a la parte superior derecha (se ajustará con CSS para quedar bajo el texto)
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    // Botón de resetear filtros
+    const resetBtn = document.getElementById('reset-filter-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            refreshMarkers(); // Carga todo de nuevo
+        });
+    }
 }
 
-let markers = [];
+let currentMarkers = [];
 
-async function refreshMarkers(filterText = '') {
-    // Clear existing markers from DOM/Map
-    markers.forEach(m => m.remove());
-    markers = [];
+/**
+ * Refresca los marcadores usando elementos DOM con imágenes (Estilo Home)
+ * Optimizados con clustering manual para mantener la fluidez.
+ */
+async function refreshMarkers(filterText = '', manualData = null) {
+    // 1. Limpiar marcadores anteriores
+    currentMarkers.forEach(m => m.remove());
+    currentMarkers = [];
+
+    // Mostrar/Ocultar botón de reset si hay datos manuales (cluster)
+    const resetBtn = document.getElementById('reset-filter-btn');
+    if (manualData) {
+        if (resetBtn) resetBtn.style.display = 'flex';
+    } else {
+        if (resetBtn) resetBtn.style.display = 'none';
+    }
 
     try {
-        const { data: lugares } = await supabase.from('lugares').select('*');
-        const { data: eventos } = await supabase.from('eventos').select('*');
+        let allData = [];
+        if (manualData) {
+            allData = manualData;
+        } else {
+            const { data: lugares } = await supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion');
+            const { data: eventos } = await supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion');
+            allData = [
+                ...(lugares || []).map(l => ({ ...l, tipo: 'lugar' })),
+                ...(eventos || []).map(e => ({ ...e, tipo: 'evento' }))
+            ];
+        }
 
-        const allData = [
-            ...(lugares || []).map(l => ({ ...l, tipo: 'lugar' })),
-            ...(eventos || []).map(e => ({ ...e, tipo: 'evento' }))
-        ].filter(item => 
-            item.nombre.toLowerCase().includes(filterText.toLowerCase()) ||
-            (item.categoria && item.categoria.toLowerCase().includes(filterText.toLowerCase()))
-        );
+        if (filterText) {
+            allData = allData.filter(item => 
+                item.nombre.toLowerCase().includes(filterText.toLowerCase()) ||
+                (item.categoria && item.categoria.toLowerCase().includes(filterText.toLowerCase()))
+            );
+        }
 
-        // Lógica de Agrupamiento (Clustering) Simplificada
+        // 2. Lógica de Agrupamiento (Clustering) para no saturar el DOM
         const clusters = [];
-        const CLUSTER_THRESHOLD = 0.002; 
+        const THRESHOLD = map.getZoom() > 10 ? 0.0005 : 0.005; // Ajustar según el zoom
 
         allData.forEach(p => {
             if (!p.lat || !p.lng) return;
             
-            p.coordenadas = { lat: p.lat, lng: p.lng };
-
-            let foundCluster = clusters.find(c => {
-                const dLat = Math.abs(c.lat - p.coordenadas.lat);
-                const dLng = Math.abs(c.lng - p.coordenadas.lng);
-                return dLat < CLUSTER_THRESHOLD && dLng < CLUSTER_THRESHOLD;
+            let found = clusters.find(c => {
+                const dLat = Math.abs(c.lat - p.lat);
+                const dLng = Math.abs(c.lng - p.lng);
+                return dLat < THRESHOLD && dLng < THRESHOLD;
             });
 
-            if (foundCluster) {
-                foundCluster.items.push(p);
+            if (found) {
+                found.items.push(p);
             } else {
-                clusters.push({
-                    lat: p.coordenadas.lat,
-                    lng: p.coordenadas.lng,
-                    items: [p]
-                });
+                clusters.push({ lat: p.lat, lng: p.lng, items: [p] });
             }
         });
 
-        const bounds = new maplibregl.LngLatBounds();
-        let hasCoords = false;
-
+        // 3. Renderizar cada cluster/punto como elemento DOM
         clusters.forEach(c => {
+            const p = c.items[0]; // Referencia para el estilo
             const count = c.items.length;
-            const p = c.items[0]; // Primer item para la imagen
             const el = document.createElement('div');
-
+            
             if (count > 1) {
-                // Es un grupo (Cluster) con imagen + número
+                // Estilo Cluster (Imagen + Contador)
                 el.className = `map-cluster-marker type-${p.tipo}`;
                 el.innerHTML = `
-                    <img src="${p.imagen || '/assets/img/kpop.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
-                    <div class="cluster-count-badge">${count > 2 ? '2+' : count}</div>
+                    <img src="${p.imagen_url || '/assets/img/ajolote.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
+                    <div class="cluster-count-badge">${count > 9 ? '9+' : count}</div>
                 `;
-                
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
+                el.onclick = () => {
                     const currentZoom = map.getZoom();
-                    if (currentZoom >= 15) {
-                        abrirPanelDetalle(p);
+                    if (currentZoom < 17) {
+                        map.flyTo({ center: [c.lng, c.lat], zoom: currentZoom + 2 });
                     } else {
-                        map.flyTo({ center: [c.lng, c.lat], zoom: currentZoom + 3, essential: true });
+                        // Si ya estamos muy cerca y siguen juntos, mostramos la lista en el carrusel
+                        refreshMarkers('', c.items); 
+                        renderEventsCarousel(c.items);
                     }
-                });
+                };
             } else {
-                // Punto único
+                // Estilo Punto Único (Igual que en la Home)
                 el.className = `map-card-marker type-${p.tipo}`;
-                el.innerHTML = `<img src="${p.imagen || '/assets/img/kpop.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">`;
-                
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    abrirPanelDetalle(p);
-                });
+                el.innerHTML = `
+                    <div class="marker-card-pulse"></div>
+                    <img src="${p.imagen_url || '/assets/img/ajolote.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
+                `;
+                el.onclick = () => abrirPanelDetalle(p);
             }
 
             const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
                 .setLngLat([c.lng, c.lat])
                 .addTo(map);
-
-            markers.push(marker);
-            bounds.extend([c.lng, c.lat]);
-            hasCoords = true;
+            
+            currentMarkers.push(marker);
         });
 
-        // Si es la carga inicial y hay coordenadas, ajustar la vista
-        if (hasCoords && !filterText) {
-            map.fitBounds(bounds, { padding: 80, maxZoom: 14 });
-        }
-
-        // Renderizar el carrusel inferior con los datos actuales
         renderEventsCarousel(allData);
 
     } catch (err) {
-        console.error(err);
+        console.error('[Atlas] Error en refreshMarkers:', err);
     }
 }
 
 function abrirPanelDetalle(item) {
-    map.flyTo({
-        center: [item.coordenadas.lng, item.coordenadas.lat],
-        zoom: 16,
-        essential: true
-    });
+    // Obtener coordenadas de forma segura (soportar ambos formatos)
+    const lng = item.lng || (item.coordenadas ? item.coordenadas.lng : null);
+    const lat = item.lat || (item.coordenadas ? item.coordenadas.lat : null);
 
+    if (lng && lat) {
+        map.flyTo({
+            center: [lng, lat],
+            zoom: 16,
+            essential: true
+        });
+    }
+
+    // Abrir panel lateral derecho
     const panel = document.getElementById('event-detail-panel');
     const img = document.getElementById('side-panel-img');
     const badge = document.getElementById('side-panel-badge');
@@ -400,15 +420,27 @@ function abrirPanelDetalle(item) {
     const location = document.getElementById('side-panel-location');
     const link = document.getElementById('side-panel-link');
 
-    if(panel) {
-        img.src = item.imagen || '/assets/img/kpop.webp';
+    if (panel) {
+        img.src = item.imagen_url || item.imagen || '/assets/img/ajolote.webp';
         badge.innerText = item.tipo.toUpperCase();
         title.innerText = item.nombre;
         category.innerText = item.categoria || 'Sin categoría';
-        location.innerText = item.ubicacion_texto || item.direccion || 'Ubicación seleccionada';
+        location.innerText = item.ubicacion_texto || item.direccion || item.ubicacion || 'Ubicación seleccionada';
         link.href = `/pages/${item.tipo}s.html?id=${item.id}`;
-        
         panel.classList.remove('hidden');
+    }
+
+    // Destacar la tarjeta del carrusel correspondiente
+    const carousel = document.getElementById('map-events-carousel');
+    if (carousel) {
+        const cards = carousel.querySelectorAll('.map-event-card');
+        cards.forEach(c => c.classList.remove('card--active'));
+        const activeCard = carousel.querySelector(`[data-id="${item.id}"]`);
+        if (activeCard) {
+            activeCard.classList.add('card--active');
+            // Scroll suave hacia la tarjeta
+            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
     }
 }
 
@@ -504,13 +536,14 @@ function renderEventsCarousel(data) {
         }
 
         card.innerHTML = `
-            <img src="${item.imagen_url || item.imagen || './assets/img/kpop.webp'}" alt="${item.nombre}">
+            <img src="${item.imagen_url || item.imagen || '/assets/img/ajolote.webp'}" alt="${item.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
             <div class="map-event-info">
                 <h4>${item.nombre}</h4>
-                <p><i class="fa-solid fa-calendar"></i> ${item.fecha || 'Próximamente'}</p>
+                <p><i class="fa-solid fa-layer-group"></i> ${item.categoria || 'Iniciativa'}</p>
                 ${distHtml}
             </div>
         `;
+        card.dataset.id = item.id; // Para poder resaltarla luego
 
         card.addEventListener('click', () => {
             if (item.lat && item.lng) {
@@ -523,13 +556,91 @@ function renderEventsCarousel(data) {
     });
 }
 
-// Configurar botón para cerrar el Panel
+// Configurar botón para cerrar el Panel, Drag Scroll, Flechas y Panel de Filtros
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Cerrar panel lateral ---
     const closeBtn = document.getElementById('close-side-panel');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             const panel = document.getElementById('event-detail-panel');
-            if(panel) panel.classList.add('hidden');
+            if (panel) panel.classList.add('hidden');
+        });
+    }
+
+    // --- DRAG SCROLL PARA EL CARRUSEL ---
+    const slider = document.getElementById('map-events-carousel');
+    if (slider) {
+        let isDown = false, startX, scrollLeft;
+        slider.addEventListener('mousedown', (e) => { isDown = true; slider.classList.add('active-drag'); startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft; });
+        slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('active-drag'); });
+        slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('active-drag'); });
+        slider.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; slider.scrollLeft = scrollLeft - (x - startX) * 2; });
+    }
+
+    // --- FLECHAS DEL CARRUSEL ---
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+    const carousel = document.getElementById('map-events-carousel');
+
+    if (prevBtn && nextBtn && carousel) {
+        const scrollAmount = 310; // Ancho de una tarjeta + gap
+        prevBtn.addEventListener('click', () => carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' }));
+        nextBtn.addEventListener('click', () => carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' }));
+    }
+
+    // --- PANEL DE FILTROS (abrir/cerrar) ---
+    const filterBtn = document.getElementById('filter-btn');
+    const filterPanel = document.getElementById('filter-panel');
+    const filterBackdrop = document.getElementById('filter-backdrop');
+
+    if (filterBtn && filterPanel) {
+        filterBtn.addEventListener('click', () => filterPanel.classList.toggle('open'));
+        filterBackdrop.addEventListener('click', () => filterPanel.classList.remove('open'));
+    }
+
+    // --- CHIPS DE REGIÓN ---
+    document.querySelectorAll('.region-chip').forEach(chip => {
+        chip.addEventListener('click', async () => {
+            // Toggle activo
+            const isActive = chip.classList.contains('active');
+            document.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
+
+            if (isActive) {
+                // Desactivar: volver a vista completa
+                refreshMarkers('');
+                return;
+            }
+
+            chip.classList.add('active');
+            const regionId = chip.dataset.region;
+
+            try {
+                const regionData = await TerritoryService.fetchEventsByRegion(regionId);
+                refreshMarkers(null, regionData); // Actualiza mapa y carrusel
+                
+                // Limpiar selectores
+                document.getElementById('select-estado').value = '';
+                document.getElementById('select-municipio').innerHTML = '<option value="">Selecciona un estado primero</option>';
+                document.getElementById('select-municipio').disabled = true;
+                highlightTerritory(null);
+            } catch (e) {
+                console.error('Error filtrando por región:', e);
+            }
+        });
+    });
+
+    // --- LIMPIAR FILTROS ---
+    const clearBtn = document.getElementById('filter-clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            document.querySelectorAll('.region-chip').forEach(c => c.classList.remove('active'));
+            document.getElementById('select-estado').value = '';
+            document.getElementById('select-municipio').innerHTML = '<option value="">Selecciona un estado primero</option>';
+            document.getElementById('select-municipio').disabled = true;
+            highlightTerritory(null);
+            map.flyTo({ center: defaultLocation, zoom: 5 });
+            refreshMarkers('');
+            filterPanel.classList.remove('open');
         });
     }
 });

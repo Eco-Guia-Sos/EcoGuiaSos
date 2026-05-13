@@ -296,35 +296,37 @@ if (formActor) {
 
             if (!userId) throw new Error("No se pudo obtener el ID de usuario.");
 
-            // B. Asegurar registro en tabla 'perfiles' (si el trigger de Auth no lo hizo)
+            // B. Asegurar registro en tabla 'perfiles' con los datos completos del actor
+            
+            // Construir objeto de redes sociales
+            const links = {};
+            document.querySelectorAll('#actor-social-inputs input').forEach(input => {
+                const net = input.dataset.net;
+                if(net === 'Facebook') links.facebook = input.value;
+                if(net === 'Instagram') links.instagram = input.value;
+                if(net === 'X') links.twitter = input.value;
+            });
+
             const { error: profileError } = await supabase
                 .from('perfiles')
                 .upsert({
                     id: authData.user.id,
                     nombre_completo: fullName,
-                    email: email,
+                    email: email, // Guardamos el correo explícitamente para el panel
                     telefono: phone,
-                    rol: 'user',
+                    rol: 'user', // Debe iniciar como 'user' hasta que el admin lo apruebe
+                    actor_status: 'pending', // Marca de solicitud activa para el panel
+                    bio: bio,
+                    links_sociales: links,
                     avatar_url: avatarUrl || currentSession?.user?.user_metadata?.avatar_url
                 });
 
-            if (profileError) console.warn("Aviso: No se pudo crear perfil manual, posiblemente ya existe vía Trigger.");
+            if (profileError) {
+                console.warn("Aviso: No se pudo crear perfil manual, error:", profileError);
+                throw new Error("No se pudo guardar el perfil de actor.");
+            }
 
-            // C. Guardar Solicitud Detallada vinculando el ID de usuario
-            const { error: dbError } = await supabase
-                .from('solicitudes_actores')
-                .insert([{
-                    usuario_id: authData.user.id, // VÍNCULO CRÍTICO
-                    nombre_completo: fullName,
-                    email: email,
-                    telefono: phone,
-                    redes_sociales: socialLinks,
-                    biografia: bio,
-                    estado: 'pendiente',
-                    avatar_url: avatarUrl // Almacenamos el avatar en la solicitud para el admin
-                }]);
-
-            if (dbError) throw dbError;
+            // Ya no insertamos en solicitudes_actores porque el panel de moderación usa 'perfiles'
 
             showMessage('¡Cuenta creada y solicitud enviada! Revisa tu email.', 'success');
             

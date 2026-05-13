@@ -70,11 +70,14 @@ function initIndex() {
         getCachedProfile().then(p => console.log('[Inicio] 👤 Perfil para mapa listo:', p?.rol || 'visitante')); 
 
         // setupAuthObserver en ui-utils.js ya maneja la sesión y la campanita.
-        // Solo necesitamos obtener la ubicación inicial si hay sesión.
-        supabase.auth.getSession().then(({data: {session}}) => {
-            if (session) {
-                console.log('[Auth] Sesión detectada en index.js, obteniendo ubicación silenciosa...');
-                setTimeout(() => obtenerUbicacionSilenciosa(), 1500);
+        // Escuchamos activamente el cambio de estado para disparar el GPS al entrar
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                if (session) {
+                    console.log(`[Auth] Evento ${event} detectado. Iniciando radar GPS...`);
+                    // Un pequeño delay para asegurar que el perfil en caché esté listo
+                    setTimeout(() => obtenerUbicacionSilenciosa(), 1000);
+                }
             }
         });
 
@@ -108,7 +111,7 @@ function initIndex() {
     // cargarDatosDeSupabase(); // Se movió al observador de Auth arriba
 
     setupMobileTooltips();
-    iniciarMiniMapa();
+    // iniciarMiniMapa(); // M4: Removido — ahora es lazy al presionar el botón
 
     // 5. Global Search Support
     const buscadorInput = document.getElementById('buscador-input');
@@ -251,13 +254,18 @@ function parseSupabaseRow(row, tipo) {
         conteo = row.eventos[0].count || 0;
     }
     
+    let firstImg = row.imagen_url || row.imagen;
+    if (row.imagenes && Array.isArray(row.imagenes) && row.imagenes.length > 0) {
+        firstImg = row.imagenes[0];
+    }
+
     return {
         id: row.id,
         nombre: row.nombre,
         categoria: row.categoria || 'General',
         ubicacion: row.ubicacion || 'CDMX',
         mapa_url: row.mapa_url || null,
-        imagen: row.imagen_url || row.imagen || '/assets/img/kpop.webp',
+        imagen: firstImg || '/assets/img/kpop.webp',
         descripcion: row.descripcion || 'Sin descripción.',
         tipo: tipo,
         coordenadas: (row.lat && row.lng) ? { lat: row.lat, lng: row.lng } : null,
@@ -280,12 +288,32 @@ async function iniciarMiniMapa() {
     try {
         miniMapHandle = new maplibregl.Map({
             container: 'mini-map',
-            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            style: {
+                version: 8,
+                sources: {
+                    'osm': {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '&copy; OpenStreetMap Contributors'
+                    }
+                },
+                layers: [{
+                    id: 'osm',
+                    type: 'raster',
+                    source: 'osm'
+                }]
+            },
             center: [-99.1332, 19.4326], // CDMX
             zoom: 10,
             scrollZoom: false
         });
         miniMapHandle.addControl(new maplibregl.NavigationControl(), 'top-right');
+        
+        // M4: Forzar resize inicial cuando cargue el estilo
+        miniMapHandle.on('load', () => {
+            miniMapHandle.resize();
+        });
         
         // Añadir Botón de Relocalización Manual
         const relocateBtn = document.createElement('button');
@@ -461,6 +489,17 @@ function abrirPanelDetalleHome(p) {
             zoom: 16,
             essential: true
         });
+
+        // --- SINCRONIZACIÓN CON EL SLIDER ---
+        const allCards = document.querySelectorAll('.nearby-slider-card');
+        allCards.forEach(c => c.classList.remove('active'));
+
+        const targetCard = document.querySelector(`.nearby-slider-card[data-id="${p.id}"]`);
+        if (targetCard) {
+            targetCard.classList.add('active');
+            // Auto-scroll suave de la tarjeta seleccionada
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
     }
 }
 
@@ -485,11 +524,16 @@ function filtrarYRenderizar() {
     // Filtro por Proximidad (GPS + Slider)
     if (proximidadActiva && userCoords) {
         datosFiltrados = datosFiltrados.filter(p => {
-            if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) return false;
+            if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) {
+                p.distancia_calculada = Infinity; // Distancia desconocida
+                return true; // No lo ocultamos, lo mostramos al final
+            }
             const dist = calcularDistancia(userCoords.lat, userCoords.lng, p.coordenadas.lat, p.coordenadas.lng);
             p.distancia_calculada = dist;
+            // Si tiene coordenadas, validamos la distancia. Si no, lo dejamos pasar.
             return dist <= filtrosAvanzados.distancia;
         });
+        // Ordenar por distancia (los Infinity irán al final)
         datosFiltrados.sort((a, b) => a.distancia_calculada - b.distancia_calculada);
     }
 
@@ -667,6 +711,7 @@ function renderNearbySlider(items) {
     items.forEach(p => {
         const card = document.createElement('div');
         card.className = 'nearby-slider-card';
+        card.setAttribute('data-id', p.id); // Guardar ID para sincronización
         
         const distText = p.distancia_calculada ? `a ${p.distancia_calculada.toFixed(1)} km` : 'Distancia desconocida';
         const icon = p.tipo === 'evento' ? '<i class="fa-solid fa-calendar-star"></i>' : '<i class="fa-solid fa-shop"></i>';
@@ -826,12 +871,14 @@ function getNivelClass(categoria) {
 function renderCards(data) {
     const contenedor = document.getElementById('contenedor-tarjetas');
     if (!contenedor) return;
-    contenedor.innerHTML = '';
+
     if (data.length === 0) {
         contenedor.innerHTML = '<p class="txt-loading">No se encontraron resultados.</p>';
         return;
     }
-    data.forEach(p => {
+
+    // Generar todo el HTML en memoria primero
+    const cardsHtml = data.map(p => {
         const nivelClass = getNivelClass(p.categoria);
         const distLabel = p.distancia_calculada ? `<span class="dist-badge">a ${p.distancia_calculada.toFixed(1)} km</span>` : '';
         const eventosBadge = (p.tipo === 'lugar') ? `<span class="place-event-badge"><i class="fa-solid fa-calendar-star"></i> ${p.conteo_eventos || 0}</span>` : '';
@@ -840,7 +887,7 @@ function renderCards(data) {
         // Determinar archivo de detalles correcto
         const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
 
-        const html = `
+        return `
             <article class="card fade-in ${nivelClass}" data-owner="${p.owner_id || ''}" onclick="window.location.href='/pages/${detailPage}?id=${p.id}'" style="cursor: pointer;">
                 <div class="card-image">
                     <img src="${p.imagen}" alt="${sanitize(p.nombre)}" onerror="this.src='/assets/img/kpop.webp'">
@@ -854,8 +901,10 @@ function renderCards(data) {
                     <h3 class="card-title">${sanitize(p.nombre)}</h3>
                 </div>
             </article>`;
-        contenedor.innerHTML += html;
-    });
+    }).join('');
+
+    // Insertar una sola vez al DOM (Mucho más rápido)
+    contenedor.innerHTML = cardsHtml;
     checkCardPermissions();
 }
 
@@ -887,10 +936,17 @@ function setupHomeMapaToggle() {
         if (isHidden) {
             wrapper.classList.remove('hidden-map');
             btn.innerText = 'Ocultar mapa';
-            // Forzar recálculo del mapa
-            setTimeout(() => {
-                if (miniMapHandle) miniMapHandle.resize();
-            }, 300);
+
+            // M4: Inicialización Lazy
+            if (!miniMapHandle) {
+                console.log('[Mobile Opt] Inicializando mini-mapa bajo demanda...');
+                iniciarMiniMapa();
+            } else {
+                // Si ya existe, forzamos un resize para que se ajuste al nuevo tamaño del contenedor
+                setTimeout(() => {
+                    miniMapHandle.resize();
+                }, 100);
+            }
         } else {
             wrapper.classList.add('hidden-map');
             btn.innerText = 'Ver mapa';
@@ -959,13 +1015,13 @@ function iniciarParticulas() {
     if (typeof particlesJS !== 'undefined') {
         particlesJS("particles-main", {
             "particles": {
-                "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+                "number": { "value": 30, "density": { "enable": true, "value_area": 800 } },
                 "color": { "value": ["#72B04D", "#0077b6", "#FFD700", "#E74C3C"] },
                 "shape": { "type": "circle" },
-                "opacity": { "value": 0.6, "random": true },
-                "size": { "value": 8, "random": true },
-                "line_linked": { "enable": true, "distance": 180, "color": "#72B04D", "opacity": 0.3, "width": 1 },
-                "move": { "enable": true, "speed": 3.5, "direction": "out", "random": true, "out_mode": "out" }
+                "opacity": { "value": 0.4, "random": true },
+                "size": { "value": 6, "random": true },
+                "line_linked": { "enable": false }, // Desactivado para fluidez extrema
+                "move": { "enable": true, "speed": 2, "direction": "out", "random": true, "out_mode": "out" }
             },
             "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false }, "onclick": { "enable": false }, "resize": true } },
             "retina_detect": true

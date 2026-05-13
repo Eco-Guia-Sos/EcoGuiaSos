@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo usar EcoGuía SOS — Tutoriales y Ayuda</title>
+    <meta name="description" content="Aprende a usar EcoGuía SOS. Tutoriales y guías paso a paso para visitantes, voluntarios y organizaciones registradas.">
+    
+    <!-- FAVICON Y TIPOGRAFÍA -->
+    <link rel="icon" type="image/webp" href="./assets/img/logo-app.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- ICONOS (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- HOJAS DE ESTILOS -->
+    <link rel="stylesheet" href="./assets/css/global.css">
+    <link rel="stylesheet" href="./assets/css/guia.css">
+</head>
+<body class="dark-theme">
+
+    <!-- NAVBAR ESTANDARIZADA (Inyectada por ui-utils.js) -->
+    <nav class="navbar glass-effect" id="main-nav">
+        <div class="nav-container">
+            <a href="./index.html" class="nav-brand">
+                <img src="./assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
+            </a>
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="./index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="./pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
+                <li><a href="./como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="./auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="./auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="guia-main-container">
+        
+        <!-- HERO SECTION -->
+        <header class="guia-hero">
+            <img src="./assets/img/logmov.gif" alt="Logo Animado EcoGuía SOS" class="hero-logo-gif">
+            <h1>¿Cómo quieres usar EcoGuía SOS?</h1>
+            <p>Selecciona tu perfil para ver los videos tutoriales, atajos y flujos de acción optimizados para tus necesidades.</p>
+        </header>
+
+        <!-- TARJETAS DE SELECCIÓN DE ROL -->
+        <section class="rol-cards-grid">
+            
+            <!-- TARJETA A: VISITANTES / VOLUNTARIOS -->
+            <article class="rol-card">
+                <div>
+                    <div class="rol-icon-box">
+                        <i class="fa-solid fa-person-hiking"></i>
+                    </div>
+                    <h3>Visitante / Voluntario</h3>
+                    <p>Ideal si buscas sumarte a iniciativas locales, encontrar áreas verdes, asistir a eventos y seguir de cerca la regeneración ambiental.</p>
+                    
+                    <ul class="rol-features-list">
+                        <li><i class="fa-solid fa-circle-check"></i> Búsqueda y filtrado inteligente</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Uso del radar geográfico de proximidad</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Gestión de favoritos y perfiles seguidos</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Proceso de registro y ayuda en campo</li>
+                    </ul>
+                </div>
+                <button type="button" class="btn-user" aria-label="Ver tutoriales para visitantes">
+                    Ver Guía de Usuario <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </article>
+
+            <!-- TARJETA B: ACTORES / ORGANIZACIONES -->
+            <article class="rol-card actor-card">
+                <div>
+                    <div class="rol-icon-box">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                    <h3>Actor / Organización</h3>
+                    <p>Diseñado para colectivos, instituciones, parques y proyectos oficiales que requieren difundir sus actividades y fortalecer su impacto.</p>
+                    
+                    <ul class="rol-features-list">
+                        <li><i class="fa-solid fa-circle-check"></i> Solicitud y validación de cuenta de Actor</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Uso del Panel de Administración central</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Formulario de eventos con múltiples imágenes</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Captura precisa de coordenadas en Google Maps</li>
+                    </ul>
+                </div>
+                <button type="button" class="btn-actor" aria-label="Ver tutoriales para organizaciones">
+                    Ver Guía de Actor <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </article>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER PREMIUM ESTANDARIZADO -->
+    <footer class="footer glass-effect">
+        <div class="footer-container">
+            <!-- Columna 1: Marca -->
+            <div class="footer-brand">
+                <div class="brand-title">
+                    <img src="./assets/img/logo-navbar.webp" alt="Logo" class="footer-mini-logo">
+                    <h2>EcoGuía SOS</h2>
+                </div>
+                <p>Conectando acciones ciudadanas y colectivas para restaurar nuestro entorno natural.</p>
+            </div>
+
+            <!-- Columna 2: Conecta (Redes) -->
+            <div class="footer-social">
+                <h4>Conecta con nosotros</h4>
+                <div class="social-icons-premium">
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="actor-hover" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS CORE -->
+    <script type="module" src="./assets/js/supabase.js"></script>
+    <script type="module" src="./assets/js/ui-utils.js"></script>
+    <script type="module" src="./assets/js/pages/como-usar.js"></script>
+</body>
+</html>

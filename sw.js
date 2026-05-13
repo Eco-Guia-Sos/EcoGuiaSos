@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecoguiasos-v5';
+const CACHE_NAME = 'ecoguiasos-v6';
 
 // URLs que NO deben ser interceptadas por el SW (APIs dinámicas)
 const BYPASS_PATTERNS = [
@@ -8,6 +8,9 @@ const BYPASS_PATTERNS = [
     'unpkg.com',             // CDN dinámico
     'cdn.jsdelivr.net',      // CDN dinámico
     'wa.me',                 // WhatsApp
+    'tile.openstreetmap.org', // OpenStreetMap Tiles
+    'basemaps.cartocdn.com', // CartoDB Tiles
+    'server.arcgisonline.com', // ArcGIS Tiles
 ];
 
 // Recursos estáticos locales para cachear
@@ -16,8 +19,10 @@ const STATIC_ASSETS = [
     './index.html',
     './assets/css/global.css',
     './assets/css/style.css',
-    './assets/gif/EGSlg.webp',
-    './assets/gif/EGSBOOK.webp',
+    './assets/img/logo-navbar.webp',
+    './assets/img/logo-carga.webp',
+    './assets/img/logo-app.webp',
+    './assets/img/carrusel-hero.webp',
 ];
 
 // ==========================================

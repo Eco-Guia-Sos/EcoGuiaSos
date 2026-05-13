@@ -77,14 +77,11 @@ async function loadFavorites(userId) {
         // Buscamos en perfiles para tener los datos básicos
         const { data: profiles } = await supabase.from('perfiles').select('*').in('id', actorIds);
         
-        // También intentamos buscar si tienen un registro en 'agentes' para el link
-        const { data: agents } = await supabase.from('agentes').select('id, usuario_id').in('usuario_id', actorIds);
-        
+        // Mapeamos directamente usando los perfiles
         const mappedActors = profiles.map(p => {
-            const agent = agents?.find(a => a.usuario_id === p.id);
             return {
                 ...p,
-                agent_id: agent?.id
+                agent_id: null // Ya no usamos ID de agente, solo ID de perfil
             };
         });
 

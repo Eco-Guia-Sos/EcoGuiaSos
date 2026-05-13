@@ -37,6 +37,140 @@ body.is-admin .stat-card.only-admin {
     display: flex !important;
 }
 
+/* BADGES DE NOTIFICACIÃ“N EN SIDEBAR */
+.pending-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    margin-left: auto;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pending-badge.hidden {
+    display: none;
+}
+
+/* SISTEMA DE TABS DE MODERACIÃ“N */
+.admin-tabs-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 5px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid var(--admin-border);
+}
+
+.admin-tab {
+    background: transparent;
+    border: none;
+    color: var(--admin-text-muted);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.admin-tab.active {
+    background: var(--gradient-eco);
+    color: white;
+    box-shadow: 0 4px 15px rgba(114, 176, 77, 0.3);
+}
+
+.tab-counter {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+/* MENÃš DE ACCIONES DESPLEGABLE */
+.actions-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-actions-trigger {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--admin-border);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-actions-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #72B04D;
+}
+
+.actions-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 8px;
+    background: #111827; /* Darker for contrast */
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    min-width: 180px;
+    overflow: hidden;
+    display: none;
+    animation: slideDown 0.2s ease;
+}
+
+.actions-menu.active {
+    display: block;
+}
+
+.action-item {
+    padding: 10px 15px;
+    color: #d1d5db;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+}
+
+.action-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.action-item.approve:hover { color: #10b981; }
+.action-item.reject:hover { color: #ef4444; }
+.action-item.edit:hover { color: #f59e0b; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Botones de acción personalizados */
 .btn-success-admin {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
@@ -281,12 +415,15 @@ body.is-admin .stat-card.only-admin {
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: var(--admin-accent);
+    background: rgba(255, 255, 255, 0.05); /* Fondo neutro muy sutil */
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     color: white;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .profile-info {
@@ -442,7 +579,7 @@ body.is-admin .stat-card.only-admin {
     padding: 0; /* No internal padding for the card itself, padding goes to header/table */
     backdrop-filter: blur(10px);
     width: 100%;
-    overflow: hidden; /* Ensure rounded corners clip content */
+    overflow: visible; /* Changed from hidden to prevent dropdown clipping */
 }
 
 .table-header {
@@ -636,6 +773,9 @@ body.is-admin .stat-card.only-admin {
 .input-wrapper input,
 .input-wrapper textarea,
 .input-wrapper select,
+.form-group input,
+.form-group textarea,
+.form-group select,
 .coord-field input,
 .image-upload-wrapper input[type="url"] {
     width: 100%;
@@ -649,9 +789,18 @@ body.is-admin .stat-card.only-admin {
     outline: none;
 }
 
+.input-wrapper select option,
+.form-group select option {
+    background-color: #0f172a; /* Fondo oscuro sólido para el menú nativo */
+    color: white;
+}
+
 .input-wrapper input:focus,
 .input-wrapper textarea:focus,
 .input-wrapper select:focus,
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus,
 .coord-field input:focus,
 .image-upload-wrapper input[type="url"]:focus {
     border-color: var(--admin-accent);

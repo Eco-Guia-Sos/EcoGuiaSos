@@ -48,7 +48,14 @@ export function showErrorState(containerId, message = 'Error al cargar los datos
     }
 }
 
+let _authObserverRegistered = false;
+
 export function setupAuthObserver() {
+    if (_authObserverRegistered) {
+        console.log('[Auth] setupAuthObserver ya estaba iniciado, ignorando.');
+        return;
+    }
+    _authObserverRegistered = true;
     console.log('[Auth] setupAuthObserver iniciado');
     
     let authBtn = document.getElementById('nav-auth-btn') || document.querySelector('.nav-btn-highlight');

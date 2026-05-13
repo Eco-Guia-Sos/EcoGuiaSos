@@ -9,8 +9,8 @@
         content="EcoGuía SOS - Plataforma tecnológica para la acción climática en México. Directorio de proyectos sustentables.">
 
     <!-- apple-touch-icon -->
-    <link rel="apple-touch-icon" href="./assets/gif/EGSlg.webp">
-    <link rel="icon" href="./assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="apple-touch-icon" href="./assets/img/logo-app.webp">
+    <link rel="icon" href="./assets/img/logo-app.webp" type="image/webp">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#72B04D">
 
@@ -27,14 +27,14 @@
 
     <!-- Font Awesome — carga no bloqueante -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-        media="print" onload="this.media='all'">
+        media="print" onload="this.media='all'" crossorigin="anonymous">
     <noscript>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     </noscript>
 
     <!-- Swiper CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" media="print"
-        onload="this.media='all'">
+        onload="this.media='all'" crossorigin="anonymous">
     <noscript>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
     </noscript>
@@ -42,30 +42,30 @@
 
     <!-- MapLibre GL — CSS no bloqueante, JS con defer -->
     <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' media="print"
-        onload="this.media='all'">
+        onload="this.media='all'" crossorigin="anonymous">
     <noscript>
         <link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet'>
     </noscript>
     <script defer src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/lucide@latest"></script>
     <!-- Particles.js -->
-    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 </head>
 
 <body>
 
     <!-- PANTALLA DE CARGA -->
     <div id="loader">
-        <img src="./assets/gif/EGSBOOK.webp" alt="Cargando EcoGuía SOS...">
+        <img src="./assets/img/logo-carga.webp" alt="Cargando EcoGuía SOS...">
     </div>
 
     <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
     <nav class="main-nav">
         <div class="nav-container">
             <a href="./index.html" class="nav-brand">
-                <img src="./assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <img src="./assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
                 <h1>EcoGuía SOS</h1>
             </a>
 
@@ -90,9 +90,15 @@
             <div class="swiper hero-carousel">
                 <div class="swiper-wrapper">
                     <!-- Slide 1: Logo Original -->
-                    <div class="swiper-slide">
-                        <img src="./assets/gif/EGSlg+.webp" alt="Logo animado de EcoGuía SOS" class="hero-logo"
-                            loading="lazy">
+                    <div class="swiper-slide custom-slide">
+                        <picture class="hero-picture-full">
+                            <!-- Versión para PC (pantallas grandes) -->
+                            <source srcset="./assets/img/pc.gif" media="(min-width: 1024px)">
+                            <!-- Versión para Tablet -->
+                            <source srcset="./assets/img/tablet.gif" media="(min-width: 768px)">
+                            <!-- Versión para Teléfono (Móvil) -->
+                            <img src="./assets/img/fon.gif" alt="Logo animado de EcoGuía SOS" class="slide-bg" loading="lazy">
+                        </picture>
                         <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
                     </div>
                     <!-- Slide 2: Ejemplo Evento -->
@@ -330,7 +336,7 @@
         </section>
 
         <!-- Mini-Map Section (Desplegable) -->
-        <section class="home-map-section fade-in hidden-map" id="mapa-home-wrapper" style="background: rgba(2, 6, 23, 0.95); padding: 20px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); margin: 0 15px 30px; position: relative; overflow: hidden;">
+        <section class="home-map-section fade-in hidden-map" id="mapa-home-wrapper" style="background: rgba(2, 6, 23, 0.95); padding: 20px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); margin: 40px auto; max-width: 1100px; width: 92%; position: relative; overflow: hidden;">
             
             <!-- Brillo de fondo sutil -->
             <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(114, 176, 77, 0.05) 0%, transparent 60%); pointer-events: none; z-index: 0;"></div>
@@ -512,3 +518,4 @@
 </body>
 
 </html>
+

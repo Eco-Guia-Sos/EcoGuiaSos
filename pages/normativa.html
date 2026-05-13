@@ -8,7 +8,7 @@
     <meta name="description" content="Consulta las leyes, normas y regulaciones ambientales vigentes en México.">
 
     <!-- PWA -->
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="icon" href="../assets/img/logo-app.webp" type="image/webp">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
 
@@ -36,7 +36,7 @@
     <nav class="main-nav">
         <div class="nav-container">
             <a href="../index.html" class="nav-brand">
-                <img src="../assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <img src="../assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
                 <h1>EcoGuía SOS</h1>
             </a>
 
@@ -72,35 +72,8 @@
     </header>
 
     <main class="content-section">
-        <p class="intro-text">Conoce las principales leyes, normas oficiales mexicanas (NOM) y regulaciones internacionales. Información esencial para fundamentar proyectos.</p>
-
-        <div class="card-grid-container">
-            <article class="norma-card generic-card fade-in">
-                <i class="fa-solid fa-gavel norma-icon"></i>
-                <h3>LGEEPA</h3>
-                <p class="norma-clave">Publicada en 1988 • Última reforma 2024</p>
-                <p>Marco legal principal para la protección ambiental y el equilibrio ecológico en México.</p>
-                <span class="norma-tag">Federal</span><span class="norma-tag">Marco general</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGEEPA.pdf" class="btn-action-main" target="_blank" style="margin-top: 12px;">Consultar</a>
-            </article>
-
-            <article class="norma-card generic-card fade-in">
-                <i class="fa-solid fa-droplet norma-icon"></i>
-                <h3>Ley de Aguas Nacionales</h3>
-                <p class="norma-clave">Publicada en 1992</p>
-                <p>Regula la explotación, uso y preservación de las aguas nacionales y su calidad.</p>
-                <span class="norma-tag">Federal</span><span class="norma-tag">Agua</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LAN.pdf" class="btn-action-main" target="_blank" style="margin-top: 12px;">Consultar</a>
-            </article>
-
-            <article class="norma-card generic-card fade-in">
-                <i class="fa-solid fa-recycle norma-icon"></i>
-                <h3>LGPGIR (Residuos)</h3>
-                <p class="norma-clave">Publicada en 2003</p>
-                <p>Bases para la gestión integral de residuos y fomento del reciclaje en el país.</p>
-                <span class="norma-tag">Federal</span><span class="norma-tag">Residuos</span>
-                <br><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LGPGIR.pdf" class="btn-action-main" target="_blank" style="margin-top: 12px;">Consultar</a>
-            </article>
+        <div class="card-grid-container" id="normativa-container">
+            <!-- Contenido cargado dinámicamente por normativa.js -->
         </div>
     </main>
 
@@ -108,7 +81,7 @@
     <footer class="footer-interior">
         <div class="footer-interior-content">
             <div class="footer-brand">
-                <img src="../assets/gif/EGSlg.webp" alt="Logo" class="footer-mini-logo">
+                <img src="../assets/img/logo-navbar.webp" alt="Logo" class="footer-mini-logo">
                 <span class="footer-title">EcoGuía SOS</span>
             </div>
             
@@ -132,3 +105,5 @@
 </body>
 
 </html>
+
+

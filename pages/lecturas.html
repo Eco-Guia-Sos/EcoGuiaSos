@@ -8,7 +8,7 @@
     <meta name="description" content="Artículos, guías, libros y recursos de lectura sobre sustentabilidad y medio ambiente.">
 
     <!-- PWA -->
-    <link rel="icon" href="../assets/gif/EGSlg.webp" type="image/gif">
+    <link rel="icon" href="../assets/img/logo-app.webp" type="image/webp">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#72B04D">
 
@@ -36,7 +36,7 @@
     <nav class="main-nav">
         <div class="nav-container">
             <a href="../index.html" class="nav-brand">
-                <img src="../assets/gif/EGSlg.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <img src="../assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
                 <h1>EcoGuía SOS</h1>
             </a>
 
@@ -76,28 +76,8 @@
     </header>
 
     <main class="content-section">
-        <p class="intro-text">Libros y artículos seleccionados para expandir tu conocimiento.</p>
-
-        <div class="card-grid-container">
-            <article class="libro-card generic-card fade-in">
-                <div class="libro-content">
-                    <span class="libro-tipo">📘 Libro</span>
-                    <h3>Primavera Silenciosa</h3>
-                    <p class="libro-autor">Rachel Carson, 1962</p>
-                    <p>El libro que inició el movimiento ambientalista moderno.</p>
-                    <a href="#" class="btn-action-main">Ver recurso</a>
-                </div>
-            </article>
-
-            <article class="libro-card generic-card fade-in">
-                <div class="libro-content">
-                    <span class="libro-tipo">📗 Guía</span>
-                    <h3>Guía del Agua CDMX</h3>
-                    <p class="libro-autor">SEDEMA</p>
-                    <p>Manual práctico para entender el sistema hídrico de la CDMX.</p>
-                    <a href="#" class="btn-action-main">Ver recurso</a>
-                </div>
-            </article>
+        <div class="card-grid-container" id="lecturas-container">
+            <!-- Contenido cargado dinámicamente por lecturas.js -->
         </div>
     </main>
 
@@ -105,7 +85,7 @@
     <footer class="footer-interior">
         <div class="footer-interior-content">
             <div class="footer-brand">
-                <img src="../assets/gif/EGSlg.webp" alt="Logo" class="footer-mini-logo">
+                <img src="../assets/img/logo-navbar.webp" alt="Logo" class="footer-mini-logo">
                 <span class="footer-title">EcoGuía SOS</span>
             </div>
             
@@ -129,3 +109,5 @@
 </body>
 
 </html>
+
+

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Usuario — EcoGuía SOS</title>
+    <meta name="description" content="Guía completa para visitantes y voluntarios en EcoGuía SOS. Aprende a buscar, usar filtros, guardar favoritos y conectar con organizaciones.">
+    
+    <!-- FAVICON Y TIPOGRAFÍA -->
+    <link rel="icon" type="image/webp" href="../assets/img/logo-app.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- ICONOS (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- HOJAS DE ESTILOS -->
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/guia.css">
+</head>
+<body class="dark-theme">
+
+    <!-- NAVBAR ESTANDARIZADA (Inyectada por ui-utils.js) -->
+    <nav class="navbar glass-effect" id="main-nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <img src="../assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo">
+                <h1>EcoGuía SOS</h1>
+            </a>
+
+            <button class="hamburger-menu" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu-list">
+                <li><a href="../index.html" class="nav-blue-btn">Inicio</a></li>
+                <li><a href="../pages/nosotros.html" class="nav-purple-btn">Nosotros</a></li>
+                <li><a href="../como-usar.html" class="nav-how-to-btn">Cómo usar</a></li>
+                <li><a href="../auth.html?tab=signup" class="nav-btn-highlight" id="nav-auth-btn">Súmate</a></li>
+                <li><a href="../auth.html?tab=login" class="nav-login-btn" id="nav-login-btn">Iniciar sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="guia-main-container">
+        
+        <!-- ENCABEZADO SUPERIOR -->
+        <header class="guia-hero" style="margin-bottom: 2rem;">
+            <h1>Guía para Visitantes y Voluntarios</h1>
+            <p>Saca el máximo provecho de nuestras herramientas de exploración ciudadana para apoyar la restauración y conservación ambiental.</p>
+        </header>
+
+        <!-- PANEL DE VIDEOS TUTORIALES -->
+        <section class="videos-grid">
+            
+            <!-- TARJETA 1: NAVEGACIÓN GENERAL -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🧭</span>
+                    <div>
+                        <h3>Navegar el sitio</h3>
+                        <p>Descubre el menú superior, el sistema de niveles ecológicos (Ajolote y Lobo) y la arquitectura de contenidos.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <!-- Placeholder: Cambiar por <iframe> o <video> al tener el video -->
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer pasos de navegación">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 2: CREACIÓN DE CUENTA -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🌱</span>
+                    <div>
+                        <h3>Registrarte como Voluntario</h3>
+                        <p>Cómo crear tu perfil seguro para desbloquear el guardado de actividades y seguimiento de actores locales.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer pasos de registro">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 3: BÚSQUEDA INTELIGENTE -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🔍</span>
+                    <div>
+                        <h3>Búsqueda en tiempo real</h3>
+                        <p>Aprende a usar la barra de búsqueda superior para ubicar instantáneamente proyectos, eventos y lugares.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer pasos de búsqueda">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 4: FILTROS AVANZADOS -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">⚙️</span>
+                    <div>
+                        <h3>Filtros de Búsqueda Avanzada</h3>
+                        <p>Combina categorías (Talleres, Parques, Huertos), fechas precisas y preferencias como acceso con mascotas o niños.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer pasos de filtros">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 5: RADAR DE PROXIMIDAD -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🎯</span>
+                    <div>
+                        <h3>Radar de Distancia</h3>
+                        <p>Autoriza tu ubicación geográfica y desliza el control de kilómetros para visualizar únicamente lo que sucede a tu alrededor.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer uso del radar">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 6: DETALLES DE EVENTOS -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🃏</span>
+                    <div>
+                        <h3>Detalles y Carrusel</h3>
+                        <p>Explora la tarjeta interior de los eventos: visualiza sus galerías de fotos, descripción de actividades y cómo llegar mediante Google Maps.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer detalles de tarjeta interior">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 7: INTERACCIÓN EN MAPA -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">🗺️</span>
+                    <div>
+                        <h3>Visor en Mapa</h3>
+                        <p>Alterna entre la vista de tarjetas y el lienzo cartográfico para analizar la densidad de proyectos y planificar rutas de voluntariado.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer navegación en mapa">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 8: GUARDADO EN FAVORITOS -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">❤️</span>
+                    <div>
+                        <h3>Guardar en Favoritos</h3>
+                        <p>Marca con un corazón los eventos, lecturas o lugares de interés para consultarlos de forma organizada desde tu menú de perfil.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer gestión de favoritos">Leer guía</button>
+                </footer>
+            </article>
+
+            <!-- TARJETA 9: DIRECTORIO DE AGENTES -->
+            <article class="video-card">
+                <header class="video-card-header">
+                    <span class="topic-icon">👥</span>
+                    <div>
+                        <h3>Conectar con Agentes</h3>
+                        <p>Visita los perfiles públicos de las organizaciones oficiales, consulta su historial de trabajo y presiona "Seguir" para enterarte de sus novedades.</p>
+                    </div>
+                </header>
+                
+                <div class="video-player-container">
+                    <div class="video-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <span>Video en producción</span>
+                    </div>
+                </div>
+
+                <footer class="video-card-footer">
+                    <span class="video-status pending">Próximamente</span>
+                    <button class="btn-read-guide" aria-label="Leer seguimiento de agentes">Leer guía</button>
+                </footer>
+            </article>
+
+        </section>
+
+        <!-- CTA INFERIOR -->
+        <footer class="guia-cta-footer">
+            <p>¿Perteneces a un colectivo, parque o proyecto ambiental constituido?</p>
+            <a href="./guia-actor.html" class="link-switch-rol">
+                Consultar los tutoriales para Organizaciones y Actores Oficiales <i class="fa-solid fa-circle-arrow-right"></i>
+            </a>
+        </footer>
+
+    </main>
+
+    <!-- FOOTER PREMIUM ESTANDARIZADO -->
+    <footer class="footer glass-effect">
+        <div class="footer-container">
+            <!-- Columna 1: Marca -->
+            <div class="footer-brand">
+                <div class="brand-title">
+                    <img src="../assets/img/logo-navbar.webp" alt="Logo" class="footer-mini-logo">
+                    <h2>EcoGuía SOS</h2>
+                </div>
+                <p>Conectando acciones ciudadanas y colectivas para restaurar nuestro entorno natural.</p>
+            </div>
+
+            <!-- Columna 2: Conecta (Redes) -->
+            <div class="footer-social">
+                <h4>Conecta con nosotros</h4>
+                <div class="social-icons-premium">
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="actor-hover" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS CORE -->
+    <script type="module" src="../assets/js/supabase.js"></script>
+    <script type="module" src="../assets/js/ui-utils.js"></script>
+    <script type="module" src="../assets/js/pages/como-usar.js"></script>
+</body>
+</html>

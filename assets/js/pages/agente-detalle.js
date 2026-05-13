@@ -20,40 +20,30 @@ async function initAgentProfile() {
 
     try {
         let agenteData = null;
-        let finalUserId = null;
+        let finalUserId = actorId || agentId; // Usamos cualquiera que venga en la URL
 
-        if (agentId) {
-            // 1. Obtener datos desde la tabla 'agentes'
-            const { data: agente, error } = await supabase
-                .from('agentes')
-                .select('*')
-                .eq('id', agentId)
-                .single();
+        // 1. Siempre obtener datos desde la tabla 'perfiles'
+        const { data: perfil, error } = await supabase
+            .from('perfiles')
+            .select('*')
+            .eq('id', finalUserId)
+            .single();
 
-            if (error || !agente) throw new Error('Agente no encontrado');
-            agenteData = agente;
-            finalUserId = agente.usuario_id;
-        } else if (actorId) {
-            // 2. Obtener datos desde la tabla 'perfiles' (Fallback)
-            const { data: perfil, error } = await supabase
-                .from('perfiles')
-                .select('*')
-                .eq('id', actorId)
-                .single();
-
-            if (error || !perfil) throw new Error('Perfil de actor no encontrado');
-            
-            // Mapear perfil a estructura de agente
-            agenteData = {
-                nombre: perfil.nombre_completo || 'Agente de Cambio',
-                imagen_url: perfil.avatar_url || perfil.imagen_url,
-                especialidad: perfil.especialidad || perfil.rol,
-                descripcion: perfil.descripcion || 'Este actor aún no ha configurado su descripción detallada.',
-                usuario_id: perfil.id,
-                is_verified: perfil.is_verified || false
-            };
-            finalUserId = perfil.id;
-        }
+        if (error || !perfil) throw new Error('Perfil no encontrado');
+        
+        // Mapear perfil a estructura de visualización
+        agenteData = {
+            nombre: perfil.nombre_completo || 'Agente de Cambio',
+            imagen_url: perfil.avatar_url || perfil.imagen_url,
+            especialidad: perfil.especialidad || (perfil.rol === 'actor' ? 'Líder Ambiental' : perfil.rol),
+            descripcion: perfil.descripcion || 'Este actor aún no ha configurado su descripción detallada.',
+            usuario_id: perfil.id,
+            is_verified: perfil.is_validated || false,
+            // Fallbacks para campos de perfil
+            organizacion: perfil.organizacion || 'Participante',
+            mision: perfil.mision || null,
+            impacto_resumen: perfil.impacto_resumen || '--'
+        };
 
         renderProfile(agenteData);
 
@@ -124,13 +114,19 @@ async function loadAgentEvents(userId) {
         container.innerHTML = '';
 
         eventos.forEach(ev => {
+            let imgSrc = ev.imagen_url;
+            if (ev.imagenes && Array.isArray(ev.imagenes) && ev.imagenes.length > 0) {
+                imgSrc = ev.imagenes[0];
+            }
+            if (!imgSrc) imgSrc = '/assets/img/kpop.webp';
+
             container.innerHTML += `
                 <article class="dash-card" onclick="window.location.href='eventos.html?id=${ev.id}'" style="cursor: pointer;">
-                    <div style="position:relative;">
-                        <img src="${ev.imagen || '/assets/img/kpop.webp'}" alt="${ev.nombre}" class="dash-card-img" onerror="this.src='/assets/img/kpop.webp'">
+                    <div style="position:relative; width: 100%; height: 160px; overflow: hidden; border-radius: 12px 12px 0 0;">
+                        <img src="${imgSrc}" alt="${ev.nombre}" class="dash-card-img" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/kpop.webp'">
                     </div>
                     <div class="dash-card-body">
-                        <h3>${ev.nombre}</h3>
+                        <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${ev.nombre}">${ev.nombre}</h3>
                         <p style="color: var(--primary-color); font-size: 0.9rem;">${ev.categoria || 'Evento'}</p>
                     </div>
                 </article>
@@ -174,7 +170,7 @@ async function setupFollowLogic(actorId) {
         .select('id')
         .eq('user_id', userId)
         .eq('actor_id', actorId)
-        .single();
+        .maybeSingle();
 
     if (followData) isFollowing = true;
 

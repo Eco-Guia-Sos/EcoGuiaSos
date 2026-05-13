@@ -1,4 +1,4 @@
-/* --- Reseteo Básico y Fuentes --- */
+/* --- Reseteo BÃ¡sico y Fuentes --- */
 html {
     scroll-behavior: smooth;
 }
@@ -62,10 +62,20 @@ html {
 }
 
 #loader img {
-    width: 200px;
+    width: 350px;
+    max-width: 85%;
+    height: auto;
+    transition: width 0.3s ease;
 }
 
-/* BARRA DE NAVEGACIÓN - Movida a global.css */
+/* Agrandar aún más en Tablet y PC */
+@media (min-width: 769px) {
+    #loader img {
+        width: 550px;
+    }
+}
+
+/* BARRA DE NAVEGACIÃ“N - Movida a global.css */
 
 /* HERO PRINCIPAL */
 .hero-section {
@@ -81,7 +91,7 @@ html {
     color: white;
     background: radial-gradient(circle at center, #1b4d1b 0%, #0d1f0d 70%, #050a05 100%);
     box-sizing: border-box;
-    z-index: 100; /* Asegura que el hero y sus menús estén por encima de la sección blanca */
+    z-index: 100; /* Asegura que el hero y sus menÃºs estÃ©n por encima de la secciÃ³n blanca */
     overflow: visible; /* IMPORTANTE: permitir que los hijos salgan del contenedor */
 }
 
@@ -116,14 +126,14 @@ html {
     100% { background-position: 200% center; }
 }
 
-/* Fondo de partículas para la sección de contenido */
+/* Fondo de partÃ­culas para la secciÃ³n de contenido */
 .content-section {
     position: relative;
     overflow: visible;
     width: 100%; /* Ancho total para expandir el fondo blanco */
-    margin: 0; /* Sin márgenes laterales para pegar a los bordes */
+    margin: 0; /* Sin mÃ¡rgenes laterales para pegar a los bordes */
     padding: 3rem 0 4rem;
-    background-color: #ffffff; /* Blanco sólido puro */
+    background-color: #ffffff; /* Blanco sÃ³lido puro */
     margin-top: 0; /* Corte perfecto sin solapamiento */
     z-index: 50;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.03); /* Sombra muy tenue para separar secciones */
@@ -132,7 +142,28 @@ html {
     align-items: center; 
 }
 
-/* Contenedores internos para mantener el ancho de lectura cómodo */
+/* M2: ReducciÃ³n de blur en mÃ³vil para fluidez */
+@media (max-width: 768px) {
+    .glass-effect, 
+    .hero-carousel,
+    .advanced-search-panel,
+    .pagination-btn {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    .hero-carousel {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .advanced-search-panel {
+        background-color: rgba(30, 40, 45, 0.95) !important; /* MÃ¡s opaco en mÃ³vil para lectura */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+}
+
+/* Contenedores internos para mantener el ancho de lectura cÃ³modo */
 .content-section > div, 
 .content-section > section, 
 .content-section > .card-grid-container {
@@ -180,6 +211,23 @@ html {
     backdrop-filter: blur(10px);
 }
 
+@media (max-width: 768px) {
+    .hero-carousel {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* M6: Respetar preferencia de usuario de Reducir Movimiento */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 .swiper-slide {
     display: flex;
     justify-content: center;
@@ -187,11 +235,20 @@ html {
     position: relative;
 }
 
+.hero-picture-full {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 .hero-logo {
     width: 100%;
-    max-width: 600px;
-    height: auto;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
 }
 
 /* CUSTOM SLIDES FOR EVENTS */
@@ -251,7 +308,7 @@ html {
     line-height: 1.4;
 }
 
-/* Asegurar que las flechas de Swiper estén siempre encima y clickeables */
+/* Asegurar que las flechas de Swiper estÃ©n siempre encima y clickeables */
 .swiper-button-next,
 .swiper-button-prev {
     z-index: 100 !important;
@@ -282,7 +339,7 @@ html {
     text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-/* Barra de Búsqueda */
+/* Barra de BÃºsqueda */
 .search-bar-row {
     display: flex;
     justify-content: center;
@@ -291,7 +348,7 @@ html {
     margin: 0 auto 1rem auto;
 }
 
-/* Removido el margin-top negativo en móvil ya que ahora los niveles están arriba */
+/* Removido el margin-top negativo en mÃ³vil ya que ahora los niveles estÃ¡n arriba */
 @media (max-width: 768px) {
     .search-bar-row {
         margin-top: 0;
@@ -322,7 +379,7 @@ html {
     color: #888;
 }
 
-/* Botones de Acción */
+/* Botones de AcciÃ³n */
 .action-buttons {
     display: flex;
     justify-content: center;
@@ -364,12 +421,12 @@ html {
     margin-right: 0.5rem;
 }
 
-/* --- Nuevos Controles de Búsqueda (v2 Stack) --- */
+/* --- Nuevos Controles de BÃºsqueda (v2 Stack) --- */
 .toggle-row {
     display: flex;
     justify-content: center;
     margin-bottom: -1rem;
-    /* Ajustado según sugerencia del usuario */
+    /* Ajustado segÃºn sugerencia del usuario */
 }
 
 .action-buttons-row {
@@ -472,7 +529,7 @@ html {
     font-size: 0.95rem;
     min-width: 240px;
     border-radius: 6px;
-    /* Más rectangular */
+    /* MÃ¡s rectangular */
     overflow: hidden;
     text-align: left;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -511,22 +568,32 @@ html {
     font-size: 1rem;
 }
 
-/* --- Panel de Búsqueda Avanzada --- */
-/* PANEL DE BÚSQUEDA AVANZADA (MODERNIZADO) */
+/* --- Panel de BÃºsqueda Avanzada --- */
+/* PANEL DE BÃšSQUEDA AVANZADA (MODERNIZADO) */
 .advanced-search-panel {
     width: 100%;
     max-width: 1100px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(30, 40, 45, 0.7); /* M7: Fondo solicitado por usuario */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 30px;
     padding: 2.5rem;
-    margin: 1.5rem auto 2rem auto;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+    margin: 1.5rem auto 2rem auto; /* PosiciÃ³n original */
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+    position: relative; /* PosiciÃ³n original */
     z-index: 1000;
+    color: white;
+}
+
+.advanced-search-panel h3 {
+    color: #72B04D; /* TÃ­tulos verdes para contraste */
+    font-size: 1rem;
+    margin-bottom: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .advanced-search-panel.hidden {
@@ -539,7 +606,7 @@ html {
     display: none !important;
 }
 
-/* Header para Móvil (Solo visible en pantallas pequeñas) */
+/* Header para MÃ³vil (Solo visible en pantallas pequeÃ±as) */
 .search-panel-header-mobile {
     display: none;
     text-align: center;
@@ -579,7 +646,7 @@ html {
     font-weight: 800;
 }
 
-/* Grids de Píldoras (Categorías, Fechas, etc) */
+/* Grids de PÃ­ldoras (CategorÃ­as, Fechas, etc) */
 .category-pills-grid,
 .date-pills-grid,
 .location-options {
@@ -588,13 +655,35 @@ html {
     gap: 0.6rem;
 }
 
+.nearby-slider-card {
+    min-width: 140px;
+    height: 180px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+/* Efecto de Brillo para Tarjeta Seleccionada */
+.nearby-slider-card.active {
+    border-color: #72B04D;
+    box-shadow: 0 0 20px rgba(114, 176, 77, 0.4);
+    transform: scale(1.05);
+    background: rgba(114, 176, 77, 0.1);
+    z-index: 10;
+}
+
 .cat-pill,
 .date-pill,
 .loc-pill {
-    padding: 8px 16px;
+    padding: 6px 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius);
+    border-radius: 10px;
     font-size: 0.8rem;
     font-weight: 500;
     color: #e0e0e0;
@@ -671,18 +760,20 @@ html {
 
 .specific-date-box span {
     font-size: 0.8rem;
-    color: #999;
-    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: #aaa;
 }
 
 .custom-date-input {
     width: 100%;
-    padding: 0.6rem 1rem;
-    border-radius: 12px;
-    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
     font-family: inherit;
-    font-size: 0.9rem;
-    background: white;
 }
 
 /* Audiencia / Chips */
@@ -701,21 +792,22 @@ html {
 }
 
 .chip-content {
-    display: inline-block;
-    padding: 0.6rem 1rem;
-    background: white;
-    border: 1px solid #eee;
+    display: block;
+    padding: 10px 15px;
     border-radius: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ccc;
     font-size: 0.85rem;
-    font-weight: 600;
-    color: #444;
+    font-weight: 700;
     transition: all 0.3s;
 }
 
 .filter-chip input:checked+.chip-content {
-    background: #f0f7ec;
-    border-color: var(--color-eco);
-    color: var(--color-eco);
+    background: #72B04D;
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 5px 15px rgba(114, 176, 77, 0.3);
 }
 
 /* Footer del Panel */
@@ -761,7 +853,7 @@ html {
     }
 }
 
-/* MÓVIL */
+/* MÃ“VIL */
 @media (max-width: 768px) {
     .advanced-search-panel {
         padding: 1rem;
@@ -845,7 +937,7 @@ html {
     }
 }
 
-/* BOTONES DE NIVEL (ESTILO HÍBRIDO) */
+/* BOTONES DE NIVEL (ESTILO HÃBRIDO) */
 .level-buttons-container {
     display: flex;
     justify-content: center;
@@ -968,8 +1060,8 @@ html {
     width: 100%;
     min-width: 220px;
     border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Sombra más profunda para destacar */
-    z-index: 10000; /* Aún más alto que el hero */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Sombra mÃ¡s profunda para destacar */
+    z-index: 10000; /* AÃºn mÃ¡s alto que el hero */
     margin-top: 10px;
     text-align: left;
     overflow: hidden;
@@ -1006,7 +1098,7 @@ html {
 
 .tooltip-list ul li {
     padding: 15px 15px;
-    /* Mejorado para touch targets en móvil */
+    /* Mejorado para touch targets en mÃ³vil */
     font-size: 1rem;
     border-bottom: 1px solid #eee;
     cursor: pointer;
@@ -1096,8 +1188,9 @@ html {
     scrollbar-width: none;
     -ms-overflow-style: none;
     margin-bottom: 0;
-    /* Ajustado según sugerencia del usuario */
     padding-bottom: 1rem;
+    touch-action: pan-x; /* M3: Respuesta tÃ¡ctil inmediata */
+    -webkit-overflow-scrolling: touch; /* Momentum scroll iOS */
 }
 
 .category-filters-scroll::-webkit-scrollbar {
@@ -1234,7 +1327,7 @@ html {
     align-items: center;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
-    /* Permite hacer clic A TRAVÉS del marcador del usuario */
+    /* Permite hacer clic A TRAVÃ‰S del marcador del usuario */
 }
 
 .user-marker-premium:hover {
@@ -1281,7 +1374,7 @@ html {
     text-transform: capitalize;
 }
 
-/* Animación de pulso para el marcador de usuario */
+/* AnimaciÃ³n de pulso para el marcador de usuario */
 .user-marker-premium::before {
     content: '';
     position: absolute;
@@ -1334,7 +1427,7 @@ html {
     object-fit: cover;
 }
 
-/* Botón de Relocalización Premium en el Mapa */
+/* BotÃ³n de RelocalizaciÃ³n Premium en el Mapa */
 .map-relocate-btn {
     position: absolute;
     bottom: 25px;
@@ -1410,7 +1503,7 @@ html {
 .map-card-marker {
     width: 48px;
     height: 72px;
-    /* Forma de rectángulo vertical */
+    /* Forma de rectÃ¡ngulo vertical */
     border-radius: 8px;
     /* Bordes ligeramente redondeados como tarjeta */
     background: white;
@@ -1421,7 +1514,7 @@ html {
     position: relative;
     z-index: 20;
     pointer-events: auto;
-    /* Estos sí deben ser clickeables */
+    /* Estos sÃ­ deben ser clickeables */
 }
 
 .map-cluster-marker:hover,
@@ -1496,6 +1589,8 @@ html {
     cursor: grab;
     user-select: none;
     width: 100%;
+    touch-action: pan-x; /* M3: Respuesta tÃ¡ctil inmediata */
+    -webkit-overflow-scrolling: touch; /* Momentum scroll iOS */
 }
 
 .nearby-events-slider::-webkit-scrollbar {
@@ -1515,10 +1610,10 @@ html {
 
 .nearby-slider-card {
     flex: 0 0 140px;
-    /* Tamaño cuadrado */
+    /* TamaÃ±o cuadrado */
     flex-shrink: 0;
     height: 140px;
-    /* Tamaño cuadrado */
+    /* TamaÃ±o cuadrado */
     background: #1e2329;
     border-radius: 12px;
     overflow: hidden;
@@ -1619,7 +1714,7 @@ html {
 }
 
 /* =========================================================
-   DISEÑO TARJETAS: CARTELERA CDMX (Dark Mode) + MATES.MX
+   DISEÃ‘O TARJETAS: CARTELERA CDMX (Dark Mode) + MATES.MX
    ========================================================= */
 
 .card-grid-container {
@@ -1670,6 +1765,7 @@ html {
     height: 100%;
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    will-change: transform; /* M1: Preparar GPU */
 }
 
 .card:hover {
@@ -1727,7 +1823,7 @@ html {
 .card-image {
     width: 100%;
     aspect-ratio: 4 / 5;
-    /* Formato vertical (historias) para móvil */
+    /* Formato vertical (historias) para mÃ³vil */
     position: relative;
     overflow: hidden;
 }
@@ -1735,7 +1831,7 @@ html {
 @media (min-width: 601px) and (max-width: 1024px) {
     .card {
         max-width: 200px;
-        /* Reducción adicional para tablet como pediste */
+        /* ReducciÃ³n adicional para tablet como pediste */
         margin: 0 auto;
         width: 100%;
     }
@@ -1759,28 +1855,28 @@ html {
     .card-grid-container {
         gap: 1.5rem !important;
         max-width: 1400px;
-        /* Permitimos que la cuadrícula sea más ancha para las tarjetas horizontales */
+        /* Permitimos que la cuadrÃ­cula sea mÃ¡s ancha para las tarjetas horizontales */
     }
 
     .card {
         max-width: 100%;
-        /* Quitamos la restricción de ancho para que ocupe la columna */
+        /* Quitamos la restricciÃ³n de ancho para que ocupe la columna */
         flex-direction: row;
         /* IMAGEN A LA IZQ, TEXTO A LA DER */
         align-items: center;
         padding: 16px;
-        /* Más padding para darle más volumen */
+        /* MÃ¡s padding para darle mÃ¡s volumen */
         gap: 18px;
         height: auto;
         min-height: 170px;
-        /* Asegura que la tarjeta sea más alta */
+        /* Asegura que la tarjeta sea mÃ¡s alta */
     }
 
     .card-image {
         width: 160px;
-        /* Imagen más grande */
+        /* Imagen mÃ¡s grande */
         height: 160px;
-        /* Imagen más alta */
+        /* Imagen mÃ¡s alta */
         aspect-ratio: unset;
         flex-shrink: 0;
         /* Para que no se aplaste la imagen */
@@ -1810,7 +1906,7 @@ html {
 
     .card-title {
         font-size: 1rem;
-        /* Texto más legible porque hay más espacio a lo ancho */
+        /* Texto mÃ¡s legible porque hay mÃ¡s espacio a lo ancho */
         margin-bottom: 0.3rem;
         text-align: left;
     }
@@ -1818,7 +1914,7 @@ html {
     .card-category {
         font-size: 0.7rem;
         align-self: flex-start;
-        /* Categoría alineada a la izquierda */
+        /* CategorÃ­a alineada a la izquierda */
         margin-bottom: 0.5rem;
     }
 }
@@ -1829,6 +1925,7 @@ html {
     height: 100%;
     object-fit: cover;
     transition: transform 0.6s ease;
+    will-change: transform; /* M1: Preparar GPU */
 }
 
 .card:hover .card-image img {
@@ -1960,7 +2057,7 @@ html {
     padding-top: 1rem;
 }
 
-/* SECCIÓN MAPA DESPLEGABLE */
+/* SECCIÃ“N MAPA DESPLEGABLE */
 .map-section-wrapper {
     width: 100%;
     text-align: center;
@@ -2085,7 +2182,7 @@ html {
     width: 100%;
 }
 
-/* AJUSTE DE SCROLL: Margen para el menú fijo */
+/* AJUSTE DE SCROLL: Margen para el menÃº fijo */
 #seccion-colibri,
 #seccion-ajolote,
 #seccion-lobo {
@@ -2287,14 +2384,14 @@ footer {
         grid-template-columns: repeat(3, 1fr);
     }
 
-    /* El menú se mantiene horizontal en tablets, se centraliza en global.css */
+    /* El menÃº se mantiene horizontal en tablets, se centraliza en global.css */
 
-    /* NOTA: El botón "Cómo Usar" ya NO está dentro del menú en desktop/tablet */
+    /* NOTA: El botÃ³n "CÃ³mo Usar" ya NO estÃ¡ dentro del menÃº en desktop/tablet */
 
     /* AJUSTE IMAGEN HERO EN TABLET */
     .hero-logo {
         max-width: 550px;
-        /* Reducimos el ancho máximo para tablet */
+        /* Reducimos el ancho mÃ¡ximo para tablet */
     }
 
     .mobile-info-toggle {
@@ -2320,11 +2417,11 @@ footer {
     .hero-section#particles-js {
         padding-top: 100px !important;
         margin-top: -70px !important;
-        /* Sube detrás de la navbar */
+        /* Sube detrÃ¡s de la navbar */
     }
 }
 
-/* Móvil (Menos de 768px): 1 Columna y Tarjetas Verticales */
+/* MÃ³vil (Menos de 768px): 1 Columna y Tarjetas Verticales */
 @media (max-width: 768px) {
     .hero-section#particles-js {
         padding: 100px 1rem 2rem 1rem !important;
@@ -2335,7 +2432,7 @@ footer {
     .hero-logo {
         max-height: 180px;
         max-width: 90%;
-        /* Ajuste también para móvil */
+        /* Ajuste tambiÃ©n para mÃ³vil */
     }
 
     .search-bar-container input {
@@ -2349,12 +2446,12 @@ footer {
 
 
 
-    /* Ajuste para el botón "Cómo usar" siempre visible en móvil */
+    /* Ajuste para el botÃ³n "CÃ³mo usar" siempre visible en mÃ³vil */
     .nav-how-to-always-visible.nav-btn-how-to {
         padding: 6px 10px;
-        /* Reduce el padding para hacerlo más compacto */
+        /* Reduce el padding para hacerlo mÃ¡s compacto */
         font-size: 0.85rem;
-        /* Reduce el tamaño de la fuente */
+        /* Reduce el tamaÃ±o de la fuente */
     }
 
     .action-buttons,
@@ -2413,7 +2510,7 @@ footer {
     }
 }
 
-/* Estilos para la nueva página de "Cómo Usar" */
+/* Estilos para la nueva pÃ¡gina de "CÃ³mo Usar" */
 .how-to-section {
     padding: 4rem 2rem;
     max-width: 900px;
@@ -2503,9 +2600,9 @@ footer {
    MAP REDESIGN UI (CARTELERA CDMX STYLE)
    ============================================================== */
 
-/* 1. Marcadores de Mapa Actualizados (Ver sección anterior) */
+/* 1. Marcadores de Mapa Actualizados (Ver secciÃ³n anterior) */
 
-/* 2. Botón Píldora "Ver Mapa" */
+/* 2. BotÃ³n PÃ­ldora "Ver Mapa" */
 .btn-pill-map {
     background-color: #ffffff;
     color: #9e1c3f;
@@ -2634,7 +2731,7 @@ footer {
     display: block;
     text-align: center;
     background: #9e1c3f;
-    /* Primario botón */
+    /* Primario botÃ³n */
     color: white;
     padding: 12px;
     border-radius: 8px;
@@ -2701,7 +2798,7 @@ footer {
 }
 
 /* =========================================================
-   PAGINACIÓN MODERNA (Premium Design)
+   PAGINACIÃ“N MODERNA (Premium Design)
    ========================================================= */
 .pagination-container {
     display: flex;
@@ -2709,7 +2806,7 @@ footer {
     align-items: center;
     gap: 0.8rem;
     margin: 0.5rem 0 1.5rem 0;
-    /* Más pegado arriba (a los eventos) */
+    /* MÃ¡s pegado arriba (a los eventos) */
     padding: 0.5rem;
 }
 
@@ -2790,5 +2887,84 @@ footer {
         min-width: 40px;
         height: 40px;
         border-radius: 12px;
+    }
+}
+/* =========================================================
+   AJUSTE ESPECÍFICO: CARTELERA HOME (5 COLUMNAS)
+   ========================================================= */
+
+#contenedor-tarjetas {
+    max-width: 1600px !important; 
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 1.5rem !important;
+    padding: 0 1.5rem !important;
+}
+
+/* Forzamos diseño vertical para las 5 columnas con ratio 5:3 */
+#contenedor-tarjetas .card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    min-height: auto !important;
+    max-width: 100% !important;
+    border-radius: 16px !important;
+}
+
+#contenedor-tarjetas .card-image {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 5 / 3 !important; /* Ratio solicitado 5x3 */
+    border-radius: 16px 16px 0 0 !important;
+}
+
+#contenedor-tarjetas .card-content {
+    padding: 1rem !important;
+    width: 100% !important;
+}
+
+#contenedor-tarjetas .card-title {
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+    margin: 5px 0 0 0 !important;
+    font-weight: 700 !important;
+}
+
+/* Responsividad Específica */
+@media (max-width: 1400px) {
+    #contenedor-tarjetas {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+@media (max-width: 1100px) {
+    #contenedor-tarjetas {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #contenedor-tarjetas {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+    
+    #contenedor-tarjetas .card-title {
+        font-size: 0.9rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #contenedor-tarjetas {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    
+    #contenedor-tarjetas .card-content {
+        padding: 10px !important;
+    }
+    
+    #contenedor-tarjetas .card-title {
+        font-size: 0.8rem !important;
     }
 }

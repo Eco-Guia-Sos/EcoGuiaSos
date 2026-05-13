@@ -5,6 +5,119 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
 // Scripts with type="module" are automatically deferred, no need for DOMContentLoaded wrapper.
 (async () => {
     console.log('[Admin] 🚀 Iniciando panel unificado...');
+    
+    let currentModerationStatus = 'approved'; // Definida al inicio para evitar errores de scope
+    
+    // --- CONFIGURACIÓN DE CAMPOS POR SECCIÓN (METADATOS) ---
+    const SECTION_CONFIGS = {
+        cursos: {
+            label: 'Curso',
+            fields: [
+                { id: 'area', label: 'Área Temática', type: 'select', options: ['Agua', 'Biodiversidad', 'Residuos', 'Energía', 'Clima', 'Cambio Climático'] },
+                { id: 'institucion', label: 'Institución / Plataforma', type: 'text', placeholder: 'Ej: BID, Coursera, UNAM' },
+                { id: 'gratuito', label: 'Acceso', type: 'select', options: ['Gratuito', 'Pago / Beca'] },
+                { id: 'fecha_limite', label: 'Fecha Límite Registro', type: 'date' }
+            ]
+        },
+        normativa: {
+            label: 'Norma Ambiental',
+            fields: [
+                { id: 'ambito', label: 'Ámbito', type: 'select', options: ['Federal', 'Estatal', 'Municipal', 'Internacional'] },
+                { id: 'tipo_norma', label: 'Tipo de Instrumento', type: 'select', options: ['Ley', 'Reglamento', 'NOM', 'NMX', 'Decreto', 'Acuerdo'] },
+                { id: 'organismo', label: 'Organismo Emisor', type: 'text', placeholder: 'Ej: SEMARNAT, CONAGUA' },
+                { id: 'vigencia', label: 'Estado de Vigencia', type: 'select', options: ['Vigente', 'En Revisión', 'Abrogada'] }
+            ]
+        },
+        lecturas: {
+            label: 'Lectura',
+            fields: [
+                { id: 'autor', label: 'Autor(es)', type: 'text', placeholder: 'Ej: Johan Rockström' },
+                { id: 'tipo_lectura', label: 'Tipo de Material', type: 'select', options: ['Libro', 'Artículo Científico', 'Manual/Guía', 'Informe', 'Ensayo'] },
+                { id: 'idioma', label: 'Idioma', type: 'select', options: ['Español', 'Inglés', 'Bilingüe'] }
+            ]
+        },
+        documentales: {
+            label: 'Cine/Documental',
+            fields: [
+                { id: 'director', label: 'Director', type: 'text' },
+                { id: 'duracion', label: 'Duración (min)', type: 'text', placeholder: 'Ej: 90 min' },
+                { id: 'plataforma', label: 'Disponible en', type: 'text', placeholder: 'Ej: Netflix, YouTube, Cine' }
+            ]
+        },
+        convocatoria: {
+            label: 'Convocatoria',
+            fields: [
+                { id: 'tipo_apoyo', label: 'Tipo de Apoyo', type: 'select', options: ['Financiamiento', 'Beca', 'Incubación', 'Premio'] },
+                { id: 'monto', label: 'Monto/Alcance', type: 'text', placeholder: 'Ej: $50,000 MXN' },
+                { id: 'fecha_cierre', label: 'Fecha de Cierre', type: 'date' }
+            ]
+        },
+        voluntariados: {
+            label: 'Voluntariado',
+            fields: [
+                { id: 'modalidad', label: 'Modalidad', type: 'select', options: ['Presencial', 'Remoto', 'Híbrido'] },
+                { id: 'duracion_estimada', label: 'Tiempo Requerido', type: 'text', placeholder: 'Ej: 4 horas/semana' }
+            ]
+        },
+        ecotecnias: {
+            label: 'Ecotecnia',
+            fields: [
+                { id: 'dificultad', label: 'Dificultad', type: 'select', options: ['Baja', 'Media', 'Alta'] },
+                { id: 'materiales', label: 'Materiales Clave', type: 'text', placeholder: 'Ej: PET, Madera, PVC' }
+            ]
+        },
+        fondos: {
+            label: 'Fondo / Beca',
+            fields: [
+                { id: 'tipo_fondo', label: 'Tipo', type: 'select', options: ['Gubernamental', 'Internacional', 'Fundación', 'ONU', 'Privado'] },
+                { id: 'origen', label: 'Origen', type: 'select', options: ['Nacional', 'Internacional', 'Regional'] },
+                { id: 'monto_aprox', label: 'Monto Aproximado', type: 'text', placeholder: 'Ej: Hasta $500,000 MXN' },
+                { id: 'fecha_cierre', label: 'Fecha de Cierre', type: 'date' }
+            ]
+        },
+        firmas: {
+            label: 'Petición / Firma',
+            fields: [
+                { id: 'plataforma_firmas', label: 'Plataforma', type: 'text', placeholder: 'Ej: Change.org, Avaaz' },
+                { id: 'meta_firmas', label: 'Meta de Firmas', type: 'text', placeholder: 'Ej: 10,000' }
+            ]
+        }
+    };
+
+    function renderDynamicFields(sectionId) {
+        const container = document.getElementById('co-dynamic-fields');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const config = SECTION_CONFIGS[sectionId];
+        if (!config || !config.fields) return;
+
+        config.fields.forEach(field => {
+            const group = document.createElement('div');
+            group.className = 'form-group';
+            group.innerHTML = `<label>${field.label}</label>`;
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'input-wrapper';
+            
+            let input;
+            if (field.type === 'select') {
+                input = document.createElement('select');
+                input.id = `meta-${field.id}`;
+                input.innerHTML = field.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            } else {
+                input = document.createElement('input');
+                input.type = field.type;
+                input.id = `meta-${field.id}`;
+                if (field.placeholder) input.placeholder = field.placeholder;
+            }
+            
+            wrapper.appendChild(input);
+            group.appendChild(wrapper);
+            container.appendChild(group);
+        });
+    }
+
     setupNavbar();
     setupAuthObserver();
 
@@ -190,7 +303,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         cargarDatosPerfil(perfil);
 
         // 2. Initialize Dashboard
+        currentModerationStatus = 'approved'; // Asegurar estado por defecto antes de cargar
         await actualizarEstadisticas();
+        await updateBadges(); 
+        
+        // 3. Setup Moderation Tabs
+        setupModerationTabs();
+        
         showDashboard();
 
     } catch (err) {
@@ -263,13 +382,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             sidebarRole.className = `profile-role-badge ${profile.rol}`;
         }
         if (sidebarAvatar) {
-            if (profile.avatar_url) {
-                sidebarAvatar.style.backgroundImage = `url(${profile.avatar_url})`;
+            if (perfil.avatar_url) {
+                sidebarAvatar.style.backgroundImage = `url("${perfil.avatar_url}")`;
                 sidebarAvatar.textContent = '';
+                localStorage.setItem('eco_user_avatar', perfil.avatar_url);
             } else {
-                const inicial = (profile.nombre_completo || 'U').charAt(0).toUpperCase();
-                sidebarAvatar.textContent = inicial;
-                sidebarAvatar.style.background = esAdmin ? '#ef4444' : 'var(--admin-accent)';
+                sidebarAvatar.style.backgroundImage = 'none';
+                sidebarAvatar.textContent = (perfil.nombre_completo || 'U').charAt(0).toUpperCase();
             }
         }
 
@@ -715,6 +834,65 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         }
     };
 
+    async function updateBadges() {
+        if (!esAdmin) return;
+
+        try {
+            // Contar eventos pendientes
+            const { count: pendingEvents } = await supabase
+                .from('eventos')
+                .select('*', { count: 'exact', head: true })
+                .eq('estado', 'pending');
+            
+            // Contar actores pendientes (usuarios pidiendo ser actores)
+            const { count: pendingActores } = await supabase
+                .from('perfiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('actor_status', 'pending');
+
+            const badgeEvents = document.getElementById('badge-eventos-pending');
+            const badgeActores = document.getElementById('badge-actores-pending');
+
+            if (badgeEvents) {
+                badgeEvents.textContent = pendingEvents || 0;
+                badgeEvents.classList.toggle('hidden', !pendingEvents);
+            }
+            if (badgeActores) {
+                badgeActores.textContent = pendingActores || 0;
+                badgeActores.classList.toggle('hidden', !pendingActores);
+            }
+
+            // Actualizar contador en tabs si estamos en esa vista
+            const counterTab = document.getElementById('counter-pending');
+            if (counterTab) {
+                const count = (currentAdminFilter === 'eventos' || currentAdminFilter === 'all') ? pendingEvents : pendingActores;
+                counterTab.textContent = count || 0;
+            }
+
+        } catch (err) {
+            console.error('[Badges] Error:', err);
+        }
+    }
+
+    function setupModerationTabs() {
+        const tabs = document.querySelectorAll('.admin-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentModerationStatus = tab.dataset.status;
+                cargarDatos(currentAdminFilter);
+            });
+        });
+    }
+
+    function showModerationTabs(visible) {
+        const tabsContainer = document.getElementById('moderation-tabs');
+        if (tabsContainer) {
+            tabsContainer.classList.toggle('hidden', !visible);
+        }
+    }
+
     async function actualizarEstadisticas() {
         try {
             // 1. Actores (Admin + Actor)
@@ -775,6 +953,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             document.getElementById('stat-card-voluntarios')?.classList.add('hidden');
         }
         currentAdminFilter = 'all';
+        currentModerationStatus = 'approved'; // Dashboard siempre muestra lo aprobado
         cargarDatos('all');
     }
 
@@ -804,10 +983,16 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         pHeader.textContent = `Listado de ${title.toLowerCase()} registrados.`;
         tableContainer.classList.remove('hidden');
         tableTitle.textContent = `Registros: ${title}`;
+        
+        // Mostrar tabs solo en eventos o usuarios (moderación)
+        const isModerated = view === 'eventos' || view === 'usuarios';
+        showModerationTabs(isModerated);
+
         if (view !== 'usuarios' && view !== 'voluntarios' && view !== 'seguidores') {
             btnNuevo.style.display = 'flex';
         }
         currentAdminFilter = view;
+        updateBadges(); // Actualizar contador dinÃ¡mico del tab segÃºn la vista
         cargarDatos(view);
     }
 
@@ -866,15 +1051,37 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             if (filter === 'all' || filter === 'eventos' || filter === 'lugares') {
                 const tables = filter === 'all' ? ['eventos', 'lugares'] : [filter];
                 for (const t of tables) {
-                    let q = supabase.from(t).select('*').order('created_at', { ascending: false });
+                    // Hacemos JOIN con perfiles para obtener el nombre del creador (publicador)
+                    let q = supabase.from(t)
+                        .select('*, publicador:owner_id(nombre_completo)')
+                        .order('created_at', { ascending: false });
                     if (esActor) q = q.eq('owner_id', session.user.id);
+                    
+                    // Aplicar filtro de moderación si es admin
+                    // Verificación de seguridad: solo filtrar si el campo existe en el esquema
+                    if (esAdmin && t === 'eventos') {
+                        // Usamos RPC o una consulta head para verificar columnas si fuera necesario, 
+                        // pero por ahora intentamos el filtro y si falla lo manejamos
+                        q = q.eq('estado', currentModerationStatus);
+                    }
+                    
                     const { data } = await q;
                     if (data) allItems = [...allItems, ...data.map(x => ({...x, tipo_orig: t === 'eventos' ? 'evento' : 'lugar'}))];
                 }
             } else if (filter === 'usuarios' || filter === 'voluntarios') {
                 let q = supabase.from('perfiles').select('*');
-                if (filter === 'voluntarios') q = q.eq('rol', 'user');
-                else q = q.in('rol', ['admin', 'actor']);
+                if (filter === 'voluntarios') {
+                    q = q.eq('rol', 'user');
+                } else {
+                    // Pestaña de Actores / Staff
+                    if (currentModerationStatus === 'pending' || currentModerationStatus === 'rejected') {
+                        // En revisión o rechazados: Mostrar a cualquiera que tenga ese estado en actor_status (solicitudes de actor)
+                        q = q.eq('actor_status', currentModerationStatus);
+                    } else {
+                        // Publicados: Mostrar SOLO actores aprobados (excluyendo explícitamente a los admins)
+                        q = q.eq('rol', 'actor').eq('actor_status', 'approved');
+                    }
+                }
                 const { data } = await q;
                 if (data) allItems = data.map(x => ({...x, nombre: x.nombre_completo, tipo_orig: 'perfiles'}));
             } else if (filter.startsWith('seccion_')) {
@@ -909,26 +1116,58 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             const esPropio = !item.owner_id || item.owner_id === session.user.id;
             const puedeEditar = (esAdmin || esPropio) && !esSeguidor;
 
-            tr.innerHTML = `
-                <td><strong>${sanitize(item.nombre || item.titulo)}</strong></td>
-                <td><span class="badge-tipo ${typeClass}">${typeClass.toUpperCase()}</span></td>
-                <td><span class="badge active">ACTIVO</span></td>
-                <td>
-                    <div style="display:flex; gap:8px; align-items: center;">
-                        ${puedeEditar ? `
-                            <button onclick="window.editarRegistro('${item.id}', '${item.tipo_orig}')" class="btn-admin-action edit" title="Editar"><i data-lucide="pencil"></i></button>
-                            <button onclick="window.eliminarRegistro('${item.id}', '${item.tipo_orig}', '${sanitize(item.nombre || item.titulo)}')" class="btn-admin-action delete" title="Eliminar"><i data-lucide="trash-2"></i></button>
-                        ` : (esSeguidor ? '' : `
-                            <span style="font-size: 0.7rem; color: #94a3b8; font-style: italic;">Solo lectura</span>
-                        `)}
+            const nombrePublicador = item.publicador?.nombre_completo ? `<div style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 2px;"><i data-lucide="user" style="width: 10px; height: 10px; display: inline-block; margin-right: 3px;"></i>Publicado por: ${sanitize(item.publicador.nombre_completo)}</div>` : '';
 
-                        ${esSeguidor ? `
-                            <button onclick="window.abrirModalMensaje('${item.id}', '${sanitize(item.nombre)}')" class="btn-admin-action message" title="Enviar Mensaje Directo"><i data-lucide="message-square"></i></button>
-                        ` : ''}
-                        
-                        ${esAdmin && item.rol === 'actor' ? `
-                            <button onclick="window.gestionarPermisos('${item.id}')" class="btn-admin-action permissions" title="Gestionar Permisos"><i data-lucide="key"></i></button>
-                        ` : ''}
+            tr.innerHTML = `
+                <td>
+                    <strong>${sanitize(item.nombre || item.titulo)}</strong>
+                    ${nombrePublicador}
+                </td>
+                <td><span class="badge-tipo ${typeClass}">${typeClass.toUpperCase()}</span></td>
+                <td><span class="badge ${item.estado || item.actor_status || 'active'}">${(item.estado || item.actor_status || 'ACTIVO').toUpperCase()}</span></td>
+                <td>
+                    <div class="actions-dropdown-container">
+                        <button class="btn-actions-trigger" onclick="window.toggleActionsMenu(event, '${item.id}')">
+                            <i data-lucide="more-horizontal"></i> Acciones
+                        </button>
+                        <div class="actions-menu" id="menu-${item.id}">
+                            ${puedeEditar ? `
+                                <button onclick="window.editarRegistro('${item.id}', '${item.tipo_orig}')" class="action-item edit">
+                                    <i data-lucide="pencil"></i> Editar Registro
+                                </button>
+                            ` : ''}
+
+                            ${esAdmin && (item.tipo_orig === 'evento' || item.tipo_orig === 'perfiles') && (item.estado === 'pending' || item.actor_status === 'pending') ? `
+                                <button onclick="window.moderarRegistro('${item.id}', '${item.tipo_orig}', 'approved')" class="action-item approve">
+                                    <i data-lucide="check-circle"></i> Aprobar Publicación
+                                </button>
+                                <button onclick="window.moderarRegistro('${item.id}', '${item.tipo_orig}', 'correction')" class="action-item edit">
+                                    <i data-lucide="message-square"></i> Solicitar Corrección
+                                </button>
+                                <button onclick="window.moderarRegistro('${item.id}', '${item.tipo_orig}', 'rejected')" class="action-item reject">
+                                    <i data-lucide="x-circle"></i> Rechazar Registro
+                                </button>
+                            ` : ''}
+
+                            ${esAdmin && item.rol === 'actor' ? `
+                                <button onclick="window.gestionarPermisos('${item.id}')" class="action-item">
+                                    <i data-lucide="key"></i> Gestionar Permisos
+                                </button>
+                            ` : ''}
+
+                            ${esSeguidor ? `
+                                <button onclick="window.abrirModalMensaje('${item.id}', '${sanitize(item.nombre)}')" class="action-item message">
+                                    <i data-lucide="message-square"></i> Enviar Mensaje Directo
+                                </button>
+                            ` : ''}
+
+                            ${puedeEditar ? `
+                                <div style="border-top: 1px solid var(--admin-border); margin: 5px 0;"></div>
+                                <button onclick="window.eliminarRegistro('${item.id}', '${item.tipo_orig}', '${sanitize(item.nombre || item.titulo)}')" class="action-item reject">
+                                    <i data-lucide="trash-2"></i> Eliminar Definitivamente
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                 </td>
             `;
@@ -937,13 +1176,24 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         lucide.createIcons();
     }
 
-    // Modal Handling (Events/Places)
+    // Modal Handling (Events/Places/Content)
     btnNuevo.onclick = () => {
         if (currentAdminFilter === 'eventos') {
             document.getElementById('modal-nuevo-evento').classList.remove('hidden');
             cargarSedesEvento();
         } else if (currentAdminFilter === 'lugares') {
             document.getElementById('modal-nuevo-lugar').classList.remove('hidden');
+        } else if (currentAdminFilter.startsWith('seccion_')) {
+            const [_, secId, hub] = currentAdminFilter.split('_');
+            const form = document.getElementById('form-nuevo-contenido');
+            form.reset();
+            delete form.dataset.editId;
+            
+            renderDynamicFields(secId);
+            
+            document.getElementById('co-image-preview').classList.add('hidden');
+            document.getElementById('contenido-modal-title').innerText = `Agregar Nuevo ${SECTION_CONFIGS[secId]?.label || 'Recurso'}`;
+            document.getElementById('modal-nuevo-contenido').classList.remove('hidden');
         }
     };
 
@@ -955,20 +1205,26 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
 
     // Restore missing coordinate extraction
     document.getElementById('ev-btn-extract-coords').onclick = () => {
-        const match = document.getElementById('ev-gmaps').value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        const url = document.getElementById('ev-gmaps').value;
+        const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
         if (match) {
             document.getElementById('ev-lat').value = match[1];
             document.getElementById('ev-lng').value = match[2];
             showToast('Coordenadas extraídas');
+        } else {
+            alert("No se pudieron extraer las coordenadas de este enlace.\n\nSi copiaste un enlace corto desde tu celular (maps.app.goo.gl), Google Maps oculta las coordenadas. Por favor, ingresa la Latitud y Longitud manualmente.");
         }
     };
 
     document.getElementById('pl-btn-extract-coords').onclick = () => {
-        const match = document.getElementById('pl-gmaps').value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        const url = document.getElementById('pl-gmaps').value;
+        const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
         if (match) {
             document.getElementById('pl-lat').value = match[1];
             document.getElementById('pl-lng').value = match[2];
             showToast('Coordenadas extraídas');
+        } else {
+            alert("No se pudieron extraer las coordenadas de este enlace.\n\nSi copiaste un enlace corto desde tu celular (maps.app.goo.gl), Google Maps oculta las coordenadas. Por favor, ingresa la Latitud y Longitud manualmente.");
         }
     };
 
@@ -1007,9 +1263,20 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             document.getElementById('ev-fecha-fin').value = data.fecha_fin ? new Date(data.fecha_fin).toISOString().slice(0, 16) : '';
             document.getElementById('ev-ubicacion').value = data.ubicacion || data.location_name || '';
             document.getElementById('ev-gmaps').value = data.gmaps_link || data.external_link || '';
-            document.getElementById('ev-lat').value = data.latitud || '';
-            document.getElementById('ev-lng').value = data.longitud || '';
-            document.getElementById('ev-imagen-url').value = data.imagen_url || data.imagen || ''; // Compatibilidad con schema anterior/nuevo
+            document.getElementById('ev-lat').value = data.latitud || data.lat || '';
+            document.getElementById('ev-lng').value = data.longitud || data.lng || '';
+            
+            // Cargar múltiples imágenes
+            const imgArrayInput = document.getElementById('ev-imagenes-array');
+            const previewGrid = document.getElementById('ev-images-preview-grid');
+            let imgs = data.imagenes || [];
+            if (!Array.isArray(imgs)) imgs = [];
+            if (imgs.length === 0 && (data.imagen_url || data.imagen)) {
+                imgs.push(data.imagen_url || data.imagen);
+            }
+            imgArrayInput.value = JSON.stringify(imgs);
+            renderizarGridImagenes(imgs, previewGrid, imgArrayInput);
+            
             document.getElementById('ev-descripcion').value = data.descripcion || '';
             document.getElementById('ev-reg-link').value = data.sumate_link || '';
             
@@ -1081,6 +1348,52 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
 
 
 
+        } else if (tipo === 'contenido_secciones') {
+            const form = document.getElementById('form-nuevo-contenido');
+            form.reset();
+            form.dataset.editId = id;
+            
+            const secId = data.seccion_id;
+            renderDynamicFields(secId);
+
+            document.getElementById('co-titulo').value = data.titulo || '';
+            document.getElementById('co-enlace').value = data.enlace_externo || '';
+            document.getElementById('co-imagen-url').value = data.imagen_url || '';
+            document.getElementById('co-estado').value = data.estado || 'publicado';
+
+            // Intentar parsear metadatos del campo descripción
+            let meta = {};
+            let descripcionPura = data.descripcion || '';
+            try {
+                if (descripcionPura.trim().startsWith('{')) {
+                    meta = JSON.parse(descripcionPura);
+                    document.getElementById('co-descripcion').value = meta.descripcion_texto || '';
+                } else {
+                    document.getElementById('co-descripcion').value = descripcionPura;
+                }
+            } catch (e) {
+                document.getElementById('co-descripcion').value = descripcionPura;
+            }
+
+            // Llenar campos dinámicos
+            if (SECTION_CONFIGS[secId]) {
+                SECTION_CONFIGS[secId].fields.forEach(f => {
+                    const el = document.getElementById(`meta-${f.id}`);
+                    if (el && meta[f.id]) el.value = meta[f.id];
+                });
+            }
+
+            const preview = document.getElementById('co-image-preview');
+            if (data.imagen_url) {
+                preview.innerHTML = `<img src="${data.imagen_url}" style="width:100%; height:100%; object-fit:cover;">`;
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+
+            document.getElementById('contenido-modal-title').innerText = `Editar ${SECTION_CONFIGS[secId]?.label || 'Recurso'}`;
+            document.getElementById('modal-nuevo-contenido').classList.remove('hidden');
+
         } else {
             showToast('Edición en construcción para esta sección', 'info');
         }
@@ -1092,28 +1405,93 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     if (btnUploadEv && inputImgEv) {
         btnUploadEv.onclick = () => inputImgEv.click();
         inputImgEv.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
             btnUploadEv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
             btnUploadEv.disabled = true;
+            
+            const arrayInput = document.getElementById('ev-imagenes-array');
+            const previewGrid = document.getElementById('ev-images-preview-grid');
+            let currentImgs = JSON.parse(arrayInput.value || '[]');
+
             try {
-                const blob = await compressImage(file);
-                const fileName = `evento_${Date.now()}.webp`;
-                const filePath = `${session.user.id}/${fileName}`;
-                const { error: uploadError } = await supabase.storage.from('imagenes-plataforma').upload(filePath, blob, { upsert: true });
-                if (uploadError) throw uploadError;
-                const { data } = supabase.storage.from('imagenes-plataforma').getPublicUrl(filePath);
-                document.getElementById('ev-imagen-url').value = data.publicUrl;
-                showToast('✅ Imagen lista');
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const blob = await compressImage(file);
+                    const fileName = `evento_${Date.now()}_${i}.webp`;
+                    const filePath = `${session.user.id}/${fileName}`;
+                    const { error: uploadError } = await supabase.storage.from('imagenes-plataforma').upload(filePath, blob, { upsert: true });
+                    if (uploadError) throw uploadError;
+                    
+                    const { data } = supabase.storage.from('imagenes-plataforma').getPublicUrl(filePath);
+                    currentImgs.push(data.publicUrl);
+                }
+                
+                arrayInput.value = JSON.stringify(currentImgs);
+                renderizarGridImagenes(currentImgs, previewGrid, arrayInput);
+                showToast(`✅ ${files.length} imagen(es) subida(s)`);
             } catch (err) {
                 console.error(err);
-                showToast('❌ Error al subir imagen', 'error');
+                showToast('❌ Error al subir imágenes', 'error');
             } finally {
-                btnUploadEv.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar otra';
+                btnUploadEv.innerHTML = '<i class="fa-solid fa-images"></i> Añadir Imágenes';
                 btnUploadEv.disabled = false;
+                inputImgEv.value = ''; // Resetear input
             }
         };
     }
+
+    // Helper para renderizar la cuadrícula de imágenes
+    window.renderizarGridImagenes = function(imgsArray, gridElement, hiddenInput) {
+        gridElement.innerHTML = '';
+        imgsArray.forEach((url, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '100%';
+            wrapper.style.paddingBottom = '100%'; // Aspect ratio 1:1
+            wrapper.style.borderRadius = '8px';
+            wrapper.style.overflow = 'hidden';
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.position = 'absolute';
+            img.style.top = '0';
+            img.style.left = '0';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+
+            const btnDelete = document.createElement('button');
+            btnDelete.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            btnDelete.type = 'button';
+            btnDelete.style.position = 'absolute';
+            btnDelete.style.top = '5px';
+            btnDelete.style.right = '5px';
+            btnDelete.style.background = 'rgba(255,0,0,0.8)';
+            btnDelete.style.color = 'white';
+            btnDelete.style.border = 'none';
+            btnDelete.style.borderRadius = '50%';
+            btnDelete.style.width = '24px';
+            btnDelete.style.height = '24px';
+            btnDelete.style.cursor = 'pointer';
+            btnDelete.style.display = 'flex';
+            btnDelete.style.alignItems = 'center';
+            btnDelete.style.justifyContent = 'center';
+            btnDelete.style.fontSize = '12px';
+
+            btnDelete.onclick = (e) => {
+                e.stopPropagation();
+                imgsArray.splice(index, 1);
+                hiddenInput.value = JSON.stringify(imgsArray);
+                renderizarGridImagenes(imgsArray, gridElement, hiddenInput);
+            };
+
+            wrapper.appendChild(img);
+            wrapper.appendChild(btnDelete);
+            gridElement.appendChild(wrapper);
+        });
+    };
 
     // --- Guardar EVENTO ---
     const formEvento = document.getElementById('form-nuevo-evento');
@@ -1126,19 +1504,21 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             btn.disabled = true;
 
             try {
-                const payload = {
+                    const imgsArray = JSON.parse(document.getElementById('ev-imagenes-array').value || '[]');
+                    const payload = {
                     nombre: document.getElementById('ev-nombre').value,
                     categoria: document.getElementById('ev-categoria').value,
-                    sede_id: document.getElementById('ev-sede').value || null,
+                    lugar_id: document.getElementById('ev-sede').value || null,
                     fecha_inicio: document.getElementById('ev-fecha-inicio').value,
                     fecha_fin: document.getElementById('ev-fecha-fin').value,
                     ubicacion: document.getElementById('ev-ubicacion').value,
-                    gmaps_link: document.getElementById('ev-gmaps').value,
-                    latitud: document.getElementById('ev-lat').value,
-                    longitud: document.getElementById('ev-lng').value,
-                    imagen_url: document.getElementById('ev-imagen-url').value, // Alineado con REORGANIZACION_DB_FINAL
+                    mapa_url: document.getElementById('ev-gmaps').value,   // columna real en BD
+                    lat: parseFloat(document.getElementById('ev-lat').value) || null,
+                    lng: parseFloat(document.getElementById('ev-lng').value) || null,
+                    imagen_url: imgsArray.length > 0 ? imgsArray[0] : '', // Mantener retrocompatibilidad
+                    imagenes: imgsArray, // Nueva columna array
                     descripcion: document.getElementById('ev-descripcion').value,
-                    sumate_link: document.getElementById('ev-reg-link').value,
+                    reg_link: document.getElementById('ev-reg-link').value, // columna real en BD
                     owner_id: session.user.id
                 };
 
@@ -1151,6 +1531,8 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 showToast('✅ Evento guardado exitosamente');
                 document.getElementById('modal-nuevo-evento').classList.add('hidden');
                 formEvento.reset();
+                document.getElementById('ev-imagenes-array').value = '[]';
+                document.getElementById('ev-images-preview-grid').innerHTML = '';
                 delete formEvento.dataset.editId;
                 cargarDatos(currentAdminFilter);
             } catch (err) {
@@ -1207,12 +1589,12 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                     nombre: document.getElementById('pl-nombre').value,
                     categoria: document.getElementById('pl-categoria').value,
                     ubicacion: document.getElementById('pl-ubicacion').value,
-                    gmaps_link: document.getElementById('pl-gmaps').value,
-                    latitud: document.getElementById('pl-lat').value,
-                    longitud: document.getElementById('pl-lng').value,
-                    imagen_url: document.getElementById('pl-imagen-url').value, // Alineado con REORGANIZACION_DB_FINAL
+                    mapa_url: document.getElementById('pl-gmaps').value,   // columna real en BD
+                    lat: parseFloat(document.getElementById('pl-lat').value) || null,
+                    lng: parseFloat(document.getElementById('pl-lng').value) || null,
+                    imagen_url: document.getElementById('pl-imagen-url').value, // columna real tras REORGANIZACION_DB_FINAL
                     descripcion: document.getElementById('pl-descripcion').value,
-                    sumate_link: document.getElementById('pl-reg-link').value,
+                    reg_link: document.getElementById('pl-reg-link').value, // columna real en BD
                     owner_id: session.user.id
                 };
 
@@ -1236,6 +1618,108 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             }
         };
     }
+
+    // --- Subida de imagen para CONTENIDO SECCIONES ---
+    const btnUploadCo = document.getElementById('co-btn-trigger-upload');
+    const inputImgCo = document.getElementById('co-imagen-file');
+    if (btnUploadCo && inputImgCo) {
+        btnUploadCo.onclick = () => inputImgCo.click();
+        inputImgCo.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            btnUploadCo.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+            btnUploadCo.disabled = true;
+            try {
+                const blob = await compressImage(file);
+                const fileName = `content_${Date.now()}.webp`;
+                const filePath = `${session.user.id}/${fileName}`;
+                const { error: uploadError } = await supabase.storage.from('imagenes-plataforma').upload(filePath, blob, { upsert: true });
+                if (uploadError) throw uploadError;
+
+                const { data } = supabase.storage.from('imagenes-plataforma').getPublicUrl(filePath);
+                document.getElementById('co-imagen-url').value = data.publicUrl;
+                
+                const preview = document.getElementById('co-image-preview');
+                preview.innerHTML = `<img src="${data.publicUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+                preview.classList.remove('hidden');
+                
+                showToast('✅ Imagen lista');
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Error al subir imagen', 'error');
+            } finally {
+                btnUploadCo.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar otra';
+                btnUploadCo.disabled = false;
+            }
+        };
+    }
+
+    // --- Guardar CONTENIDO DINÁMICO ---
+    const formContenido = document.getElementById('form-nuevo-contenido');
+    if (formContenido) {
+        formContenido.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-contenido');
+            const origHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btn.disabled = true;
+
+            try {
+                const [_, secId, hub] = currentAdminFilter.split('_');
+
+                // Recolectar metadatos dinámicos
+                const meta = {
+                    descripcion_texto: document.getElementById('co-descripcion').value
+                };
+                if (SECTION_CONFIGS[secId]) {
+                    SECTION_CONFIGS[secId].fields.forEach(f => {
+                        const el = document.getElementById(`meta-${f.id}`);
+                        if (el) meta[f.id] = el.value;
+                    });
+                }
+
+                const payload = {
+                    titulo: document.getElementById('co-titulo').value,
+                    enlace_externo: document.getElementById('co-enlace').value || null,
+                    descripcion: JSON.stringify(meta),
+                    imagen_url: document.getElementById('co-imagen-url').value || null,
+                    estado: document.getElementById('co-estado').value,
+                    seccion_id: secId,
+                    parent_hub: hub,
+                    owner_id: session.user.id,
+                    updated_at: new Date()
+                };
+
+                const editId = formContenido.dataset.editId;
+                const { error } = editId 
+                    ? await supabase.from('contenido_secciones').update(payload).eq('id', editId)
+                    : await supabase.from('contenido_secciones').insert(payload);
+
+                if (error) throw error;
+
+                showToast(`✅ Recurso ${editId ? 'actualizado' : 'creado'} correctamente`);
+                document.getElementById('modal-nuevo-contenido').classList.add('hidden');
+                formContenido.reset();
+                delete formContenido.dataset.editId;
+                cargarDatos(currentAdminFilter);
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Error al guardar recurso', 'error');
+            } finally {
+                btn.innerHTML = origHTML;
+                btn.disabled = false;
+            }
+        };
+    }
+
+    // --- Cierre de modales extendido ---
+    document.querySelectorAll('.btn-close-modal, #btn-cancelar-contenido, #btn-close-contenido').forEach(btn => {
+        const original = btn.onclick;
+        btn.onclick = () => {
+            if (original) original();
+            document.getElementById('modal-nuevo-contenido').classList.add('hidden');
+        };
+    });
 
     // --- GESTIÓN DE PERFIL COMPLETA (ADMIN) ---
     async function compressImage(file, { maxWidth = 800, quality = 0.7 } = {}) {
@@ -1348,6 +1832,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 const { error } = await supabase.from('perfiles').update(payload).eq('id', editId);
                 if (error) throw error;
 
+                // Actualizar Sidebar inmediatamente
+                const sidebarAvatar = document.getElementById('sidebar-avatar');
+                if (sidebarAvatar && avatarUrl) {
+                    sidebarAvatar.style.backgroundImage = `url("${avatarUrl}")`;
+                    sidebarAvatar.textContent = '';
+                }
+                
                 showToast('✅ Perfil actualizado correctamente');
                 document.getElementById('profile-modal').classList.add('hidden');
                 formProfileEdit.reset();
@@ -1924,6 +2415,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     window.editarPerfil = async (id) => {
         const profileModal = document.getElementById('profile-modal');
         const formProfileEdit = document.getElementById('form-profile-edit');
+        const profEmailInput = document.getElementById('prof-email');
         
         try {
             const { data, error } = await supabase.from('perfiles').select('*').eq('id', id).single();
@@ -1937,6 +2429,11 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 document.getElementById('prof-bio').value = data.bio || '';
                 document.getElementById('prof-web').value = data.sitio_web || '';
                 
+                // Intentar obtener el correo (si es el propio usuario o desde metadatos si los guardaste)
+                if (profEmailInput) {
+                    profEmailInput.value = data.email || ''; // Si agregamos email a perfiles
+                }
+
                 const links = data.links_sociales || {};
                 document.getElementById('prof-fb').value = links.facebook || '';
                 document.getElementById('prof-ig').value = links.instagram || '';
@@ -1950,6 +2447,33 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                     preview.innerHTML = (data.nombre_completo || 'U').charAt(0).toUpperCase();
                 }
                 
+                // El email ya llega en data-target-email del form (puesto al abrir el modal)
+                // data.email puede ser NULL en perfiles si el trigger aún no se actualizó
+                const form = document.getElementById('form-profile-edit');
+                const emailFromForm = form?.dataset?.targetEmail || '';
+                const resolvedEmail = data.email || emailFromForm;
+
+                const profEmailDisplay = document.getElementById('prof-email-display');
+                if (profEmailDisplay) {
+                    profEmailDisplay.value = resolvedEmail;
+                }
+
+                if (profEmailInput) {
+                    profEmailInput.value = resolvedEmail;
+                }
+
+                // Limpiar cualquier aviso de tiempo previo (ya que decidimos no usarlo)
+                const timeNotice = document.getElementById('edit-time-notice');
+                if (timeNotice) timeNotice.remove();
+
+                // Asegurar que el botÃ³n de guardar estÃ© siempre habilitado
+                const saveBtn = document.getElementById('btn-save-user-profile');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
+                    saveBtn.textContent = 'Actualizar Perfil';
+                }
+
                 profileModal.classList.remove('hidden');
             }
         } catch (err) {
@@ -1961,4 +2485,157 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
     document.getElementById('btn-close-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
     document.getElementById('btn-cancel-profile').onclick = () => document.getElementById('profile-modal').classList.add('hidden');
 
+    // ==========================================
+    // CONTROL DE MENÃš DE ACCIONES Y MODERACIÃ“N
+    // ==========================================
+
+    window.toggleActionsMenu = (event, id) => {
+        event.stopPropagation();
+        const menu = document.getElementById(`menu-${id}`);
+        const allMenus = document.querySelectorAll('.actions-menu');
+        
+        // Cerrar otros menÃºs
+        allMenus.forEach(m => {
+            if (m.id !== `menu-${id}`) m.classList.remove('active');
+        });
+
+        if (menu) {
+            const isOpening = !menu.classList.contains('active');
+            menu.classList.toggle('active');
+
+            if (isOpening) {
+                // Detectar espacio disponible debajo
+                const rect = event.currentTarget.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                
+                // Si hay menos de 220px debajo, abrir hacia arriba
+                if (spaceBelow < 220) {
+                    menu.style.top = 'auto';
+                    menu.style.bottom = '100%';
+                    menu.style.marginTop = '0';
+                    menu.style.marginBottom = '8px';
+                } else {
+                    menu.style.top = '100%';
+                    menu.style.bottom = 'auto';
+                    menu.style.marginTop = '8px';
+                    menu.style.marginBottom = '0';
+                }
+            }
+        }
+
+        // Cerrar al hacer clic fuera
+        const closeMenu = (e) => {
+            if (menu && !menu.contains(e.target)) {
+                menu.classList.remove('active');
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+        document.addEventListener('click', closeMenu);
+    };
+
+    window.moderarRegistro = async (id, tipo, nuevoEstado) => {
+        const confirmMsg = nuevoEstado === 'approved' ? 'Â¿Aprobar publicaciÃ³n?' : 
+                          (nuevoEstado === 'rejected' ? 'Â¿Rechazar definitivamente?' : 'Â¿Solicitar correcciones?');
+        
+        if (!confirm(confirmMsg)) return;
+
+        let reviewNotes = '';
+        if (nuevoEstado === 'correction' || nuevoEstado === 'rejected') {
+            reviewNotes = prompt('Escribe el motivo o las correcciones necesarias:');
+            if (reviewNotes === null) return;
+        }
+
+        try {
+            const esPerfil = tipo === 'perfiles' || tipo === 'usuarios';
+            const tabla = esPerfil ? 'perfiles' : (tipo === 'evento' ? 'eventos' : tipo);
+            const campoEstado = esPerfil ? 'actor_status' : 'estado';
+            
+            const updates = {
+                [campoEstado]: nuevoEstado === 'correction' ? 'pending' : nuevoEstado,
+                review_notes: reviewNotes,
+                reviewed_by: session.user.id,
+                reviewed_at: new Date()
+            };
+
+            // Si es un perfil y lo estamos aprobando, le otorgamos el rol de actor
+            if (esPerfil && nuevoEstado === 'approved') {
+                updates.rol = 'actor';
+            }
+
+            console.log(`[Moderation] Actualizando ${tabla} (${id}) con estado: ${nuevoEstado}`);
+            const { error } = await supabase.from(tabla).update(updates).eq('id', id);
+            if (error) throw error;
+
+            showToast(`âœ… Registro actualizado a ${nuevoEstado}`);
+            
+            // Enviar notificaciÃ³n al usuario/actor
+            await enviarNotificacionRevision(id, tipo, nuevoEstado, reviewNotes);
+            
+            await updateBadges();
+            cargarDatos(currentAdminFilter);
+        } catch (err) {
+            console.error('Error al moderar:', err);
+            showToast('âŒ Error al procesar la moderaciÃ³n: ' + err.message, 'error');
+        }
+    };
+
+    async function enviarNotificacionRevision(targetId, tipo, estado, notas) {
+        try {
+            const tabla = tipo === 'evento' ? 'eventos' : 'perfiles';
+            const { data } = await supabase.from(tabla).select(tipo === 'evento' ? 'owner_id, nombre' : 'id, nombre_completo').eq('id', targetId).single();
+            
+            const userId = tipo === 'evento' ? data.owner_id : data.id;
+            const nombreObj = tipo === 'evento' ? data.nombre : data.nombre_completo;
+
+            if (!userId) return;
+
+            const titulos = {
+                approved: 'âœ… Â¡PublicaciÃ³n Aprobada!',
+                rejected: 'âŒ PublicaciÃ³n Rechazada',
+                correction: 'âœï¸ AcciÃ³n Requerida: Correcciones'
+            };
+
+            const mensajes = {
+                approved: `Tu ${tipo} "${nombreObj}" ha sido aprobado y ya es visible en la plataforma.`,
+                rejected: `Lo sentimos, tu ${tipo} "${nombreObj}" no cumple con los lineamientos: ${notas}`,
+                correction: `Por favor, revisa y corrige tu ${tipo} "${nombreObj}". Nota del admin: ${notas}`
+            };
+
+            const { data: notif, error: nError } = await supabase.from('notificaciones').insert({
+                remitente_id: session.user.id,
+                titulo: titulos[estado],
+                mensaje: mensajes[estado],
+                destinatarios: 'privada'
+            }).select().single();
+
+            if (nError) throw nError;
+
+            await supabase.from('notificaciones_usuarios').insert({
+                notificacion_id: notif.id,
+                usuario_id: userId,
+                leido: false
+            });
+        } catch (err) { console.error(err); }
+    }
+
+    // --- GESTIÃ“N DE PARÃMETROS URL ---
+    async function handleQueryParams() {
+        const params = new URLSearchParams(window.location.search);
+        const action = params.get('action');
+        const section = params.get('section');
+        const hub = params.get('hub');
+
+        if (action === 'new' && section && hub) {
+            console.log(`[Admin] âš¡ AcciÃ³n rÃ¡pida detectada: Nuevo registro en ${section} (${hub})`);
+            showHubMenu(hub);
+            currentAdminFilter = `seccion_${section}_${hub}`;
+            setTimeout(() => {
+                const btnNuevo = document.getElementById('btn-nuevo');
+                if (btnNuevo) btnNuevo.click();
+            }, 500);
+        }
+    }
+
+    // Ejecutar al final de la carga
+    await handleQueryParams();
 })();

@@ -20,12 +20,8 @@ async function initAgentes() {
 
         if (pError) throw pError;
 
-        // 2. Obtener datos de la tabla agentes para relacionar especialidades
-        const { data: agentes, error: aError } = await supabase
-            .from('agentes')
-            .select('*');
-
-        if (aError) console.warn("[Agentes] No se pudo cargar la tabla de agentes, usando solo perfiles.");
+        // 2. Usamos solo perfiles (la tabla agentes no existe)
+        const agentes = null;
 
         container.innerHTML = '';
 
