@@ -199,6 +199,9 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             } else if (view === 'config') {
                 showConfigView();
+            } else if (view === 'slider') {
+                showSliderView();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             } else if (['colibri', 'ajolote', 'lobo'].includes(view)) {
                 showHubMenu(view);
             } else {
@@ -413,9 +416,11 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         const perfilView = document.getElementById('perfil-view');
         const notifView = document.getElementById('notificaciones-view');
         const configView = document.getElementById('config-view');
+        const sliderView = document.getElementById('slider-view');
         if (perfilView) perfilView.classList.add('hidden');
         if (notifView) notifView.classList.add('hidden');
         if (configView) configView.classList.add('hidden');
+        if (sliderView) sliderView.classList.add('hidden');
 
         currentHub = null;
         currentSection = null;
@@ -2635,6 +2640,315 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             }, 500);
         }
     }
+
+    // --- GESTIÓN DEL SLIDER PRINCIPAL ---
+    function showSliderView() {
+        resetViews();
+        h1Header.textContent = 'Carrusel Principal';
+        pHeader.textContent = 'Administra las imágenes de portada y enlaces dinámicos de la página de inicio.';
+        const view = document.getElementById('slider-view');
+        if (view) {
+            view.classList.remove('hidden');
+            cargarSlidesAdmin();
+        }
+    }
+
+    async function cargarSlidesAdmin() {
+        const grid = document.getElementById('slider-list-grid');
+        if (!grid) return;
+        
+        grid.innerHTML = '<div style="grid-column: span 100%; text-align: center; padding: 40px; color: var(--admin-text-muted);"><i class="fa-solid fa-circle-notch fa-spin"></i> Cargando diapositivas...</div>';
+
+        try {
+            const { data: slides, error } = await supabase
+                .from('carrusel_principal')
+                .select('*')
+                .order('orden', { ascending: true });
+
+            if (error) throw error;
+
+            if (!slides || slides.length === 0) {
+                grid.innerHTML = '<div style="grid-column: span 100%; text-align: center; padding: 40px; color: var(--admin-text-muted);">No hay diapositivas configuradas.</div>';
+                return;
+            }
+
+            grid.innerHTML = slides.map(sl => `
+                <div class="profile-card glass-effect fade-in" style="display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 1px solid ${sl.activo ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.3)'};">
+                    <div>
+                        <div style="height: 160px; width: 100%; background: #000; position: relative; border-radius: 12px; overflow: hidden; margin-bottom: 15px;">
+                            <img src="${sanitize(sl.imagen_url)}" style="width: 100%; height: 100%; object-fit: cover;">
+                            ${sl.badge ? `<span style="position: absolute; top: 10px; left: 10px; background: var(--admin-accent); color: black; font-weight: 800; font-size: 0.65rem; padding: 4px 8px; border-radius: 6px;">${sanitize(sl.badge)}</span>` : ''}
+                            <span style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; font-weight: 700; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">#${sl.orden}</span>
+                            ${(sl.imagen_pc_url || sl.imagen_tablet_url) ? `<span style="position: absolute; bottom: 10px; left: 10px; background: rgba(16, 185, 129, 0.85); color: white; font-size: 0.7rem; padding: 3px 6px; border-radius: 4px;"><i class="fa-solid fa-layer-group"></i> Multi-Formato</span>` : ''}
+                        </div>
+
+                        <h3 style="color: white; font-size: 1.1rem; margin-bottom: 6px;">${sl.titulo ? sanitize(sl.titulo) : '<span style="color: #64748b; font-style: italic;">Sin título (Solo imagen)</span>'}</h3>
+                        ${sl.subtitulo ? `<p style="color: var(--admin-text-muted); font-size: 0.85rem; margin-bottom: 12px; line-height: 1.4;">${sanitize(sl.subtitulo)}</p>` : ''}
+                        
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: #94a3b8;">
+                            ${sl.sin_boton ? 
+                                `<span style="color: var(--color-eco);"><i class="fa-solid fa-expand"></i> Imagen completa sin botón</span>` : 
+                                `<span><i class="fa-solid fa-link"></i> Botón: <strong>${sl.btn_texto ? sanitize(sl.btn_texto) : 'Por defecto'}</strong></span>`
+                            }
+                            ${sl.enlace_url ? `<div style="margin-top: 4px; word-break: break-all; color: var(--admin-accent); font-size: 0.75rem;">URL: ${sanitize(sl.enlace_url)}</div>` : ''}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <button class="btn-admin" style="flex: 1; padding: 8px; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;" onclick="window.editarSlideAdmin(${JSON.stringify(sl).replace(/"/g, '&quot;')})">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button class="btn-admin" style="padding: 8px 12px; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444;" onclick="window.eliminarSlideAdmin('${sl.id}')" title="Eliminar">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+        } catch (err) {
+            console.error('Error al cargar diapositivas:', err);
+            grid.innerHTML = '<div style="grid-column: span 100%; text-align: center; padding: 40px; color: #ef4444;">Error al cargar diapositivas.</div>';
+        }
+    }
+
+    // Modal Control
+    const modalSlide = document.getElementById('modal-nuevo-slide');
+    const formSlide = document.getElementById('form-nuevo-slide');
+    const btnNuevoSlide = document.getElementById('btn-nuevo-slide');
+    const btnCloseSlide = document.getElementById('btn-close-slide');
+    const btnCancelarSlide = document.getElementById('btn-cancelar-slide');
+    const chkSinBoton = document.getElementById('sl-sin-boton');
+    const botonFields = document.getElementById('sl-boton-fields');
+    
+    // Elementos Responsive Multi-Formato
+    const chkResponsive = document.getElementById('sl-chk-responsive');
+    const responsiveFields = document.getElementById('sl-responsive-fields');
+
+    if (btnNuevoSlide) {
+        btnNuevoSlide.addEventListener('click', () => {
+            formSlide.reset();
+            document.getElementById('sl-id').value = '';
+            document.getElementById('slide-modal-title').textContent = 'Añadir Diapositiva';
+            document.getElementById('sl-image-preview').classList.add('hidden');
+            document.getElementById('sl-preview-img').src = '';
+            
+            // Limpiar URLs secundarias
+            document.getElementById('sl-imagen-pc-url').value = '';
+            document.getElementById('sl-imagen-tablet-url').value = '';
+            if (chkResponsive) {
+                chkResponsive.checked = false;
+                if (responsiveFields) responsiveFields.style.display = 'none';
+            }
+
+            botonFields.style.display = 'grid';
+            modalSlide.classList.remove('hidden');
+        });
+    }
+
+    [btnCloseSlide, btnCancelarSlide].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => modalSlide.classList.add('hidden'));
+        }
+    });
+
+    if (chkSinBoton) {
+        chkSinBoton.addEventListener('change', () => {
+            botonFields.style.display = chkSinBoton.checked ? 'none' : 'grid';
+        });
+    }
+
+    if (chkResponsive && responsiveFields) {
+        chkResponsive.addEventListener('change', () => {
+            responsiveFields.style.display = chkResponsive.checked ? 'grid' : 'none';
+        });
+    }
+
+    // --- UPLOAD HANDLERS ---
+    async function setupUploader(triggerBtnId, fileInputId, urlInputId, previewImgId, previewContainerId, prefix = 'slide') {
+        const triggerBtn = document.getElementById(triggerBtnId);
+        const fileInput = document.getElementById(fileInputId);
+        const urlInput = document.getElementById(urlInputId);
+
+        if (!triggerBtn || !fileInput) return;
+
+        triggerBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const originalHtml = triggerBtn.innerHTML;
+            triggerBtn.disabled = true;
+            triggerBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Subiendo...';
+
+            try {
+                let uploadBlob = file;
+                let fileExt = file.name.split('.').pop().toLowerCase();
+                let contentType = file.type || 'image/jpeg';
+
+                // Si no es un GIF animado ni SVG, aplicamos la optimizacion y compresion a WebP
+                if (file.type !== 'image/gif' && file.type !== 'image/svg+xml') {
+                    uploadBlob = await compressImage(file);
+                    fileExt = 'webp';
+                    contentType = 'image/webp';
+                }
+
+                const fileName = `${prefix}_${Date.now()}.${fileExt}`;
+                const filePath = `carrusel/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('imagenes')
+                    .upload(filePath, uploadBlob, { contentType: contentType, cacheControl: '3600', upsert: true });
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('imagenes')
+                    .getPublicUrl(filePath);
+
+                if (urlInput) urlInput.value = publicUrl;
+                
+                if (previewImgId && previewContainerId) {
+                    const pImg = document.getElementById(previewImgId);
+                    const pCont = document.getElementById(previewContainerId);
+                    if (pImg) pImg.src = publicUrl;
+                    if (pCont) pCont.classList.remove('hidden');
+                }
+
+                showToast('✅ Imagen optimizada subida con éxito');
+
+            } catch (err) {
+                console.error(`Error subiendo imagen (${prefix}):`, err);
+                showToast('❌ Error al subir imagen', 'error');
+            } finally {
+                triggerBtn.disabled = false;
+                triggerBtn.innerHTML = originalHtml;
+                fileInput.value = '';
+            }
+        });
+
+        if (urlInput && previewImgId && previewContainerId) {
+            urlInput.addEventListener('input', () => {
+                const val = urlInput.value.trim();
+                const pImg = document.getElementById(previewImgId);
+                const pCont = document.getElementById(previewContainerId);
+                if (val && pImg && pCont) {
+                    pImg.src = val;
+                    pCont.classList.remove('hidden');
+                } else if (pCont) {
+                    pCont.classList.add('hidden');
+                }
+            });
+        }
+    }
+
+    // Inicializar subidores
+    setupUploader('sl-btn-trigger-upload', 'sl-imagen-file', 'sl-imagen-url', 'sl-preview-img', 'sl-image-preview', 'slide');
+    setupUploader('sl-btn-trigger-pc', 'sl-imagen-pc-file', 'sl-imagen-pc-url', null, null, 'slide_pc');
+    setupUploader('sl-btn-trigger-tablet', 'sl-imagen-tablet-file', 'sl-imagen-tablet-url', null, null, 'slide_tablet');
+
+    // Save Slide (Create/Update)
+    if (formSlide) {
+        formSlide.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnGuardar = document.getElementById('btn-guardar-slide');
+            const originalText = btnGuardar.innerHTML;
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Guardando...';
+
+            try {
+                const id = document.getElementById('sl-id').value;
+                const pcUrl = document.getElementById('sl-imagen-pc-url').value.trim();
+                const tabletUrl = document.getElementById('sl-imagen-tablet-url').value.trim();
+                const isResponsiveActive = chkResponsive && chkResponsive.checked;
+
+                const payload = {
+                    imagen_url: document.getElementById('sl-imagen-url').value.trim(),
+                    imagen_pc_url: (isResponsiveActive && pcUrl) ? pcUrl : null,
+                    imagen_tablet_url: (isResponsiveActive && tabletUrl) ? tabletUrl : null,
+                    badge: document.getElementById('sl-badge').value.trim() || null,
+                    orden: parseInt(document.getElementById('sl-orden').value) || 1,
+                    titulo: document.getElementById('sl-titulo').value.trim() || null,
+                    subtitulo: document.getElementById('sl-subtitulo').value.trim() || null,
+                    sin_boton: document.getElementById('sl-sin-boton').checked,
+                    btn_texto: document.getElementById('sl-btn-texto').value.trim() || null,
+                    enlace_url: document.getElementById('sl-enlace').value.trim() || null,
+                    activo: document.getElementById('sl-activo').value === 'true'
+                };
+
+                if (id) {
+                    const { error } = await supabase.from('carrusel_principal').update(payload).eq('id', id);
+                    if (error) throw error;
+                    showToast('✅ Diapositiva actualizada');
+                } else {
+                    const { error } = await supabase.from('carrusel_principal').insert([payload]);
+                    if (error) throw error;
+                    showToast('✅ Diapositiva creada');
+                }
+
+                modalSlide.classList.add('hidden');
+                cargarSlidesAdmin();
+
+            } catch (err) {
+                console.error('Error guardando slide:', err);
+                showToast('❌ Error al guardar diapositivas', 'error');
+            } finally {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = originalText;
+            }
+        });
+    }
+
+    window.editarSlideAdmin = (sl) => {
+        document.getElementById('sl-id').value = sl.id;
+        document.getElementById('slide-modal-title').textContent = 'Editar Diapositiva';
+        document.getElementById('sl-imagen-url').value = sl.imagen_url || '';
+        document.getElementById('sl-badge').value = sl.badge || '';
+        document.getElementById('sl-orden').value = sl.orden || 1;
+        document.getElementById('sl-titulo').value = sl.titulo || '';
+        document.getElementById('sl-subtitulo').value = sl.subtitulo || '';
+        
+        // Multi-Formato
+        const pcUrl = sl.imagen_pc_url || '';
+        const tabUrl = sl.imagen_tablet_url || '';
+        document.getElementById('sl-imagen-pc-url').value = pcUrl;
+        document.getElementById('sl-imagen-tablet-url').value = tabUrl;
+        
+        if (chkResponsive) {
+            chkResponsive.checked = !!(pcUrl || tabUrl);
+            if (responsiveFields) responsiveFields.style.display = chkResponsive.checked ? 'grid' : 'none';
+        }
+
+        const chk = document.getElementById('sl-sin-boton');
+        chk.checked = !!sl.sin_boton;
+        botonFields.style.display = chk.checked ? 'none' : 'grid';
+
+        document.getElementById('sl-btn-texto').value = sl.btn_texto || '';
+        document.getElementById('sl-enlace').value = sl.enlace_url || '';
+        document.getElementById('sl-activo').value = sl.activo ? 'true' : 'false';
+
+        if (sl.imagen_url) {
+            document.getElementById('sl-preview-img').src = sl.imagen_url;
+            document.getElementById('sl-image-preview').classList.remove('hidden');
+        } else {
+            document.getElementById('sl-image-preview').classList.add('hidden');
+        }
+
+        modalSlide.classList.remove('hidden');
+    };
+
+    window.eliminarSlideAdmin = async (id) => {
+        if (!confirm('¿Estás seguro de eliminar esta diapositiva?')) return;
+        try {
+            const { error } = await supabase.from('carrusel_principal').delete().eq('id', id);
+            if (error) throw error;
+            showToast('✅ Diapositiva eliminada');
+            cargarSlidesAdmin();
+        } catch (err) {
+            console.error('Error al eliminar slide:', err);
+            showToast('❌ Error al eliminar slide', 'error');
+        }
+    };
 
     // Ejecutar al final de la carga
     await handleQueryParams();

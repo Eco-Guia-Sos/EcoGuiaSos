@@ -25,12 +25,13 @@ RETURNS TABLE (
     tipo TEXT,
     categoria TEXT,
     imagen_url TEXT,
-    ubicacion TEXT
+    ubicacion TEXT,
+    fecha_inicio TEXT
 ) AS $$
 BEGIN
     RETURN QUERY
     -- Eventos
-    SELECT e.id, e.nombre, e.lat, e.lng, 'evento'::TEXT, e.categoria, e.imagen_url, e.ubicacion
+    SELECT e.id, e.nombre, e.lat, e.lng, 'evento'::TEXT, e.categoria, e.imagen_url, e.ubicacion, e.fecha_inicio::TEXT
     FROM public.eventos e
     JOIN public.territories t ON ST_Contains(t.geometry, e.geom)
     WHERE t.id = p_territory_id
@@ -38,7 +39,7 @@ BEGIN
     UNION ALL
     
     -- Lugares
-    SELECT l.id, l.nombre, l.lat, l.lng, 'lugar'::TEXT, l.categoria, l.imagen_url, l.ubicacion
+    SELECT l.id, l.nombre, l.lat, l.lng, 'lugar'::TEXT, l.categoria, l.imagen_url, l.ubicacion, NULL::TEXT
     FROM public.lugares l
     JOIN public.territories t ON ST_Contains(t.geometry, l.geom)
     WHERE t.id = p_territory_id;
@@ -55,12 +56,13 @@ RETURNS TABLE (
     tipo TEXT,
     categoria TEXT,
     imagen_url TEXT,
-    ubicacion TEXT
+    ubicacion TEXT,
+    fecha_inicio TEXT
 ) AS $$
 BEGIN
     RETURN QUERY
     -- Eventos
-    SELECT e.id, e.nombre, e.lat, e.lng, 'evento'::TEXT, e.categoria, e.imagen_url, e.ubicacion
+    SELECT e.id, e.nombre, e.lat, e.lng, 'evento'::TEXT, e.categoria, e.imagen_url, e.ubicacion, e.fecha_inicio::TEXT
     FROM public.eventos e
     JOIN public.territories t ON ST_Contains(t.geometry, e.geom)
     WHERE t.id = ANY(p_territory_ids)
@@ -68,7 +70,7 @@ BEGIN
     UNION ALL
     
     -- Lugares
-    SELECT l.id, l.nombre, l.lat, l.lng, 'lugar'::TEXT, l.categoria, l.imagen_url, l.ubicacion
+    SELECT l.id, l.nombre, l.lat, l.lng, 'lugar'::TEXT, l.categoria, l.imagen_url, l.ubicacion, NULL::TEXT
     FROM public.lugares l
     JOIN public.territories t ON ST_Contains(t.geometry, l.geom)
     WHERE t.id = ANY(p_territory_ids);

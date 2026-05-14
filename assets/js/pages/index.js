@@ -26,7 +26,10 @@ async function getCachedProfile() {
         
         _cachedProfile = profile ? { ...profile, id: session.user.id } : null;
     } catch (e) { 
-        console.warn('[Index] Error obteniendo perfil:', e);
+        // Silenciar advertencias inofensivas de locks inter-pestañas de Supabase
+        if (e?.name !== 'AbortError' && !e?.message?.includes('Lock') && !e?.message?.includes('steal')) {
+            console.warn('[Index] Error obteniendo perfil:', e);
+        }
         _cachedProfile = null; 
     }
     return _cachedProfile;
@@ -716,17 +719,29 @@ function renderNearbySlider(items) {
         card.className = 'nearby-slider-card';
         card.setAttribute('data-id', p.id); // Guardar ID para sincronización
         
-        const distText = p.distancia_calculada ? `a ${p.distancia_calculada.toFixed(1)} km` : 'Distancia desconocida';
-        const icon = p.tipo === 'evento' ? '<i class="fa-solid fa-calendar-star"></i>' : '<i class="fa-solid fa-shop"></i>';
+        // Distancia depurada y en color amarillo
+        const distText = (p.distancia_calculada && isFinite(p.distancia_calculada)) ? `a ${p.distancia_calculada.toFixed(1)} km` : '';
+        const distHtml = distText ? `<div class="nearby-card-dist" style="color:#fde047; font-size:0.75rem; font-weight:700; margin-top:2px;"><i class="fa-solid fa-route"></i> ${distText}</div>` : '';
+        
+        // Fecha en la esquina superior izquierda flotando elegantemente
+        let dateSmallBadge = '';
+        const fTarget = p.fecha || p.fecha_inicio;
+        if (fTarget) {
+            try {
+                const d = new Date(fTarget);
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                dateSmallBadge = `<span style="position:absolute; top:4px; left:4px; background:rgba(15,20,25,0.85); color:#5bc2f7; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:10px; border:1px solid rgba(91,194,247,0.3); z-index:2;"><i class="fa-regular fa-calendar"></i> ${d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}</span>`;
+            } catch(e){}
+        }
 
         card.innerHTML = `
-            <div class="nearby-card-img">
-                <img src="${p.imagen || '/assets/img/kpop.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
+            <div class="nearby-card-img" style="position:relative;">
+                <img src="${p.imagen || '/assets/img/kpop.webp'}" alt="${sanitize(p.nombre)}" onerror="this.src='/assets/img/kpop.webp'">
+                ${dateSmallBadge}
             </div>
-            <div class="nearby-card-type-icon">${icon}</div>
             <div class="nearby-card-info">
-                <div class="nearby-card-title">${p.nombre}</div>
-                <div class="nearby-card-dist">${distText}</div>
+                <div class="nearby-card-title" style="font-weight:700; line-height:1.1;">${sanitize(p.nombre)}</div>
+                ${distHtml}
             </div>
         `;
 
@@ -794,6 +809,7 @@ async function activarProximidad() {
             (position) => {
                 console.log('[GPS] ¡getCurrentPosition respondió exitosamente!');
                 userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
+                localStorage.setItem('eco_user_coords', JSON.stringify(userCoords));
                 proximidadActiva = true;
                 
                 if (loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); }
@@ -833,6 +849,7 @@ async function obtenerUbicacionSilenciosa() {
         (position) => {
             console.log('[GPS] Ubicación silenciosa obtenida con éxito.');
             userCoords = { lat: position.coords.latitude, lng: position.coords.longitude, isGPS: true };
+            localStorage.setItem('eco_user_coords', JSON.stringify(userCoords));
             
             // ACTIVAR proximidad por defecto (silencioso, sin mover el scroll/mapa)
             // Lo ponemos al máximo (100km) para que se vean todos los eventos pero con km
@@ -883,9 +900,21 @@ function renderCards(data) {
     // Generar todo el HTML en memoria primero
     const cardsHtml = data.map(p => {
         const nivelClass = getNivelClass(p.categoria);
-        const distLabel = p.distancia_calculada ? `<span class="dist-badge">a ${p.distancia_calculada.toFixed(1)} km</span>` : '';
+        const distLabel = p.distancia_calculada ? `<span class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;"><i class="fa-solid fa-route"></i> a ${p.distancia_calculada.toFixed(1)} km</span>` : '';
         const eventosBadge = (p.tipo === 'lugar') ? `<span class="place-event-badge"><i class="fa-solid fa-calendar-star"></i> ${p.conteo_eventos || 0}</span>` : '';
         const actorBadge = p.actor_nombre ? `<div class="actor-badge" title="Publicado por: ${sanitize(p.actor_nombre)}"><i class="fa-solid fa-user-pen"></i><span>${sanitize(p.actor_nombre)}</span></div>` : '';
+
+        // Formato premium de la fecha debajo del título
+        let dateSubtext = '';
+        const fTarget = p.fecha || p.fecha_inicio;
+        if (fTarget) {
+            try {
+                const d = new Date(fTarget);
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                const fTxtFull = d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                dateSubtext = `<span class="card-date-sub" style="color:#5bc2f7; font-size:0.8rem; display:block; margin-top:4px; font-weight:600;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${fTxtFull}</span>`;
+            } catch(e){}
+        }
 
         // Determinar archivo de detalles correcto
         const detailPage = p.tipo === 'evento' ? 'eventos.html' : 'lugares.html';
@@ -901,7 +930,8 @@ function renderCards(data) {
                 </div>
                 <div class="card-content">
                     <div class="card-header"><span class="card-category">${sanitize(p.categoria)}</span></div>
-                    <h3 class="card-title">${sanitize(p.nombre)}</h3>
+                    <h3 class="card-title" style="margin-bottom:2px;">${sanitize(p.nombre)}</h3>
+                    ${dateSubtext}
                 </div>
             </article>`;
     }).join('');
@@ -1032,12 +1062,75 @@ function iniciarParticulas() {
     }
 }
 
-function iniciarCarrusel() {
+async function iniciarCarrusel() {
+    const wrapper = document.getElementById('main-hero-swiper-wrapper');
+    if (!wrapper) return;
+
+    let slideCount = 0;
+
+    try {
+        // Consultar slides activos usando fetchRawSupabaseTable para evitar bloqueos
+        const slides = await fetchRawSupabaseTable('carrusel_principal?select=*&activo=eq.true&order=orden.asc');
+        
+        if (slides && slides.length > 0) {
+            slideCount = slides.length;
+            wrapper.innerHTML = slides.map(sl => {
+                const isClickable = sl.sin_boton && sl.enlace_url;
+                const clickAttr = isClickable ? `style="cursor: pointer;" onclick="window.open('${sanitize(sl.enlace_url)}', '_blank')"` : '';
+                const overlayPointer = isClickable ? 'style="pointer-events: none;"' : '';
+                const btnPointer = isClickable ? 'style="pointer-events: auto;"' : '';
+
+                let contentHtml = '';
+                if (sl.badge || sl.titulo || sl.subtitulo || (!sl.sin_boton && sl.btn_texto)) {
+                    contentHtml = `
+                        <div class="slide-content-overlay" ${overlayPointer}>
+                            ${sl.badge ? `<span class="slide-badge" style="background: var(--color-colibri);">${sanitize(sl.badge)}</span>` : ''}
+                            ${sl.titulo ? `<h2>${sanitize(sl.titulo)}</h2>` : ''}
+                            ${sl.subtitulo ? `<p>${sanitize(sl.subtitulo)}</p>` : ''}
+                            ${!sl.sin_boton ? `
+                                <a ${sl.enlace_url ? `href="${sanitize(sl.enlace_url)}" target="_blank"` : ''} class="btn btn-primary shimmer-btn" ${btnPointer}>
+                                    ${sl.btn_texto ? sanitize(sl.btn_texto) : 'Ver Detalles'}
+                                </a>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                // Unificar todas las imágenes para que llenen la pantalla armónicamente (object-fit: cover nativo)
+                const objectFitStyle = '';
+
+                // Renderizado condicional Multi-Formato con <picture> si existen URLs de PC o Tablet
+                let mediaHtml = '';
+                if (sl.imagen_pc_url || sl.imagen_tablet_url) {
+                    mediaHtml = `
+                        <picture class="hero-picture-full">
+                            ${sl.imagen_pc_url ? `<source srcset="${sanitize(sl.imagen_pc_url)}" media="(min-width: 1024px)">` : ''}
+                            ${sl.imagen_tablet_url ? `<source srcset="${sanitize(sl.imagen_tablet_url)}" media="(min-width: 768px)">` : ''}
+                            <img src="${sanitize(sl.imagen_url)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy">
+                        </picture>
+                    `;
+                } else {
+                    mediaHtml = `<img src="${sanitize(sl.imagen_url)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy">`;
+                }
+
+                return `
+                    <div class="swiper-slide custom-slide" ${clickAttr}>
+                        ${contentHtml}
+                        ${mediaHtml}
+                        <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.warn('[Inicio] No se pudo cargar el carrusel dinámico, usando fallback estático.', err);
+    }
+
     if (typeof Swiper !== 'undefined') {
         new Swiper('.hero-carousel', { 
-            loop: true, 
+            loop: slideCount > 1, 
             autoplay: { 
-                delay: 5000,
+                delay: 6000,
                 disableOnInteraction: false 
             }, 
             pagination: { el: '.swiper-pagination', clickable: true }, 

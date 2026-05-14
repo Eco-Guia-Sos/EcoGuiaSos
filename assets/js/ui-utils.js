@@ -108,6 +108,10 @@ export function setupAuthObserver() {
             console.log('[Auth] Iniciando fetch de perfil DB (Directo)...');
             
             const fetchProfile = async () => {
+                try {
+                    const { data, error } = await supabase.from('perfiles').select('nombre_completo,rol,avatar_url').eq('id', user.id).maybeSingle();
+                    if (!error && data) return data;
+                } catch (e) {}
                 const url = `${supabaseUrl}/rest/v1/perfiles?id=eq.${user.id}&select=nombre_completo,rol,avatar_url`;
                 const response = await fetch(url, {
                     headers: {
@@ -160,7 +164,7 @@ export function setupAuthObserver() {
                     }
                 })
                 .catch(err => {
-                    console.error('[Auth] Error recuperando perfil:', err);
+                    console.warn('[Auth] Aviso al sincronizar perfil en UI (usando datos locales):', err?.message || err);
                 });
         } else {
             console.log('[Auth] Sin sesión - mostrando botón Súmate');

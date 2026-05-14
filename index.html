@@ -88,41 +88,14 @@
         <div class="hero-content">
             <!-- CARRUSEL PRINCIPAL -->
             <div class="swiper hero-carousel">
-                <div class="swiper-wrapper">
-                    <!-- Slide 1: Logo Original -->
+                <div class="swiper-wrapper" id="main-hero-swiper-wrapper">
+                    <!-- Slide 1: Logo Original (Fallback inicial) -->
                     <div class="swiper-slide custom-slide">
                         <picture class="hero-picture-full">
-                            <!-- Versión para PC (pantallas grandes) -->
                             <source srcset="./assets/img/pc.gif" media="(min-width: 1024px)">
-                            <!-- Versión para Tablet -->
                             <source srcset="./assets/img/tablet.gif" media="(min-width: 768px)">
-                            <!-- Versión para Teléfono (Móvil) -->
                             <img src="./assets/img/fon.gif" alt="Logo animado de EcoGuía SOS" class="slide-bg" loading="lazy">
                         </picture>
-                        <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
-                    </div>
-                    <!-- Slide 2: Ejemplo Evento -->
-                    <div class="swiper-slide custom-slide">
-                        <div class="slide-content-overlay">
-                            <span class="slide-badge">DESTACADO</span>
-                            <h2>Fondo Semilla 2026</h2>
-                            <p>Aplica hoy para recibir financiamiento para tu proyecto ecoturístico.</p>
-                            <button class="btn btn-primary shimmer-btn">Ver Detalles</button>
-                        </div>
-                        <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=1000"
-                            alt="Fondo Ecologico" class="slide-bg" loading="lazy">
-                        <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
-                    </div>
-                    <!-- Slide 3: Rescate de Ríos -->
-                    <div class="swiper-slide custom-slide" style="background-color: #020617; cursor: pointer;" onclick="window.open('https://science.nasa.gov/specials/your-name-in-landsat/', '_blank')">
-                        <div class="slide-content-overlay" style="pointer-events: none;">
-                            <span class="slide-badge" style="background: var(--color-colibri);">NASA LANDSAT</span>
-                            <h2>Envía tu nombre al espacio</h2>
-                            <p>Únete a la misión Landsat y registra tu nombre en la base de datos satelital de la NASA.</p>
-                            <a href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" class="btn btn-primary shimmer-btn" style="background: var(--color-colibri); pointer-events: auto;">Registrarse en la NASA</a>
-                        </div>
-                        <img src="./assets/img/ecoguiasos_rios_2.png"
-                            alt="EcoGuía SOS Ríos" class="slide-bg" loading="lazy" style="object-fit: contain !important; opacity: 0.95; object-position: center;">
                         <div class="swiper-lazy-preloader swiper-lazy-preloader-white"></div>
                     </div>
                 </div>

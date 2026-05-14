@@ -105,6 +105,7 @@
                 <li class="menu-category">Ajustes</li>
                 <li><a href="#" data-view="perfil"><i data-lucide="user-cog"></i> <span>Mi Perfil</span></a></li>
                 <li class="only-admin"><a href="#" data-view="notificaciones"><i data-lucide="bell"></i> <span>Notificaciones</span></a></li>
+                <li><a href="#" data-view="slider" id="menu-slider-link"><i data-lucide="images"></i> <span>Slider Principal</span></a></li>
                 <li class="only-admin"><a href="#" data-view="config"><i data-lucide="settings"></i> <span>Ajustes Plataforma</span></a></li>
 
                 <li class="menu-divider"></li>
@@ -425,6 +426,24 @@
                                 <p>No hay notificaciones enviadas aún.</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA: SLIDER PRINCIPAL -->
+            <div id="slider-view" class="profile-view-container fade-in hidden">
+                <div class="table-container glass-effect" style="padding: 24px;">
+                    <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h2 style="color: white; font-size: 1.5rem; margin-bottom: 4px;">Diapositivas del Inicio</h2>
+                            <p style="color: var(--admin-text-muted); font-size: 0.9rem;">Gestiona las imágenes, enlaces y textos del carrusel principal.</p>
+                        </div>
+                        <button class="btn-create-new" id="btn-nuevo-slide">
+                            <i data-lucide="plus"></i> <span>Añadir Slide</span>
+                        </button>
+                    </div>
+                    <div id="slider-list-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                        <div style="grid-column: span 100%; text-align: center; padding: 40px; color: var(--admin-text-muted);">Cargando diapositivas...</div>
                     </div>
                 </div>
             </div>
@@ -978,6 +997,111 @@
                 <button type="button" onclick="document.getElementById('notif-review-modal').classList.add('hidden')" class="btn-admin btn-notif-review-close" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 10px; cursor: pointer;">Cerrar</button>
             </div>
 
+        </div>
+    </div>
+
+    <!-- MODAL: SLIDER PRINCIPAL -->
+    <div id="modal-nuevo-slide" class="modal-overlay hidden">
+        <div class="modal-content glass-effect" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="slide-modal-title">Añadir Diapositiva</h2>
+                <button class="btn-close-modal" id="btn-close-slide"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-nuevo-slide" style="padding: 25px;">
+                <input type="hidden" id="sl-id">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Imagen General / Versión Móvil (*)</span>
+                            <label class="perm-item" style="font-size: 0.8rem; color: var(--color-colibri); font-weight: 600; cursor: pointer;">
+                                <input type="checkbox" id="sl-chk-responsive" style="vertical-align: middle; margin-right: 4px;">
+                                Activar Modo Multi-Formato (PC/Tablet/Móvil dedicados)
+                            </label>
+                        </label>
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="sl-imagen-file" accept="image/*" style="display: none;">
+                            <button type="button" class="btn-admin" id="sl-btn-trigger-upload" style="width: 100%; margin-bottom: 10px;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Seleccionar Imagen General / Móvil
+                            </button>
+                            <input type="text" id="sl-imagen-url" placeholder="URL de la imagen (usada en todo por defecto)" required style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                            <div id="sl-image-preview" class="image-preview hidden" style="margin-top: 10px; text-align: center;">
+                                <img id="sl-preview-img" src="" style="max-height: 140px; border-radius: 8px; object-fit: contain;">
+                            </div>
+                        </div>
+
+                        <!-- Sección de Formatos Secundarios (PC y Tablet) -->
+                        <div id="sl-responsive-fields" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <label style="font-size: 0.85rem; color: #cbd5e1;">💻 Formato Escritorio (PC)</label>
+                                <input type="file" id="sl-imagen-pc-file" accept="image/*" style="display: none;">
+                                <button type="button" class="btn-admin" id="sl-btn-trigger-pc" style="width: 100%; margin: 6px 0; font-size: 0.8rem; padding: 6px; background: rgba(255,255,255,0.05);">
+                                    <i class="fa-solid fa-desktop"></i> Subir PC
+                                </button>
+                                <input type="text" id="sl-imagen-pc-url" placeholder="URL PC (Opcional)" style="width: 100%; font-size: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 6px; color: white; padding: 6px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; color: #cbd5e1;">📱 Formato Tablet</label>
+                                <input type="file" id="sl-imagen-tablet-file" accept="image/*" style="display: none;">
+                                <button type="button" class="btn-admin" id="sl-btn-trigger-tablet" style="width: 100%; margin: 6px 0; font-size: 0.8rem; padding: 6px; background: rgba(255,255,255,0.05);">
+                                    <i class="fa-solid fa-tablet-screen-button"></i> Subir Tablet
+                                </button>
+                                <input type="text" id="sl-imagen-tablet-url" placeholder="URL Tablet (Opcional)" style="width: 100%; font-size: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 6px; color: white; padding: 6px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Etiqueta / Badge (Opcional)</label>
+                        <input type="text" id="sl-badge" placeholder="Ej: DESTACADO, NASA LANDSAT" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Orden de aparición</label>
+                        <input type="number" id="sl-orden" value="1" min="1" required style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Título Principal (Opcional)</label>
+                        <input type="text" id="sl-titulo" placeholder="Texto grande en la diapositiva" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Subtítulo / Descripción (Opcional)</label>
+                        <textarea id="sl-subtitulo" rows="2" placeholder="Texto descriptivo secundario" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;"></textarea>
+                    </div>
+
+                    <div class="form-group full-width" style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--admin-border);">
+                        <label class="perm-item" style="margin-bottom: 12px; display: flex; justify-content: space-between;">
+                            <span style="color: var(--color-eco); font-weight: 600;">Ocultar botón (Imagen completa sin acción o clicable)</span>
+                            <input type="checkbox" id="sl-sin-boton" style="width: 20px; height: 20px;">
+                        </label>
+                        
+                        <div id="sl-boton-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div>
+                                <label style="font-size: 0.85rem;">Texto del Botón</label>
+                                <input type="text" id="sl-btn-texto" placeholder="Ej: Ver Detalles" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 8px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem;">URL de Enlace</label>
+                                <input type="url" id="sl-enlace" placeholder="https://..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 8px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Estado</label>
+                        <select id="sl-activo" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                            <option value="true">Activo (Visible)</option>
+                            <option value="false">Inactivo (Oculto)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancelar-slide">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-guardar-slide">Guardar Slide</button>
+                </div>
+            </form>
         </div>
     </div>
 </body>

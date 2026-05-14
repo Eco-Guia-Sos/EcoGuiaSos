@@ -366,7 +366,7 @@ export const TerritoryService = {
         }
 
         const [eventosRes, lugaresRes] = await Promise.all([
-            supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion'),
+            supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio'),
             supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion')
         ]);
 

@@ -462,7 +462,7 @@ async function refreshMarkers(filterText = '', manualData = null) {
             allData = manualData;
         } else {
             const { data: lugares } = await supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion');
-            const { data: eventos } = await supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion');
+            const { data: eventos } = await supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio');
             allData = [
                 ...(lugares || []).map(l => ({ ...l, tipo: 'lugar' })),
                 ...(eventos || []).map(e => ({ ...e, tipo: 'evento' }))
@@ -716,14 +716,29 @@ function renderEventsCarousel(data) {
     data.slice(0, 10).forEach(item => {
         const card = document.createElement('div');
         card.className = 'map-event-card';
+        card.style.position = 'relative'; // Garantizar contención del badge absoluto
         
         let distHtml = '';
         if (userCoords && item.lat && item.lng) {
             const d = calcularDistancia(userCoords.lat, userCoords.lng, item.lat, item.lng);
-            distHtml = `<p class="map-event-dist"><i class="fa-solid fa-person-walking"></i> A ${d.toFixed(1)} km</p>`;
+            if (isFinite(d)) {
+                distHtml = `<p class="map-event-dist" style="color:#fde047; font-weight:700; margin-top:2px;"><i class="fa-solid fa-person-walking"></i> A ${d.toFixed(1)} km</p>`;
+            }
+        }
+
+        // Fecha en la esquina superior izquierda flotando
+        let dateBadge = '';
+        const fTarget = item.fecha_inicio || item.fecha;
+        if (fTarget) {
+            try {
+                const d = new Date(fTarget);
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                dateBadge = `<span style="position:absolute; top:4px; left:4px; background:rgba(15,20,25,0.85); color:#5bc2f7; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:10px; border:1px solid rgba(91,194,247,0.3); z-index:2;"><i class="fa-regular fa-calendar"></i> ${d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}</span>`;
+            } catch(e){}
         }
 
         card.innerHTML = `
+            ${dateBadge}
             <img src="${item.imagen_url || item.imagen || '/assets/img/ajolote.webp'}" alt="${item.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
             <div class="map-event-info">
                 <h4>${item.nombre}</h4>

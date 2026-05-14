@@ -8,7 +8,8 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES 
   ('avatars', 'avatars', true, 5242880, '{"image/jpeg","image/png","image/webp","image/gif"}'), -- 5MB límite
   ('imagenes_eventos', 'imagenes_eventos', true, 10485760, '{"image/jpeg","image/png","image/webp","image/gif"}'), -- 10MB límite
-  ('contenido_secciones', 'contenido_secciones', true, 10485760, '{"image/jpeg","image/png","image/webp","image/gif"}') -- 10MB límite
+  ('contenido_secciones', 'contenido_secciones', true, 10485760, '{"image/jpeg","image/png","image/webp","image/gif"}'), -- 10MB límite
+  ('imagenes', 'imagenes', true, 10485760, '{"image/jpeg","image/png","image/webp","image/gif"}') -- 10MB límite (Carrusel y multimedia general)
 ON CONFLICT (id) DO UPDATE SET 
   public = EXCLUDED.public,
   file_size_limit = EXCLUDED.file_size_limit,
@@ -31,6 +32,11 @@ BEGIN
     DROP POLICY IF EXISTS "Auth users can upload section images" ON storage.objects;
     DROP POLICY IF EXISTS "Auth users can update section images" ON storage.objects;
     DROP POLICY IF EXISTS "Auth users can delete section images" ON storage.objects;
+
+    DROP POLICY IF EXISTS "General images viewable by everyone" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth users can upload general images" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth users can update general images" ON storage.objects;
+    DROP POLICY IF EXISTS "Auth users can delete general images" ON storage.objects;
 EXCEPTION
     WHEN undefined_object THEN null;
 END $$;
@@ -84,3 +90,18 @@ CREATE POLICY "Auth users can update section images" ON storage.objects
 
 CREATE POLICY "Auth users can delete section images" ON storage.objects
     FOR DELETE USING (bucket_id = 'contenido_secciones' AND auth.role() = 'authenticated');
+
+-- ==========================================
+-- BUCKET: imagenes (Multimedia del Carrusel y contenido general)
+-- ==========================================
+CREATE POLICY "General images viewable by everyone" ON storage.objects
+    FOR SELECT USING (bucket_id = 'imagenes');
+
+CREATE POLICY "Auth users can upload general images" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'imagenes' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Auth users can update general images" ON storage.objects
+    FOR UPDATE USING (bucket_id = 'imagenes' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Auth users can delete general images" ON storage.objects
+    FOR DELETE USING (bucket_id = 'imagenes' AND auth.role() = 'authenticated');
