@@ -20,6 +20,15 @@
 
 ---
 
+## Dependency Security Policy
+
+**Mandatory Rule**: Todas las instalaciones de dependencias mediante `npm` deben adherirse a una postura defensiva estricta:
+1. **Lifecycle Scripts Deshabilitados**: Por defecto, los scripts de terceros (`preinstall`, `postinstall`) están bloqueados globalmente mediante `.npmrc`.
+2. **Dependencias Nativas**: Si un paquete requiere compilación nativa o scripts estrictamente justificados, la instalación y ejecución de scripts debe auditarse de forma manual.
+3. **Versiones Exactas**: Prohibido el uso de prefijos de rango (`^`, `~`). Todas las versiones deben ser fijas y deterministas.
+
+---
+
 ## Proof Requirements
 
 Every change requires verification evidence:
