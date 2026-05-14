@@ -224,10 +224,15 @@ async function highlightTerritory(territoryId, territoryName = null) {
         if (territoryName) {
             if (!_mexicoGeoJSON) {
                 try {
-                    const res = await fetch('/assets/data/mexico-estados.geojson');
-                    _mexicoGeoJSON = await res.json();
+                    const res = await fetch('./assets/data/mexico-estados.geojson').catch(() => fetch('/assets/data/mexico-estados.geojson'));
+                    if (res && res.ok) {
+                        const text = await res.text();
+                        if (text && text.startsWith('{')) {
+                            _mexicoGeoJSON = JSON.parse(text);
+                        }
+                    }
                 } catch (e) {
-                    console.warn('[Atlas] No se pudo cargar el GeoJSON local:', e);
+                    console.info('[Atlas] GeoJSON local no resuelto en esta ruta, usando fallback a Supabase.');
                 }
             }
             if (_mexicoGeoJSON && _mexicoGeoJSON.features) {
@@ -343,26 +348,27 @@ if (document.readyState === 'loading') {
 function initMap() {
     map = new maplibregl.Map({
         container: 'map-container',
-        // Estilo Plano con Color (ArcGIS Streets) - Público y muy fluido
+        // Estilo Plano CartoDB Voyager - Público, con soporte CORS nativo y alta disponibilidad
         style: {
             'version': 8,
             'sources': {
-                'osm-tiles': {
+                'carto-tiles': {
                     'type': 'raster',
                     'tiles': [
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                        'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                        'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
                     ],
                     'tileSize': 256,
-                    'attribution': '&copy; OpenStreetMap contributors'
+                    'attribution': '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 }
             },
             'layers': [
                 {
-                    'id': 'osm-layer',
+                    'id': 'carto-layer',
                     'type': 'raster',
-                    'source': 'osm-tiles',
+                    'source': 'carto-tiles',
                     'minzoom': 0,
-                    'maxzoom': 18
+                    'maxzoom': 20
                 }
             ]
         },
