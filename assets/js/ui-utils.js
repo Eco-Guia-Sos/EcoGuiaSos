@@ -783,7 +783,7 @@ window.abrirNotificacionDesdeDataset = async (el) => {
 /**
  * Comprime una imagen a formato WebP conservando relación de aspecto
  */
-export async function compressImage(file, maxWidth = 500, maxHeight = 500) {
+export async function compressImage(file, maxWidth = 3840, maxHeight = 2160, quality = 0.95) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -795,27 +795,27 @@ export async function compressImage(file, maxWidth = 500, maxHeight = 500) {
                 let width = img.width;
                 let height = img.height;
 
+                // Calcular nuevas dimensiones conservando el aspect ratio
                 if (width > height) {
                     if (width > maxWidth) {
-                        height *= maxWidth / width;
+                        height = Math.round(height * (maxWidth / width));
                         width = maxWidth;
                     }
                 } else {
                     if (height > maxHeight) {
-                        width *= maxHeight / height;
+                        width = Math.round(width * (maxHeight / height));
                         height = maxHeight;
                     }
                 }
 
-                const size = Math.min(width, height);
-                canvas.width = size;
-                canvas.height = size;
+                canvas.width = width;
+                canvas.height = height;
                 const ctx = canvas.getContext('2d');
-                const offsetX = (width - size) / 2;
-                const offsetY = (height - size) / 2;
-                ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
                 
-                canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.8);
+                // Dibujar la imagen completa en el canvas (sin recortes cuadrados)
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                canvas.toBlob((blob) => resolve(blob), 'image/webp', quality);
             };
         };
         reader.onerror = error => reject(error);
@@ -828,7 +828,8 @@ export async function compressImage(file, maxWidth = 500, maxHeight = 500) {
 export async function uploadToSupabase(supabaseClient, file, folder = 'avatares') {
     if (!file) return null;
     try {
-        const compressedBlob = await compressImage(file);
+        // Para avatares usamos un tamaño contenido (500x500)
+        const compressedBlob = await compressImage(file, 500, 500, 0.8);
         const fileName = `${folder}/img_${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
         const { error: uploadError } = await supabaseClient.storage.from('imagenes-plataforma').upload(fileName, compressedBlob, { upsert: false });
         if (uploadError) throw uploadError;
