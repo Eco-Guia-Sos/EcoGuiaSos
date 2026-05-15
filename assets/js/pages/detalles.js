@@ -365,7 +365,9 @@ async function setupSocialActions(itemId, type) {
         .eq('user_id', user.id)
         .eq('item_id', itemId)
         .eq('item_tipo', type)
+        .limit(1)
         .maybeSingle();
+
 
     if (favData) {
         isFavorite = true;
@@ -397,7 +399,7 @@ async function setupSocialActions(itemId, type) {
 }
 
 async function getFavId(userId, itemId, type) {
-    const { data } = await supabase.from('favoritos').select('id').eq('user_id', userId).eq('item_id', itemId).eq('item_tipo', type).maybeSingle();
+    const { data } = await supabase.from('favoritos').select('id').eq('user_id', userId).eq('item_id', itemId).eq('item_tipo', type).limit(1).maybeSingle();
     return data?.id;
 }
 
@@ -435,20 +437,29 @@ async function checkFollowStatus(actorId) {
         .select('id')
         .eq('user_id', session.user.id)
         .eq('actor_id', actorId)
+        .limit(1)
         .maybeSingle();
 
     if (followData) isFollowing = true;
     updateFollowUI(isFollowing);
 
     btnFollow.onclick = async () => {
-        if (isFollowing) {
-            await supabase.from('seguimientos_actores').delete().eq('user_id', session.user.id).eq('actor_id', actorId);
-            isFollowing = false;
-        } else {
-            await supabase.from('seguimientos_actores').insert({ user_id: session.user.id, actor_id: actorId });
-            isFollowing = true;
+        btnFollow.disabled = true;
+        try {
+            if (isFollowing) {
+                await supabase.from('seguimientos_actores').delete().eq('user_id', session.user.id).eq('actor_id', actorId);
+                isFollowing = false;
+            } else {
+                await supabase.from('seguimientos_actores').delete().eq('user_id', session.user.id).eq('actor_id', actorId);
+                await supabase.from('seguimientos_actores').insert({ user_id: session.user.id, actor_id: actorId });
+                isFollowing = true;
+            }
+            updateFollowUI(isFollowing);
+        } catch (e) {
+            console.error('Error actualizando seguimiento:', e);
+        } finally {
+            btnFollow.disabled = false;
         }
-        updateFollowUI(isFollowing);
     };
 }
 

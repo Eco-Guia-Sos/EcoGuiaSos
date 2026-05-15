@@ -170,6 +170,7 @@ async function setupFollowLogic(actorId) {
         .select('id')
         .eq('user_id', userId)
         .eq('actor_id', actorId)
+        .limit(1)
         .maybeSingle();
 
     if (followData) isFollowing = true;
@@ -191,14 +192,23 @@ async function setupFollowLogic(actorId) {
     updateUI(isFollowing);
 
     btn.onclick = async () => {
-        if (isFollowing) {
-            await supabase.from('seguimientos_actores').delete().eq('user_id', userId).eq('actor_id', actorId);
-            isFollowing = false;
-        } else {
-            await supabase.from('seguimientos_actores').insert({ user_id: userId, actor_id: actorId });
-            isFollowing = true;
+        btn.disabled = true;
+        try {
+            if (isFollowing) {
+                await supabase.from('seguimientos_actores').delete().eq('user_id', userId).eq('actor_id', actorId);
+                isFollowing = false;
+            } else {
+                // Borrar previamente por si quedaron registros huérfanos/duplicados anteriores y luego insertar uno limpio
+                await supabase.from('seguimientos_actores').delete().eq('user_id', userId).eq('actor_id', actorId);
+                await supabase.from('seguimientos_actores').insert({ user_id: userId, actor_id: actorId });
+                isFollowing = true;
+            }
+            updateUI(isFollowing);
+        } catch (e) {
+            console.error('Error al actualizar seguimiento:', e);
+        } finally {
+            btn.disabled = false;
         }
-        updateUI(isFollowing);
     };
 }
 

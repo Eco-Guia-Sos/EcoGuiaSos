@@ -368,6 +368,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         toggleLink('lugares', fnPerms ? fnPerms.puede_crear_lugares : true);
         toggleLink('notificaciones', fnPerms ? fnPerms.puede_enviar_notificaciones : false);
         toggleLink('directorio', fnPerms ? fnPerms.visible_en_directorio : true);
+        toggleLink('slider', fnPerms ? fnPerms.puede_gestionar_slider : false);
     }
 
 
@@ -922,10 +923,12 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             if (esActor) qLugares = qLugares.eq('owner_id', session.user.id);
             const { count: countLugares } = await qLugares;
 
-            // 5. Seguidores
-            let qSeguidores = supabase.from('seguimientos_actores').select('*', { count: 'exact', head: true });
+            // 5. Seguidores (Conteo de usuarios únicos para evitar duplicados en BD)
+            let qSeguidores = supabase.from('seguimientos_actores').select('user_id');
             if (esActor) qSeguidores = qSeguidores.eq('actor_id', session.user.id);
-            const { count: countSeguidores } = await qSeguidores;
+            const { data: dataSeguidores } = await qSeguidores;
+            const countSeguidores = dataSeguidores ? new Set(dataSeguidores.map(s => s.user_id)).size : 0;
+
 
             // Actualizar DOM con animaciones suaves (opcional, por ahora directo)
             const elActores = document.getElementById('stat-actores');
@@ -1099,7 +1102,20 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 let q = supabase.from('seguimientos_actores').select('user_id, perfiles:user_id(nombre_completo)');
                 if (esActor) q = q.eq('actor_id', session.user.id);
                 const { data } = await q;
-                if (data) allItems = data.map(r => ({id: r.user_id, nombre: r.perfiles?.nombre_completo, tipo_orig: 'perfiles', categoria: 'Seguidor'}));
+                if (data) {
+                    const uniqueFollowers = new Map();
+                    data.forEach(r => {
+                        if (r.user_id && !uniqueFollowers.has(r.user_id)) {
+                            uniqueFollowers.set(r.user_id, {
+                                id: r.user_id,
+                                nombre: r.perfiles?.nombre_completo || 'Usuario Desconocido',
+                                tipo_orig: 'perfiles',
+                                categoria: 'Seguidor'
+                            });
+                        }
+                    });
+                    allItems = Array.from(uniqueFollowers.values());
+                }
             }
             if (btnNotificarSeguidores) {
                 if (filter === 'seguidores' && esActor) btnNotificarSeguidores.classList.remove('hidden');
@@ -1313,10 +1329,10 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             document.getElementById('prof-rol').value = data.rol || '';
             document.getElementById('prof-telefono').value = data.telefono || '';
             document.getElementById('prof-bio').value = data.bio || '';
-            document.getElementById('prof-web').value = data.sitio_web || '';
             
-            // Redes Sociales
+            // Redes Sociales y Web
             const links = data.links_sociales || {};
+            document.getElementById('prof-web').value = links.sitio_web || data.sitio_web || ''; // fallback a data.sitio_web por si existe legacy
             document.getElementById('prof-fb').value = links.facebook || '';
             document.getElementById('prof-ig').value = links.instagram || '';
             document.getElementById('prof-x').value = links.twitter || '';
@@ -1822,8 +1838,8 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                     rol: document.getElementById('prof-rol').value,
                     telefono: document.getElementById('prof-telefono').value,
                     bio: document.getElementById('prof-bio').value,
-                    sitio_web: document.getElementById('prof-web').value,
                     links_sociales: {
+                        sitio_web: document.getElementById('prof-web').value,
                         facebook: document.getElementById('prof-fb').value,
                         instagram: document.getElementById('prof-ig').value,
                         twitter: document.getElementById('prof-x').value
@@ -2219,12 +2235,14 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
             const fnLugares = document.getElementById('fn-lugares');
             const fnNotifs = document.getElementById('fn-notifs');
             const fnDirectorio = document.getElementById('fn-directorio');
+            const fnSlider = document.getElementById('fn-slider');
             const fnReadonly = document.getElementById('fn-readonly');
 
             if (fnEventos) fnEventos.checked = fnPerms ? fnPerms.puede_crear_eventos : true;
             if (fnLugares) fnLugares.checked = fnPerms ? fnPerms.puede_crear_lugares : true;
             if (fnNotifs) fnNotifs.checked = fnPerms ? fnPerms.puede_enviar_notificaciones : false;
             if (fnDirectorio) fnDirectorio.checked = fnPerms ? fnPerms.visible_en_directorio : true;
+            if (fnSlider) fnSlider.checked = fnPerms ? fnPerms.puede_gestionar_slider : false;
             if (fnReadonly) fnReadonly.checked = fnPerms ? fnPerms.modo_solo_lectura : false;
 
             
@@ -2313,6 +2331,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 puede_crear_lugares: document.getElementById('fn-lugares').checked,
                 puede_enviar_notificaciones: document.getElementById('fn-notifs').checked,
                 visible_en_directorio: document.getElementById('fn-directorio').checked,
+                puede_gestionar_slider: document.getElementById('fn-slider').checked,
                 modo_solo_lectura: document.getElementById('fn-readonly').checked,
                 updated_at: new Date()
             };
@@ -2432,7 +2451,6 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 document.getElementById('prof-rol').value = data.rol || 'actor';
                 document.getElementById('prof-telefono').value = data.telefono || '';
                 document.getElementById('prof-bio').value = data.bio || '';
-                document.getElementById('prof-web').value = data.sitio_web || '';
                 
                 // Intentar obtener el correo (si es el propio usuario o desde metadatos si los guardaste)
                 if (profEmailInput) {
@@ -2440,6 +2458,7 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 }
 
                 const links = data.links_sociales || {};
+                document.getElementById('prof-web').value = links.sitio_web || data.sitio_web || '';
                 document.getElementById('prof-fb').value = links.facebook || '';
                 document.getElementById('prof-ig').value = links.instagram || '';
                 document.getElementById('prof-x').value = links.twitter || '';
@@ -2629,9 +2648,16 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
         const action = params.get('action');
         const section = params.get('section');
         const hub = params.get('hub');
+        const view = params.get('view');
 
-        if (action === 'new' && section && hub) {
-            console.log(`[Admin] âš¡ AcciÃ³n rÃ¡pida detectada: Nuevo registro en ${section} (${hub})`);
+        if (view === 'perfil') {
+            console.log('[Admin] 👤 Preparando vista de perfil...');
+            setTimeout(() => {
+                const perfilLink = document.querySelector('.admin-menu a[data-view="perfil"]');
+                if (perfilLink) perfilLink.click();
+            }, 500);
+        } else if (action === 'new' && section && hub) {
+            console.log(`[Admin] ⚡ Acción rápida detectada: Nuevo registro en ${section} (${hub})`);
             showHubMenu(hub);
             currentAdminFilter = `seccion_${section}_${hub}`;
             setTimeout(() => {

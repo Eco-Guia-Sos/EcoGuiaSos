@@ -49,6 +49,9 @@ export function showErrorState(containerId, message = 'Error al cargar los datos
 }
 
 let _authObserverRegistered = false;
+let _profileFetchCounter = 0;
+let _resolvedDbRole = null;
+let _lastResolvedUserId = null;
 
 export function setupAuthObserver() {
     if (_authObserverRegistered) {
@@ -56,103 +59,115 @@ export function setupAuthObserver() {
         return;
     }
     _authObserverRegistered = true;
-    console.log('[Auth] setupAuthObserver iniciado');
+    console.log('[Auth] setupAuthObserver iniciado (v.stabilization-profile)');
     
     let authBtn = document.getElementById('nav-auth-btn') || document.querySelector('.nav-btn-highlight');
-    console.log('[Auth] Botón inicial:', authBtn ? `encontrado (${authBtn.textContent.trim()})` : 'NO encontrado');
+    
+    const isSubpage = window.location.pathname.includes('/pages/') || window.location.pathname.includes('/forms/');
 
     const updateAuthUI = async (session) => {
-        console.log('[Auth] updateAuthUI llamado. Sesión:', session ? `usuario ${session.user?.email}` : 'NULL');
+        const userEmail = session && session.user ? session.user.email : 'NULL';
+        console.log(`[Auth] updateAuthUI llamado. Usuario: ${userEmail}`);
         
         if (!authBtn) {
             authBtn = document.getElementById('nav-auth-btn') || document.querySelector('.nav-btn-highlight');
             if (!authBtn) return;
         }
 
-        if (session) {
+        if (session && session.user) {
             const user = session.user;
             const meta = user.user_metadata || {};
             
-            // 1. Prioridad: Recuperar de LocalStorage para evitar parpadeos
+            // 1. Recuperar de LocalStorage para evitar parpadeos
             const cachedName = localStorage.getItem('eco_user_name');
             const cachedRole = localStorage.getItem('eco_user_role');
+            const cachedAvatar = localStorage.getItem('eco_user_avatar');
             
-            // 2. Determinar nombre inicial (Metadata -> Email)
+            // 2. Determinar estado inicial (Preferir Cache -> Metadata -> Fallback)
+            const initialRole = _resolvedDbRole || cachedRole || meta.rol || meta.role || 'user';
+            user.role_assigned = initialRole;
+            user.avatar_url = cachedAvatar || meta.avatar_url;
+            
             let rawName = meta.nombre_completo || meta.full_name || meta.name || user.email.split('@')[0];
-            // Si el nombre parece un email, lo limpiamos
             let greetingName = (rawName.includes('@') ? rawName.split('@')[0] : rawName).split(' ')[0];
-            
-            // Usar cache si existe, si no, el calculado
             const displayName = cachedName || greetingName;
-            user.role_assigned = cachedRole || meta.rol || meta.role || 'user';
 
-            console.log(`[Auth] UI Inicial: ${displayName} (${user.role_assigned}) - Cache: ${!!cachedName}`);
+            console.log(`[Auth] UI Inicial: ${displayName} (${initialRole}) - Cache: ${!!cachedRole} - DbRole: ${_resolvedDbRole}`);
 
-            // Actualizar Botón Nav
+            // 3. Renderizado Visual Inmediato
             authBtn.innerHTML = `<i data-lucide="user"></i> ${displayName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
             if (typeof lucide !== 'undefined') lucide.createIcons();
             authBtn.classList.add('nav-user-dropdown-btn');
             authBtn.href = "#";
 
-            // Activar dropdown
+            // Inyectar el dropdown con los datos actuales
             setupUserDropdown(authBtn, user, displayName);
 
-            // 4. Inicializar Campanita de Notificaciones (NUEVO)
+            // Componentes adicionales
             setupNotifications(user.id, session.access_token);
-
-            // Ocultar el botón "Iniciar sesión"
             const loginBtn = document.getElementById('nav-login-btn');
             if (loginBtn) loginBtn.style.display = 'none';
 
-            // 3. Consulta DB para datos finales (Uso de fetch directo para mayor confiabilidad)
-            console.log('[Auth] Iniciando fetch de perfil DB (Directo)...');
-            
-            const fetchProfile = async () => {
-                try {
-                    const { data, error } = await supabase.from('perfiles').select('nombre_completo,rol,avatar_url').eq('id', user.id).maybeSingle();
-                    if (!error && data) return data;
-                } catch (e) {}
-                const url = `${supabaseUrl}/rest/v1/perfiles?id=eq.${user.id}&select=nombre_completo,rol,avatar_url`;
-                const response = await fetch(url, {
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${session.access_token}`
-                    }
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                return data && data.length > 0 ? data[0] : null;
-            };
+            // 4. Sincronización con DB (Solo si el usuario cambió o no tenemos rol resuelto)
+            if (user.id !== _lastResolvedUserId || !_resolvedDbRole) {
+                _lastResolvedUserId = user.id;
+                const thisCallId = ++_profileFetchCounter;
+                
+                console.log(`[Auth] Iniciando fetch de perfil DB (callId: ${thisCallId})...`);
 
-            fetchProfile()
-                .then(profile => {
+                const fetchProfileWithTimeout = async () => {
+                    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout DB')), 3000));
+                    
+                    const sdkCall = (async () => {
+                        try {
+                            const { data, error } = await supabase.from('perfiles').select('nombre_completo,rol,avatar_url').eq('id', user.id).maybeSingle();
+                            if (!error && data) return data;
+                        } catch (e) { console.warn('[Auth] Error SDK:', e); }
+                        return null;
+                    })();
+
+                    const restCall = (async () => {
+                        try {
+                            const url = `${supabaseUrl}/rest/v1/perfiles?id=eq.${user.id}&select=nombre_completo,rol,avatar_url`;
+                            const res = await fetch(url, {
+                                headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${session.access_token}` }
+                            });
+                            if (res.ok) {
+                                const list = await res.json();
+                                return list.length > 0 ? list[0] : null;
+                            }
+                        } catch (e) { console.warn('[Auth] Error REST:', e); }
+                        return null;
+                    })();
+
+                    // Intentar ambos, el que resuelva primero con éxito
+                    return Promise.race([sdkCall, restCall, timeout]).catch(err => {
+                        console.warn('[Auth] Fallback a REST lento:', err.message);
+                        return restCall; // Último intento si el race falla
+                    });
+                };
+
+                fetchProfileWithTimeout().then(profile => {
+                    if (thisCallId !== _profileFetchCounter) return;
+
                     if (profile) {
                         const detectedRole = (profile.rol || 'user').trim().toLowerCase();
+                        _resolvedDbRole = detectedRole;
                         
-                        // Lógica de nombre: NO sobreescribir con email si ya tenemos un nombre real
                         let dbName = displayName; 
-                        const isEmailLike = (str) => str && (str.includes('@') || str.includes('+'));
-                        
-                        if (profile.nombre_completo && !isEmailLike(profile.nombre_completo)) {
+                        if (profile.nombre_completo && !profile.nombre_completo.includes('@')) {
                             dbName = profile.nombre_completo.split(' ')[0];
-                        } else if (isEmailLike(displayName) && profile.nombre_completo && !isEmailLike(profile.nombre_completo)) {
-                            dbName = profile.nombre_completo.split(' ')[0];
-                        } 
+                        }
+
+                        console.log(`[Auth] Datos DB sincronizados: ${dbName} (${detectedRole}) [callId: ${thisCallId}]`);
                         
-                        console.log(`[Auth] Datos DB recibidos: ${dbName} (${detectedRole})`);
-                        
-                        // Guardar en cache para persistencia entre páginas
+                        // Guardar en cache para persistencia
                         localStorage.setItem('eco_user_name', dbName);
                         localStorage.setItem('eco_user_role', detectedRole);
                         if (profile.avatar_url) localStorage.setItem('eco_user_avatar', profile.avatar_url);
-                        else localStorage.removeItem('eco_user_avatar');
                         
-                        // Si el botón ya no existe en el DOM (navegación rápida), abortar
-                        if (!document.body.contains(authBtn)) return;
-
-                        // Actualizar UI si el rol cambió o el nombre es mejor
-                        if (dbName !== displayName || detectedRole !== user.role_assigned || profile.avatar_url) {
-                            console.log('[Auth] Actualizando UI con datos finales');
+                        // Re-renderizar si el rol cambió o para asegurar datos finales
+                        if (document.body.contains(authBtn)) {
                             user.role_assigned = detectedRole;
                             user.avatar_url = profile.avatar_url;
                             authBtn.innerHTML = `<i data-lucide="user"></i> ${dbName} <i data-lucide="chevron-down" style="width:14px; height:14px; margin-left:5px;"></i>`;
@@ -160,23 +175,23 @@ export function setupAuthObserver() {
                             setupUserDropdown(authBtn, user, dbName);
                         }
                     } else {
-                        console.warn('[Auth] No se encontró perfil en DB para este ID');
+                        console.log(`[Auth] No se pudo obtener perfil de DB para ${userEmail}`);
                     }
-                })
-                .catch(err => {
-                    console.warn('[Auth] Aviso al sincronizar perfil en UI (usando datos locales):', err?.message || err);
-                });
+                }).catch(err => console.error('[Auth] Error en flujo de perfil:', err));
+            }
         } else {
-            console.log('[Auth] Sin sesión - mostrando botón Súmate');
+            // Limpieza por falta de sesión
+            _resolvedDbRole = null;
+            _lastResolvedUserId = null;
             localStorage.removeItem('eco_user_name');
             localStorage.removeItem('eco_user_role');
+            localStorage.removeItem('eco_user_avatar');
+            
             authBtn.innerHTML = 'Súmate';
             authBtn.classList.remove('nav-user-dropdown-btn');
-            const isSubpage = window.location.pathname.includes('/pages/');
             authBtn.href = isSubpage ? '../auth.html?tab=signup' : './auth.html?tab=signup';
             authBtn.onclick = null;
             
-            // Asegurar que el botón "Iniciar sesión" sea visible si no hay sesión
             const loginBtn = document.getElementById('nav-login-btn');
             if (loginBtn) loginBtn.style.display = '';
             
@@ -185,30 +200,33 @@ export function setupAuthObserver() {
         }
     };
 
-    // Verificación inicial de sesión
-    console.log('[Auth] Llamando getSession...');
-    supabase.auth.getSession().then(({ data, error }) => {
-        console.log('[Auth] getSession respondió. data.session:', data?.session ? `existe (${data.session.user?.email})` : 'null', 'error:', error?.message);
-        updateAuthUI(data?.session || null);
-    }).catch(err => {
-        console.error('[Auth] getSession lanzó error:', err);
+    // Registrar observadores
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log('[Auth] Evento onAuthStateChange:', event);
+        updateAuthUI(session);
     });
 
-    // Observar cambios de sesión
-    supabase.auth.onAuthStateChange((event, session) => {
-        console.log('[Auth] onAuthStateChange evento:', event, 'sesión:', session ? session.user?.email : 'null');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        console.log('[Auth] getSession listo');
         updateAuthUI(session);
     });
 }
 
-function setupUserDropdown(authBtn, user, userName) {
+/**
+ * Configura el menú desplegable del usuario.
+ */
+export function setupUserDropdown(authBtn, user, userName) {
+    if (!authBtn || !user) return;
+
     // Remove if already exists to avoid duplicates
     let dropdown = document.getElementById('user-dropdown-menu');
+    const wasActive = dropdown && dropdown.classList.contains('active');
     if (dropdown) dropdown.remove();
 
     dropdown = document.createElement('div');
     dropdown.id = 'user-dropdown-menu';
     dropdown.className = 'user-dropdown-menu';
+    if (wasActive) dropdown.classList.add('active');
     
     // User info header
     const avatarUrl = user.avatar_url || localStorage.getItem('eco_user_avatar');
@@ -226,7 +244,7 @@ function setupUserDropdown(authBtn, user, userName) {
     `;
 
     // ROLE CHECK: Only show "Mi Panel" (Admin) if role is 'actor' or 'admin'
-    const role = (user.role_assigned || 'public').trim().toLowerCase();
+    const role = (user.role_assigned || localStorage.getItem('eco_user_role') || 'user').trim().toLowerCase();
     const isAdmin = (role === 'actor' || role === 'admin' || (user.email && user.email.toLowerCase() === 'ecoguiasos@gmail.com'));
     
     // Rutas dinámicas basadas en la profundidad de la URL
@@ -234,9 +252,11 @@ function setupUserDropdown(authBtn, user, userName) {
     const basePath = isSubpage ? '../' : './';
     const adminPath = `${basePath}admin.html`;
     const favPath = `${basePath}pages/mis-favoritos.html`;
-    const profilePath = `${basePath}pages/agente-detalle.html?actor_id=${user.id}`;
+    
+    // --- NUEVO: Mi Perfil ahora apunta a la vista pública del actor ---
+    const publicProfilePath = `${basePath}pages/agente-detalle.html?actor_id=${user.id}`;
 
-    console.log(`[Auth] Dropdown: ${userName} (${role}) - isSubpage: ${isSubpage}`);
+    console.log(`[Auth] Dropdown Render: ${userName} (${role}) - isAdmin: ${isAdmin} - isSubpage: ${isSubpage}`);
 
     dropdown.innerHTML = `
         ${userHeader}
@@ -244,12 +264,14 @@ function setupUserDropdown(authBtn, user, userName) {
             <a href="${adminPath}" class="dropdown-item">
                 <i data-lucide="layout-dashboard"></i> Mi Panel
             </a>
-        ` : ''}
-        ${(role === 'actor' || role === 'admin') ? `
-            <a href="${profilePath}" class="dropdown-item">
+            <a href="${publicProfilePath}" class="dropdown-item">
                 <i data-lucide="user-circle"></i> Mi Perfil
             </a>
-        ` : ''}
+        ` : `
+            <a href="${publicProfilePath}" class="dropdown-item">
+                <i data-lucide="user-circle"></i> Mi Perfil
+            </a>
+        `}
         <a href="${favPath}" class="dropdown-item">
             <i data-lucide="star"></i> Mis Favoritos
         </a>
@@ -261,6 +283,19 @@ function setupUserDropdown(authBtn, user, userName) {
 
     document.body.appendChild(dropdown);
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Re-posicionar si ya estaba activo
+    if (wasActive) {
+        const rect = authBtn.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + 10}px`;
+        if (window.innerWidth < 768) {
+            dropdown.style.left = '50%';
+            dropdown.style.transform = 'translate(-50%, 0)';
+        } else {
+            dropdown.style.left = `${rect.right - 220}px`;
+            dropdown.style.transform = 'none';
+        }
+    }
 
     authBtn.onclick = (e) => {
         e.preventDefault();
@@ -306,11 +341,11 @@ window.handleMainLogout = async (e) => {
         console.warn('[Auth] Error al avisar salida al servidor:', err);
     } finally {
         // 2. PURGA TOTAL de LocalStorage (Lo más importante)
-        const keysToRemove = ['eco_user_role', 'eco_user_name'];
+        const keysToRemove = ['eco_user_role', 'eco_user_name', 'eco_user_avatar'];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             // Borrar cualquier llave de Supabase (por defecto o nuestra custom)
-            if (key.includes('supabase') || key.includes('sb-') || key === 'ecoguia-auth-token') {
+            if (key && (key.includes('supabase') || key.includes('sb-') || key === 'ecoguia-auth-token')) {
                 keysToRemove.push(key);
             }
         }
@@ -609,7 +644,6 @@ async function setupNotifications(userId, accessToken) {
     };
 
     updateBadge();
-    // Podríamos poner un intervalo o Realtime de Supabase aquí
 }
 
 async function renderNotificacionesList(userId, accessToken, container) {
@@ -684,14 +718,8 @@ window.abrirNotificacionDesdeDataset = async (el) => {
         const enlace = el.getAttribute('data-enlace');
         const archivo = el.getAttribute('data-archivo');
 
-        console.log('[Notificaciones] 📑 Intentando abrir modal para:', titulo);
-
         const modal = document.getElementById('global-notif-modal');
-        if (!modal) {
-            console.error('[Notificaciones] ❌ Error: El modal global-notif-modal no existe en el DOM');
-            alert("Error: El visualizador de notificaciones no se cargó correctamente. Por favor recarga la página.");
-            return;
-        }
+        if (!modal) return;
 
         // 1. Marcar como leída
         if (el.classList.contains('nueva')) {
@@ -733,11 +761,9 @@ window.abrirNotificacionDesdeDataset = async (el) => {
             const isImage = archivo.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i);
             
             if (isImage) {
-                // Mostrar como imagen incrustada
                 imgElement.src = archivo;
                 imgContainer.style.display = 'block';
             } else {
-                // Mostrar como botón de documento
                 fileBtn.href = archivo;
                 fileBtn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Descargar Documento';
                 fileBtn.style.display = 'block';
@@ -746,7 +772,6 @@ window.abrirNotificacionDesdeDataset = async (el) => {
         
         document.getElementById('notif-dropdown').classList.add('hidden');
         modal.classList.remove('hidden');
-        console.log('[Notificaciones] ✅ Modal abierto exitosamente');
 
     } catch (error) {
         console.error('[Notificaciones] 💥 Error al abrir modal:', error);
