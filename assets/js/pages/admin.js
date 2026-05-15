@@ -850,11 +850,12 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 .select('*', { count: 'exact', head: true })
                 .eq('estado', 'pending');
             
-            // Contar actores pendientes (usuarios pidiendo ser actores)
+            // Contar actores pendientes (usuarios pidiendo ser actores o en el limbo)
             const { count: pendingActores } = await supabase
                 .from('perfiles')
                 .select('*', { count: 'exact', head: true })
-                .eq('actor_status', 'pending');
+                .eq('rol', 'actor')
+                .or('actor_status.eq.pending,actor_status.is.null');
 
             const badgeEvents = document.getElementById('badge-eventos-pending');
             const badgeActores = document.getElementById('badge-actores-pending');
@@ -1082,11 +1083,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                     q = q.eq('rol', 'user');
                 } else {
                     // Pestaña de Actores / Staff
-                    if (currentModerationStatus === 'pending' || currentModerationStatus === 'rejected') {
-                        // En revisión o rechazados: Mostrar a cualquiera que tenga ese estado en actor_status (solicitudes de actor)
-                        q = q.eq('actor_status', currentModerationStatus);
+                    if (currentModerationStatus === 'pending') {
+                        // Mostrar pendientes Y aquellos que no tengan estado definido (limbo)
+                        q = q.eq('rol', 'actor').or('actor_status.eq.pending,actor_status.is.null');
+                    } else if (currentModerationStatus === 'rejected') {
+                        q = q.eq('rol', 'actor').eq('actor_status', 'rejected');
                     } else {
-                        // Publicados: Mostrar SOLO actores aprobados (excluyendo explícitamente a los admins)
+                        // Publicados: Mostrar SOLO actores aprobados
                         q = q.eq('rol', 'actor').eq('actor_status', 'approved');
                     }
                 }
