@@ -1085,8 +1085,10 @@ async function iniciarCarrusel() {
                 const resolveImg = (url) => {
                     if (!url) return '';
                     if (url.startsWith('http')) return url;
-                    // Asumimos que si es relativa, pertenece al bucket 'imagenes'
-                    return `${supabaseUrl}/storage/v1/object/public/imagenes/${url.startsWith('/') ? url.slice(1) : url}`;
+                    // Si empieza con assets/, es una ruta local del proyecto, no de Supabase
+                    if (url.startsWith('assets/')) return `./${url}`;
+                    // Asumimos que si es relativa y no es local, pertenece al bucket principal
+                    return `${supabaseUrl}/storage/v1/object/public/imagenes-plataforma/${url.startsWith('/') ? url.slice(1) : url}`;
                 };
 
                 const imgUrl = resolveImg(sl.imagen_url);

@@ -2823,13 +2823,13 @@ import { setupNavbar, setupAuthObserver, sanitize, showToast, formatearFechaRela
                 const filePath = `carrusel/${fileName}`;
 
                 const { error: uploadError } = await supabase.storage
-                    .from('imagenes')
+                    .from('imagenes-plataforma')
                     .upload(filePath, uploadBlob, { contentType: contentType, cacheControl: '3600', upsert: true });
 
                 if (uploadError) throw uploadError;
 
                 const { data: { publicUrl } } = supabase.storage
-                    .from('imagenes')
+                    .from('imagenes-plataforma')
                     .getPublicUrl(filePath);
 
                 if (urlInput) urlInput.value = publicUrl;
