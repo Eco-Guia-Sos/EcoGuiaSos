@@ -1081,13 +1081,10 @@ async function iniciarCarrusel() {
                 const overlayPointer = isClickable ? 'style="pointer-events: none;"' : '';
                 const btnPointer = isClickable ? 'style="pointer-events: auto;"' : '';
 
-                // Normalización de URL: Si es relativa, anteponer la base de Supabase Storage
+                // Normalización ULTRA-SIMPLE: Si ya es absoluta, usarla. Si no, asumir bucket.
                 const resolveImg = (url) => {
                     if (!url) return '';
                     if (url.startsWith('http')) return url;
-                    // Si empieza con assets/, es una ruta local del proyecto, no de Supabase
-                    if (url.startsWith('assets/')) return `./${url}`;
-                    // Asumimos que si es relativa y no es local, pertenece al bucket principal
                     return `${supabaseUrl}/storage/v1/object/public/imagenes-plataforma/${url.startsWith('/') ? url.slice(1) : url}`;
                 };
 
@@ -1111,18 +1108,18 @@ async function iniciarCarrusel() {
                     `;
                 }
 
-                // Renderizado condicional Multi-Formato con <picture> si existen URLs de PC o Tablet
+                // Renderizado condicional Multi-Formato sin sanitize en los src para evitar roturas
                 let mediaHtml = '';
                 if (pcUrl || tabletUrl) {
                     mediaHtml = `
                         <picture class="hero-picture-full">
-                            ${pcUrl ? `<source srcset="${sanitize(pcUrl)}" media="(min-width: 1024px)">` : ''}
-                            ${tabletUrl ? `<source srcset="${sanitize(tabletUrl)}" media="(min-width: 768px)">` : ''}
-                            <img src="${sanitize(imgUrl)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error cargando imagen:', this.src)">
+                            ${pcUrl ? `<source srcset="${pcUrl}" media="(min-width: 1024px)">` : ''}
+                            ${tabletUrl ? `<source srcset="${tabletUrl}" media="(min-width: 768px)">` : ''}
+                            <img src="${imgUrl}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error crítico:', this.src)">
                         </picture>
                     `;
                 } else {
-                    mediaHtml = `<img src="${sanitize(imgUrl)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error cargando imagen:', this.src)">`;
+                    mediaHtml = `<img src="${imgUrl}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error crítico:', this.src)">`;
                 }
 
                 return `

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecoguiasos-v8';
+const CACHE_NAME = 'ecoguiasos-v9';
 
 // URLs que NO deben ser interceptadas por el SW (APIs dinámicas)
 const BYPASS_PATTERNS = [
