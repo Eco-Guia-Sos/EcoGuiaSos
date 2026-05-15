@@ -1073,12 +1073,25 @@ async function iniciarCarrusel() {
         const slides = await fetchRawSupabaseTable('carrusel_principal?select=*&activo=eq.true&order=orden.asc');
         
         if (slides && slides.length > 0) {
+            console.log(`[Inicio] 🎞️ Cargando ${slides.length} diapositivas en el carrusel...`);
             slideCount = slides.length;
             wrapper.innerHTML = slides.map(sl => {
                 const isClickable = sl.sin_boton && sl.enlace_url;
                 const clickAttr = isClickable ? `style="cursor: pointer;" onclick="window.open('${sanitize(sl.enlace_url)}', '_blank')"` : '';
                 const overlayPointer = isClickable ? 'style="pointer-events: none;"' : '';
                 const btnPointer = isClickable ? 'style="pointer-events: auto;"' : '';
+
+                // Normalización de URL: Si es relativa, anteponer la base de Supabase Storage
+                const resolveImg = (url) => {
+                    if (!url) return '';
+                    if (url.startsWith('http')) return url;
+                    // Asumimos que si es relativa, pertenece al bucket 'imagenes'
+                    return `${supabaseUrl}/storage/v1/object/public/imagenes/${url.startsWith('/') ? url.slice(1) : url}`;
+                };
+
+                const imgUrl = resolveImg(sl.imagen_url);
+                const pcUrl = resolveImg(sl.imagen_pc_url);
+                const tabletUrl = resolveImg(sl.imagen_tablet_url);
 
                 let contentHtml = '';
                 if (sl.badge || sl.titulo || sl.subtitulo || (!sl.sin_boton && sl.btn_texto)) {
@@ -1096,21 +1109,18 @@ async function iniciarCarrusel() {
                     `;
                 }
 
-                // Unificar todas las imágenes para que llenen la pantalla armónicamente (object-fit: cover nativo)
-                const objectFitStyle = '';
-
                 // Renderizado condicional Multi-Formato con <picture> si existen URLs de PC o Tablet
                 let mediaHtml = '';
-                if (sl.imagen_pc_url || sl.imagen_tablet_url) {
+                if (pcUrl || tabletUrl) {
                     mediaHtml = `
                         <picture class="hero-picture-full">
-                            ${sl.imagen_pc_url ? `<source srcset="${sanitize(sl.imagen_pc_url)}" media="(min-width: 1024px)">` : ''}
-                            ${sl.imagen_tablet_url ? `<source srcset="${sanitize(sl.imagen_tablet_url)}" media="(min-width: 768px)">` : ''}
-                            <img src="${sanitize(sl.imagen_url)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy">
+                            ${pcUrl ? `<source srcset="${sanitize(pcUrl)}" media="(min-width: 1024px)">` : ''}
+                            ${tabletUrl ? `<source srcset="${sanitize(tabletUrl)}" media="(min-width: 768px)">` : ''}
+                            <img src="${sanitize(imgUrl)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error cargando imagen:', this.src)">
                         </picture>
                     `;
                 } else {
-                    mediaHtml = `<img src="${sanitize(sl.imagen_url)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy">`;
+                    mediaHtml = `<img src="${sanitize(imgUrl)}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error cargando imagen:', this.src)">`;
                 }
 
                 return `
