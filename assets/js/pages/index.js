@@ -1108,6 +1108,9 @@ async function iniciarCarrusel() {
                     `;
                 }
 
+                const hasContent = !!(sl.badge || sl.titulo || sl.subtitulo || (!sl.sin_boton && sl.btn_texto));
+                const bgClass = hasContent ? 'slide-bg' : 'slide-bg full-color';
+
                 // Renderizado condicional Multi-Formato sin sanitize en los src para evitar roturas
                 let mediaHtml = '';
                 if (pcUrl || tabletUrl) {
@@ -1115,11 +1118,11 @@ async function iniciarCarrusel() {
                         <picture class="hero-picture-full">
                             ${pcUrl ? `<source srcset="${pcUrl}" media="(min-width: 1024px)">` : ''}
                             ${tabletUrl ? `<source srcset="${tabletUrl}" media="(min-width: 768px)">` : ''}
-                            <img src="${imgUrl}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error crítico:', this.src)">
+                            <img src="${imgUrl}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="${bgClass}" loading="lazy" onerror="console.error('[Carrusel] Error crítico:', this.src)">
                         </picture>
                     `;
                 } else {
-                    mediaHtml = `<img src="${imgUrl}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="slide-bg" loading="lazy" onerror="console.error('[Carrusel] Error crítico:', this.src)">`;
+                    mediaHtml = `<img src="${imgUrl}" alt="${sanitize(sl.titulo || 'EcoGuía SOS Portada')}" class="${bgClass}" loading="lazy" onerror="console.error('[Carrusel] Error crítico:', this.src)">`;
                 }
 
                 return `
