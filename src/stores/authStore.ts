@@ -1,0 +1,83 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { supabase } from '../services/supabase.service'
+import type { Session, User } from '@supabase/supabase-js'
+
+export const useAuthStore = defineStore('auth', () => {
+  const session = ref<Session | null>(null)
+  const user = ref<User | null>(null)
+  const profile = ref<{
+    nombre_completo: string | null
+    rol: string | null
+    avatar_url: string | null
+  } | null>(null)
+  
+  const loading = ref(true)
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('perfiles')
+        .select('nombre_completo, rol, avatar_url')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (!error && data) {
+        profile.value = data
+        // Cache profile data as in the original app
+        let dbName = data.nombre_completo || ''
+        if (dbName && !dbName.includes('@')) {
+          dbName = dbName.split(' ')[0]
+        }
+        localStorage.setItem('eco_user_name', dbName)
+        localStorage.setItem('eco_user_role', data.rol || 'user')
+        if (data.avatar_url) localStorage.setItem('eco_user_avatar', data.avatar_url)
+      }
+    } catch (e) {
+      console.warn('[AuthStore] Error fetching profile:', e)
+    }
+  }
+
+  const handleSession = async (currentSession: Session | null) => {
+    session.value = currentSession
+    user.value = currentSession?.user || null
+    
+    if (user.value) {
+      await fetchProfile(user.value.id)
+    } else {
+      profile.value = null
+      // Clear cache on logout
+      localStorage.removeItem('eco_user_name')
+      localStorage.removeItem('eco_user_role')
+      localStorage.removeItem('eco_user_avatar')
+    }
+    loading.value = false
+  }
+
+  const init = async () => {
+    loading.value = true
+    
+    // Initial session check
+    const { data } = await supabase.auth.getSession()
+    await handleSession(data.session)
+
+    // Listen to auth changes
+    supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      await handleSession(newSession)
+    })
+  }
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    // handleSession will trigger via onAuthStateChange to clean up state
+  }
+
+  return {
+    session,
+    user,
+    profile,
+    loading,
+    init,
+    logout
+  }
+})
