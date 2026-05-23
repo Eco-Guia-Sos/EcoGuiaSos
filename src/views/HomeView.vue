@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
@@ -49,11 +49,26 @@ const activeDateEvents = ref<any[]>([])
 const currentMonth = ref(new Date().getMonth())
 const currentYear = ref(new Date().getFullYear())
 
-// Resize handler
+// Tooltip state
+const activeTooltip = ref<string | null>(null)
+const toggleTooltip = (name: string, event: Event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  activeTooltip.value = activeTooltip.value === name ? null : name
+}
+
+// Window Event Listeners
+const handleResize = () => {
+  maxRendered.value = window.innerWidth <= 600 ? 4 : 9
+}
+
+const handleWindowClick = () => {
+  activeTooltip.value = null
+}
+
 onMounted(() => {
-  window.addEventListener('resize', () => {
-    maxRendered.value = window.innerWidth <= 600 ? 4 : 9
-  })
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('click', handleWindowClick)
   
   // Init auth store if not already initialized
   if (authStore.loading) {
@@ -68,6 +83,11 @@ onMounted(() => {
       }
     }
   })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('click', handleWindowClick)
 })
 
 // Globals declarations
@@ -746,12 +766,12 @@ onMounted(() => {
         <div class="level-buttons-container main-levels">
           <!-- COLIBRÍ -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-colibri glass-effect">
-              <a href="#seccion-colibri" class="level-btn-link">
+            <div class="level-btn-group level-btn-colibri glass-effect" @click="toggleTooltip('colibri', $event)">
+              <a href="#seccion-colibri" class="level-btn-link" @click.prevent>
                 <i class="fa-solid fa-dove"></i> Colibrí (Polinización)
               </a>
             </div>
-            <div class="tooltip-list">
+            <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'colibri' }" @click.stop>
               <ul>
                 <li><RouterLink to="/cursos">🎓 Cursos</RouterLink></li>
                 <li><RouterLink to="/ecotecnias">💡 Ecotecnias</RouterLink></li>
@@ -764,12 +784,12 @@ onMounted(() => {
 
           <!-- AJOLOTE -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-ajolote glass-effect">
-              <a href="#seccion-ajolote" class="level-btn-link">
+            <div class="level-btn-group level-btn-ajolote glass-effect" @click="toggleTooltip('ajolote', $event)">
+              <a href="#seccion-ajolote" class="level-btn-link" @click.prevent>
                 <i class="fa-solid fa-frog"></i> Ajolote (Regeneración)
               </a>
             </div>
-            <div class="tooltip-list">
+            <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'ajolote' }" @click.stop>
               <ul>
                 <li><RouterLink to="/agentes">👥 Agentes</RouterLink></li>
                 <li><RouterLink to="/convocatorias">📣 Convocatorias</RouterLink></li>
@@ -780,12 +800,12 @@ onMounted(() => {
 
           <!-- LOBO -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-lobo glass-effect">
-              <a href="#seccion-lobo" class="level-btn-link">
+            <div class="level-btn-group level-btn-lobo glass-effect" @click="toggleTooltip('lobo', $event)">
+              <a href="#seccion-lobo" class="level-btn-link" @click.prevent>
                 <i class="fa-solid fa-dog"></i> Lobo (Estrategia)
               </a>
             </div>
-            <div class="tooltip-list">
+            <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'lobo' }" @click.stop>
               <ul>
                 <li><RouterLink to="/fondos">💰 Fondos</RouterLink></li>
                 <li><RouterLink to="/normativa">⚖️ Normativa</RouterLink></li>

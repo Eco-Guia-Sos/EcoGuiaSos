@@ -3,13 +3,32 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
+import { useValidation } from '../composables/useValidation'
+import { useServiceCall } from '../composables/useServiceCall'
+import { AuthSchema } from '../schemas'
 
 declare const particlesJS: any
+
+// TODO: Integrar Cloudflare Turnstile para proteger el formulario de auth
+// Pasos:
+// 1. npm install @vue-turnstile/vue3
+// 2. Registrarse en https://dash.cloudflare.com/?to=/:account/turnstile
+// 3. Crear Site Key y Secret Key
+// 4. Poner VITE_TURNSTILE_SITE_KEY en .env
+// 5. Agregar <VueTurnstile v-model="captchaToken" /> en el template
+// 6. Validar el token en handleSubmit() antes de llamar a supabase.auth.signUp()
 
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Validation composable
+const { validateForm } = useValidation()
+const { call } = useServiceCall()
+const loginErrors = ref<Record<string, string>>({})
+const signupErrors = ref<Record<string, string>>({})
+const actorErrors = ref<Record<string, string>>({})
 
 // State
 const activeTab = ref<'login' | 'signup' | 'actor'>('login')
@@ -212,29 +231,59 @@ const getSocialDataStr = (socialValues: Record<string, string>) => {
 
 // Auth Handlers
 const handleLogin = async () => {
+  loginErrors.value = {}
+  const { valid, errors } = validateForm(AuthSchema, {
+    email: loginEmail.value,
+    password: loginPassword.value
+  })
+
+  if (!valid) {
+    loginErrors.value = errors
+    return
+  }
+
   isLoginSubmitting.value = true
   showMessage('')
-  try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail.value,
-      password: loginPassword.value
-    })
-    if (error) throw error
+  
+  const { error } = await call(
+    async () => {
+      const res = await supabase.auth.signInWithPassword({
+        email: loginEmail.value,
+        password: loginPassword.value
+      })
+      if (res.error) throw res.error
+      return res.data
+    },
+    'Email o contraseña incorrectos.'
+  )
 
-    showMessage('Sesión iniciada. Redirigiendo...', 'success')
-    
-    // Initialize Pinia store update
-    await authStore.init()
-    
-    setTimeout(() => router.push('/'), 1500)
-  } catch (error: any) {
-    showMessage(error.message, 'error')
-  } finally {
+  if (error) {
+    showMessage(error, 'error')
     isLoginSubmitting.value = false
+    return
   }
+
+  showMessage('Sesión iniciada. Redirigiendo...', 'success')
+  
+  // Initialize Pinia store update
+  await authStore.init()
+  
+  setTimeout(() => router.push('/'), 1500)
+  isLoginSubmitting.value = false
 }
 
 const handleSignup = async () => {
+  signupErrors.value = {}
+  const { valid, errors } = validateForm(AuthSchema, {
+    email: regEmail.value,
+    password: regPassword.value
+  })
+
+  if (!valid) {
+    signupErrors.value = errors
+    return
+  }
+
   isSignupSubmitting.value = true
   showMessage('')
   try {
@@ -278,6 +327,17 @@ const handleSignup = async () => {
 }
 
 const handleActorRequest = async () => {
+  actorErrors.value = {}
+  const { valid, errors } = validateForm(AuthSchema, {
+    email: actorEmail.value,
+    password: actorPassword.value
+  })
+
+  if (!valid) {
+    actorErrors.value = errors
+    return
+  }
+
   const socialLinks = getSocialDataStr(actorSocialValues.value)
   if (!socialLinks) {
     showMessage('Debes añadir al menos una red social para ser Actor.', 'error')
@@ -398,6 +458,7 @@ const handleActorRequest = async () => {
               <i class="fa-solid fa-envelope"></i>
               <input type="email" id="login-email" v-model="loginEmail" placeholder="tu@email.com" required>
             </div>
+            <span v-if="loginErrors.email" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ loginErrors.email }}</span>
           </div>
 
           <div class="input-group">
@@ -406,6 +467,7 @@ const handleActorRequest = async () => {
               <i class="fa-solid fa-lock"></i>
               <input type="password" id="login-password" v-model="loginPassword" placeholder="••••••••" required>
             </div>
+            <span v-if="loginErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ loginErrors.password }}</span>
             <div class="forgot-password-container">
               <RouterLink to="/reset-password" class="forgot-link">¿Olvidaste tu contraseña?</RouterLink>
             </div>
@@ -451,6 +513,7 @@ const handleActorRequest = async () => {
               <i class="fa-solid fa-envelope"></i>
               <input type="email" id="reg-email" v-model="regEmail" placeholder="tu@email.com" required>
             </div>
+            <span v-if="signupErrors.email" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ signupErrors.email }}</span>
           </div>
 
           <div class="input-group">
@@ -495,6 +558,7 @@ const handleActorRequest = async () => {
               <i class="fa-solid fa-lock"></i>
               <input type="password" id="reg-password" v-model="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
             </div>
+            <span v-if="signupErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ signupErrors.password }}</span>
           </div>
 
           <button type="submit" class="btn btn-primary auth-btn shimmer-extra" :disabled="isSignupSubmitting">
@@ -537,6 +601,7 @@ const handleActorRequest = async () => {
               <i class="fa-solid fa-envelope"></i>
               <input type="email" id="actor-email" v-model="actorEmail" placeholder="contacto@organizacion.com" required>
             </div>
+            <span v-if="actorErrors.email" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ actorErrors.email }}</span>
           </div>
 
           <div class="input-group">
@@ -581,6 +646,7 @@ const handleActorRequest = async () => {
               <i class="fa-solid fa-lock"></i>
               <input type="password" id="actor-password" v-model="actorPassword" placeholder="Crea tu clave de acceso" required minlength="6">
             </div>
+            <span v-if="actorErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ actorErrors.password }}</span>
           </div>
 
           <div class="input-group">

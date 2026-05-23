@@ -1124,3 +1124,26 @@ main, section, header {
 }
 
 .hidden { display: none !important; }
+
+/* Prevent horizontal overflow completely on all viewports */
+html, body, #app {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+@media (max-width: 480px) {
+    .nav-brand-logo {
+        height: 38px !important;
+        width: 38px !important;
+    }
+    .nav-brand h1 {
+        font-size: 1.2rem !important;
+    }
+    .nav-container {
+        gap: 8px !important;
+    }
+    .nav-actions-wrapper {
+        gap: 8px !important;
+    }
+}
+

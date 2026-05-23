@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onErrorCaptured } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/authStore'
 import { supabase } from './services/supabase.service'
+import * as Sentry from '@sentry/vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -166,10 +167,25 @@ onMounted(() => {
     closeDropdowns()
   })
 })
+
+const globalError = ref<string | null>(null)
+
+onErrorCaptured((err, instance, info) => {
+  console.error('Global error captured:', err, info)
+  Sentry.captureException(err)
+  globalError.value = 'Ocurrió un error inesperado en la aplicación. Por favor, intenta de nuevo.'
+  return false // Stop propagation
+})
 </script>
 
 <template>
   <div>
+    <!-- Banner de error global -->
+    <div v-if="globalError" class="global-error-banner" style="background-color: #ef4444; color: white; padding: 12px; text-align: center; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 100000;">
+      <span>{{ globalError }}</span>
+      <button @click="globalError = null" style="background: transparent; border: 1px solid white; color: white; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Cerrar</button>
+    </div>
+
     <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
     <nav class="main-nav">
       <div class="nav-container">
@@ -253,7 +269,6 @@ onMounted(() => {
               class="user-dropdown-menu" 
               :class="{ 'active': isUserDropdownOpen }"
               id="user-dropdown-menu"
-              style="position: absolute; top: 100%; right: 0; z-index: 10000;"
             >
               <div class="dropdown-user-header">
                 <div 
@@ -379,5 +394,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Scoped overrides if necessary */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10000;
+}
+
+@media (max-width: 850px) {
+  .user-dropdown-menu {
+    right: auto;
+    left: 50%;
+    transform: translate(-50%, -8px) scale(0.97);
+  }
+  .user-dropdown-menu.active {
+    transform: translate(-50%, 0) scale(1);
+  }
+}
 </style>

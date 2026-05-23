@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../services/supabase.service'
 import type { Session, User } from '@supabase/supabase-js'
+import { PerfilSchema } from '../schemas'
+import * as Sentry from '@sentry/vue'
 
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session | null>(null)
@@ -18,11 +20,17 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data, error } = await supabase
         .from('perfiles')
-        .select('nombre_completo, rol, avatar_url')
+        .select('*')
         .eq('id', userId)
         .maybeSingle()
 
       if (!error && data) {
+        const { success } = PerfilSchema.safeParse(data)
+        if (!success) {
+          console.warn('Perfil con campos inesperados:', data)
+          Sentry.captureMessage(`Perfil con campos inesperados: ${JSON.stringify(data)}`, 'warning')
+        }
+
         profile.value = data
         // Cache profile data as in the original app
         let dbName = data.nombre_completo || ''

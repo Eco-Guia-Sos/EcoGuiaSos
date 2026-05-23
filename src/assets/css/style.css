@@ -164,7 +164,7 @@ html {
 }
 
 /* Contenedores internos para mantener el ancho de lectura cÃ³modo */
-.content-section > div, 
+.content-section > div:not(#particles-main):not(.search-bar-row):not(.toggle-row):not(.action-buttons-row):not(.advanced-search-panel):not(.pagination-container), 
 .content-section > section, 
 .content-section > .card-grid-container {
     width: 100%;
@@ -2419,16 +2419,16 @@ footer {
 }
 
 @media (max-width: 1024px) {
-    .hero-section#particles-js {
+    .hero-section {
         padding-top: 100px !important;
         margin-top: -70px !important;
-        /* Sube detrÃ¡s de la navbar */
+        /* Sube detrás de la navbar */
     }
 }
 
-/* MÃ³vil (Menos de 768px): 1 Columna y Tarjetas Verticales */
+/* Móvil (Menos de 768px): 1 Columna y Tarjetas Verticales */
 @media (max-width: 768px) {
-    .hero-section#particles-js {
+    .hero-section {
         padding: 100px 1rem 2rem 1rem !important;
         margin-top: -70px !important;
         min-height: auto;
@@ -2437,7 +2437,7 @@ footer {
     .hero-logo {
         max-height: 180px;
         max-width: 90%;
-        /* Ajuste tambiÃ©n para mÃ³vil */
+        /* Ajuste también para móvil */
     }
 
     .search-bar-container input {
@@ -2451,20 +2451,28 @@ footer {
 
 
 
-    /* Ajuste para el botÃ³n "CÃ³mo usar" siempre visible en mÃ³vil */
+    /* Ajuste para el botón "Cómo usar" siempre visible en móvil */
     .nav-how-to-always-visible.nav-btn-how-to {
         padding: 6px 10px;
-        /* Reduce el padding para hacerlo mÃ¡s compacto */
+        /* Reduce el padding para hacerlo más compacto */
         font-size: 0.85rem;
-        /* Reduce el tamaÃ±o de la fuente */
+        /* Reduce el tamaño de la fuente */
     }
 
     .action-buttons,
+    .action-buttons-row,
+    .main-map-actions,
     .level-buttons-container {
         flex-direction: column;
         width: 100%;
         gap: 1rem;
         align-items: stretch;
+    }
+
+    .main-map-actions .btn-pill-map,
+    .action-buttons-row .btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .btn-wrapper {
