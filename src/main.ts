@@ -1,4 +1,7 @@
-import './assets/main.css'
+import './assets/css/global.css'
+import './assets/css/style.css'
+import './assets/css/fab.css'
+import './assets/css/calendar.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

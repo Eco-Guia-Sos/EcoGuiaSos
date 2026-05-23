@@ -1,0 +1,334 @@
+/* DETALLES.CSS - Estilos Premium EcoGuía SOS */
+
+:root {
+    --hero-height: 400px;
+    --sidebar-width: 320px;
+    --flyer-width: 480px;
+    --content-max-width: 1350px;
+    --text-main: #2c3e50;
+    --text-muted: #666;
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* 1. LAYOUT BASE */
+.full-screen-loader {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #0f1419; display: flex; justify-content: center;
+    align-items: center; z-index: 9999;
+}
+
+.spinner {
+    width: 45px; height: 45px; border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: var(--color-eco); border-radius: 50%;
+    animation: spin 0.8s infinite linear;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hidden { display: none !important; }
+
+/* Eliminar action bar redundante en TODAS las vistas (PC, Tablet, Móvil) */
+.mobile-action-bar { display: none !important; }
+
+/* 2. HERO SECTION */
+.detail-hero {
+    position: relative;
+    min-height: 500px;
+    display: flex;
+    align-items: center; /* Centrado para estilo hero */
+    padding: 120px 0 80px;
+    overflow: hidden;
+    background-color: var(--color-fondo);
+}
+
+@media (max-width: 992px) {
+    .detail-hero { min-height: 250px; padding-bottom: 60px; }
+}
+@media (max-width: 768px) {
+    .detail-hero { min-height: 200px; padding-bottom: 30px; }
+}
+
+.hero-bg-blur {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover; background-position: center;
+    filter: blur(15px) brightness(0.4); opacity: 0.9; z-index: 0;
+    transition: opacity 0.8s ease;
+}
+
+.hero-bg-blur::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(10, 14, 18, 0.4), var(--color-fondo));
+    z-index: 1;
+}
+
+.hero-container { position: relative; z-index: 2; max-width: var(--content-max-width); margin: 0 auto; }
+
+.hero-info {
+    color: white; display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+}
+
+.hero-info h1 {
+    font-size: 4rem; font-weight: 850; margin-bottom: 20px;
+    letter-spacing: -2px; line-height: 1.05; max-width: 900px;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.hero-meta { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+.meta-item {
+    background: rgba(255,255,255,0.08); padding: 10px 20px;
+    border-radius: 50px; font-weight: 700; font-size: 0.9rem;
+    backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; gap: 10px;
+}
+
+/* 3. CONTENT AREA (3 Columns) */
+.content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr var(--flyer-width) var(--sidebar-width);
+    gap: 40px;
+    max-width: var(--content-max-width);
+    margin: -70px auto 100px;
+    position: relative; z-index: 10;
+}
+
+/* Main content cards */
+.main-content { display: flex; flex-direction: column; gap: 30px; }
+
+.info-section {
+    background: var(--tarjeta-bg-dark);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: var(--shadow-strong);
+    border: 1px solid var(--tarjeta-border-dark);
+}
+
+.section-title {
+    font-size: 1.4rem; font-weight: 800; margin-bottom: 25px;
+    color: white; display: flex; align-items: center; gap: 12px;
+}
+
+.section-title i { color: var(--color-eco); font-size: 1.2rem; }
+
+.description-text {
+    font-size: 1.15rem; line-height: 1.85; color: rgba(255, 255, 255, 0.85);
+    font-weight: 450;
+}
+
+/* Informational Cards (Schedule, Contact) */
+.schedule-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 25px;
+}
+.schedule-card .label {
+    font-size: 0.75rem; font-weight: 800; color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+    display: block;
+}
+.schedule-card .value {
+    font-size: 1.1rem; color: white; font-weight: 600;
+}
+
+/* Flyer Styling */
+.flyer-content { position: sticky; top: 120px; align-self: flex-start; }
+.flyer-wrapper {
+    width: 100%; border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    background: var(--tarjeta-bg-dark); 
+    border: 1px solid var(--tarjeta-border-dark);
+    padding: 8px;
+    position: relative; /* Clave para el badge interno */
+}
+.flyer-wrapper img { width: 100%; height: auto; display: block; object-fit: contain; border-radius: 12px; }
+
+.type-badge {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    padding: 8px 16px;
+    border-radius: 30px;
+    color: white;
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Social Links Styles */
+.social-links-container { display: flex; gap: 15px; flex-wrap: wrap; }
+.social-btn {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; color: white; text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.social-btn:hover { transform: translateY(-6px) rotate(3deg); }
+
+.social-btn.facebook { background: #1877F2; box-shadow: 0 8px 20px rgba(24,119,242,0.3); }
+.social-btn.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); box-shadow: 0 8px 20px rgba(214,41,118,0.3); }
+.social-btn.whatsapp { background: #25D366; box-shadow: 0 8px 20px rgba(37,211,102,0.3); }
+.social-btn.youtube { background: #FF0000; box-shadow: 0 8px 20px rgba(255,0,0,0.3); }
+.social-btn.x-twitter { background: #000; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+.social-btn.web { background: #34495e; box-shadow: 0 8px 20px rgba(52,73,94,0.3); }
+
+/* Sidebar */
+.side-panel .sticky-card {
+    position: sticky; top: 120px; background: #1a232e;
+    border-radius: 24px; padding: 25px; color: white;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+}
+
+.sidebar-map-container {
+    height: 160px; border-radius: 16px; overflow: hidden;
+    margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05);
+    background: #2a3441; /* Fallback color */
+}
+
+#detail-mini-map {
+    width: 100%;
+    height: 100%;
+}
+
+.location-box h4 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+.location-address { font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.5; margin-bottom: 30px; }
+
+/* Buttons */
+.btn.full-width {
+    width: 100%; padding: 16px; border-radius: 14px; margin-bottom: 12px;
+    font-weight: 800; display: flex; align-items: center; justify-content: center;
+    gap: 12px; transition: all 0.3s;
+}
+
+.btn-primary { background: #9b2238; color: white; border: none; }
+.btn-primary:hover { background: #7a1b2d; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(155,34,56,0.4); }
+
+.btn-secondary { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.1); }
+.btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
+
+/* Media Queries (Responsive Grid & Adjustments) */
+@media (max-width: 1200px) {
+    /* Tablet: Sidebar stays sticky on the right, but Flyer moves above info */
+    .content-wrapper {
+        grid-template-columns: 1fr var(--sidebar-width);
+        gap: 30px;
+        margin-top: -40px;
+    }
+    .flyer-content { grid-column: 1; grid-row: 1; position: static; }
+    .main-content { grid-column: 1; grid-row: 2; }
+    .side-panel { grid-column: 2; grid-row: 1 / span 2; }
+    .flyer-wrapper { max-width: 500px; margin: 0 auto; }
+}
+
+@media (max-width: 900px) {
+    /* Mobile / Small Tablet: Todo en 1 columna. Quitamos márgenes negativos para que no se encime el badge */
+    .content-wrapper {
+        grid-template-columns: 1fr;
+        margin-top: 20px;
+    }
+    .flyer-content { grid-column: 1; grid-row: 1; margin-bottom: 20px; }
+
+    .main-content { grid-column: 1; grid-row: 2; }
+    .side-panel { grid-column: 1; grid-row: 3; margin-top: 10px; }
+    .side-panel .sticky-card { position: static; } /* Deja de arrastrarse cuando baja al final */
+}
+
+@media (max-width: 768px) {
+    .detail-hero .hero-container { padding: 0 15px; }
+    .hero-info h1 { font-size: 2.2rem; }
+}
+
+/* ========================================= */
+/* LAYOUT ESPECÍFICO PARA LUGARES (1 COLUMNA)*/
+/* ========================================= */
+body.lugares-page .content-wrapper {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+}
+
+body.lugares-page .flyer-content {
+    position: static;
+    margin-bottom: 30px;
+}
+
+body.lugares-page .main-content {
+    order: 2;
+}
+
+body.lugares-page .flyer-content {
+    order: 1;
+}
+
+body.lugares-page .side-panel {
+    order: 3;
+    margin-top: 20px;
+}
+
+body.lugares-page .side-panel .sticky-card {
+    position: static;
+}
+
+/* Permitir que la imagen abarque más si es necesario en modo apilado */
+body.lugares-page .flyer-wrapper img {
+    max-height: 500px;
+    object-fit: contain;
+    background: rgba(0,0,0,0.2);
+}
+
+/* ========================================= */
+/* RESPONSIVIDAD ADICIONAL MÓVIL            */
+/* ========================================= */
+@media (max-width: 600px) {
+    .detail-hero {
+        padding: 80px 0 20px;
+    }
+
+    .hero-info h1 {
+        font-size: 1.6rem;
+        letter-spacing: -1px;
+        margin-bottom: 12px;
+    }
+
+    .hero-meta {
+        gap: 8px;
+    }
+
+    .meta-item {
+        padding: 7px 12px;
+        font-size: 0.78rem;
+    }
+
+    /* Sección publicado por: botones en columna en móvil pequeño */
+    .actor-card-lite > div {
+        flex-wrap: wrap;
+    }
+
+    .actor-card-lite > div > div:last-child {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+
+    /* Reducir padding general del contenido */
+    .info-section {
+        padding: 20px 16px;
+    }
+
+    /* Sidebar: mapa más pequeño */
+    .sidebar-map-container {
+        height: 120px;
+    }
+}

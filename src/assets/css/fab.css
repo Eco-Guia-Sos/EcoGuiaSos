@@ -1,0 +1,106 @@
+/* assets/css/fab.css */
+.fab-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 15px;
+}
+
+.fab-main {
+    width: 60px;
+    height: 60px;
+    background: var(--color-eco);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 10px 25px rgba(114, 176, 77, 0.4);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: none;
+    outline: none;
+}
+
+.fab-main:hover {
+    transform: scale(1.1) rotate(90deg);
+    background: var(--color-eco-hover);
+}
+
+.fab-main.active {
+    transform: rotate(45deg);
+    background: #e74c3c;
+    box-shadow: 0 10px 25px rgba(231, 76, 60, 0.4);
+}
+
+.fab-menu {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.fab-menu.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.fab-item {
+    width: 45px;
+    height: 45px;
+    background: var(--tarjeta-bg-dark);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--tarjeta-border-dark);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.fab-item:hover {
+    background: var(--color-eco);
+    transform: scale(1.1);
+}
+
+.fab-item::before {
+    content: attr(data-label);
+    position: absolute;
+    right: 60px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.fab-item:hover::before {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Animations for menu items appearance */
+.fab-menu.active .fab-item:nth-child(1) { transition-delay: 0.05s; }
+.fab-menu.active .fab-item:nth-child(2) { transition-delay: 0.1s; }
+.fab-menu.active .fab-item:nth-child(3) { transition-delay: 0.15s; }
