@@ -1724,7 +1724,8 @@ html {
 
 .card-grid-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+    justify-content: center;
     gap: 2rem;
     margin: 0 auto 1rem auto;
     /* Reducido de 4rem a 1rem */
@@ -1736,24 +1737,27 @@ html {
 
 @media (max-width: 600px) {
     .card-grid-container {
-        grid-template-columns: repeat(2, 1fr) !important;
-        /* Strict 2 columns on phones */
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+        /* Strict 2 columns on phones or auto-fit if very small */
         gap: 12px !important;
+        justify-content: center;
     }
 }
 
 @media (min-width: 601px) and (max-width: 1024px) {
     .card-grid-container {
-        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 240px)) !important;
         gap: 1.5rem !important;
+        justify-content: center;
         /* Reducimos espacio para que quepan */
     }
 }
 
 @media (min-width: 1025px) {
     .card-grid-container {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 1rem !important;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 360px)) !important;
+        justify-content: center;
+        gap: 1.5rem !important;
         /* Muy poco espacio en PC para compactar */
     }
 }
