@@ -1749,6 +1749,8 @@ html {
         grid-template-columns: repeat(auto-fit, minmax(200px, 240px)) !important;
         gap: 1.5rem !important;
         justify-content: center;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
         /* Reducimos espacio para que quepan */
     }
 }
@@ -1758,6 +1760,8 @@ html {
         grid-template-columns: repeat(auto-fit, minmax(300px, 360px)) !important;
         justify-content: center;
         gap: 1.5rem !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
         /* Muy poco espacio en PC para compactar */
     }
 }
