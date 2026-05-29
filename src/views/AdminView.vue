@@ -766,6 +766,7 @@ const activeSocialInputs = ref<Record<string, boolean>>({
 const approvedPlacesList = ref<any[]>([])
 const gmapsLink = ref('')
 const isUploadingImages = ref(false)
+const eventImagesInput = ref<HTMLInputElement | null>(null)
 
 const fetchApprovedPlaces = async () => {
   try {
@@ -818,17 +819,25 @@ const extractCoordsFromGmaps = () => {
 }
 
 const handleEventImagesUpload = async (e: Event) => {
+  console.log('[Upload Debug] handleEventImagesUpload triggered', e)
   const target = e.target as HTMLInputElement
   const files = target.files
-  if (!files || files.length === 0) return
-
-  // Check session first
-  const { data: sessionData } = await supabase.auth.getSession()
-  if (!sessionData?.session) {
-    alert('Tu sesi\u00f3n ha expirado. Por favor recarga la p\u00e1gina e inicia sesi\u00f3n de nuevo.')
+  console.log('[Upload Debug] Files list:', files)
+  if (!files || files.length === 0) {
+    console.log('[Upload Debug] No files selected or target.files is empty')
     return
   }
 
+  console.log('[Upload Debug] Checking session...')
+  const { data: sessionData } = await supabase.auth.getSession()
+  console.log('[Upload Debug] Session data:', sessionData)
+  if (!sessionData?.session) {
+    console.warn('[Upload Debug] Session not active')
+    alert('Tu sesión ha expirado. Por favor recarga la página e inicia sesión de nuevo.')
+    return
+  }
+
+  console.log('[Upload Debug] Starting upload of', files.length, 'files')
   isUploadingImages.value = true
   const errors: string[] = []
   try {
@@ -838,23 +847,28 @@ const handleEventImagesUpload = async (e: Event) => {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       if (!file) continue
+      console.log(`[Upload Debug] Compressing and uploading file ${i}:`, file.name, 'size:', file.size)
       try {
         const url = await compressAndUploadFile(file)
+        console.log(`[Upload Debug] Upload success for file ${i}, URL:`, url)
         editingItem.value.imagenes.push(url)
         if (!editingItem.value.imagen) {
           editingItem.value.imagen = url
         }
       } catch (fileErr: any) {
         errors.push(`${file.name}: ${fileErr.message}`)
-        console.error('Error subiendo', file.name, fileErr)
+        console.error('[Upload Debug] Error subiendo', file.name, fileErr)
       }
     }
     if (errors.length > 0) {
       alert('Algunos archivos no pudieron subirse:\n' + errors.join('\n'))
     }
+  } catch (err: any) {
+    console.error('[Upload Debug] General try-catch error in handler:', err)
   } finally {
     isUploadingImages.value = false
     target.value = ''
+    console.log('[Upload Debug] Upload process finished')
   }
 }
 
@@ -1487,10 +1501,12 @@ const updatePassword = async () => {
 
 // Image compression and upload helpers
 const compressAndUploadFile = async (file: File): Promise<string> => {
+  console.log('[Upload Debug] compressAndUploadFile start for:', file.name, 'mime:', file.type)
   // Verify session before attempting upload
   const { data: sessionData } = await supabase.auth.getSession()
   if (!sessionData?.session) {
-    throw new Error('Tu sesi\u00f3n ha expirado. Por favor recarga la p\u00e1gina e inicia sesi\u00f3n de nuevo.')
+    console.warn('[Upload Debug] compressAndUploadFile: No session active')
+    throw new Error('Tu sesión ha expirado. Por favor recarga la página e inicia sesión de nuevo.')
   }
 
   // Helper: canvas to blob with timeout and jpeg fallback
@@ -1499,7 +1515,7 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
       new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) resolve(blob)
-          else reject(new Error(`toBlob devuelvi\u00f3 null para ${type}`))
+          else reject(new Error(`toBlob devolvió null para ${type}`))
         }, type, quality)
       }),
       new Promise<Blob>((_, reject) => setTimeout(() => reject(new Error('Timeout al comprimir imagen (toBlob)')), 15000))
@@ -1525,15 +1541,18 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
       new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image()
         img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error('El archivo no es una imagen v\u00e1lida o no se pudo cargar.'))
+        img.onerror = () => reject(new Error('El archivo no es una imagen válida o no se pudo cargar.'))
         img.src = src
       }),
       new Promise<HTMLImageElement>((_, reject) => setTimeout(() => reject(new Error('Timeout al cargar la imagen')), 10000))
     ])
   }
 
+  console.log('[Upload Debug] Reading file as Data URL...')
   const dataUrl = await readFileAsDataURL(file)
+  console.log('[Upload Debug] Loading image...')
   const img = await loadImage(dataUrl)
+  console.log('[Upload Debug] Image dimensions:', img.width, 'x', img.height)
 
   const canvas = document.createElement('canvas')
   const MAX_WIDTH = 1200
@@ -1563,8 +1582,10 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
   let ext = 'webp'
   let mimeType = 'image/webp'
   try {
+    console.log('[Upload Debug] Converting canvas to webp blob...')
     blob = await canvasToBlob(canvas, 'image/webp', 0.8)
-  } catch {
+  } catch (webpErr) {
+    console.warn('[Upload Debug] WebP compression failed, trying JPEG fallback...', webpErr)
     // webp failed, try jpeg
     try {
       blob = await canvasToBlob(canvas, 'image/jpeg', 0.85)
@@ -1575,22 +1596,26 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
     }
   }
 
-  if (!blob) throw new Error('Error: el blob de la imagen est\u00e1 vac\u00edo')
+  if (!blob) throw new Error('Error: el blob de la imagen está vacío')
+  console.log('[Upload Debug] Compression success, size:', blob.size, 'type:', mimeType)
 
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`
+  console.log('[Upload Debug] Uploading blob to Supabase Storage with name:', fileName)
   const { error: uploadError, data: uploadData } = await supabase.storage
     .from('imagenes-plataforma')
     .upload(fileName, blob, { contentType: mimeType, upsert: false })
 
   if (uploadError) {
+    console.error('[Upload Debug] Supabase upload error:', uploadError)
     // Provide helpful error messages
     const msg = uploadError.message || String(uploadError)
     if (msg.includes('Unauthorized') || msg.includes('403') || msg.includes('permission') || msg.includes('policy')) {
-      throw new Error(`Sin permiso para subir im\u00e1genes. Verifica que tu cuenta tenga los permisos necesarios. (${msg})`)
+      throw new Error(`Sin permiso para subir imágenes. Verifica que tu cuenta tenga los permisos necesarios. (${msg})`)
     }
     throw new Error(`Error al subir imagen a Supabase: ${msg}`)
   }
 
+  console.log('[Upload Debug] Supabase upload success! Data:', uploadData)
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   return `${supabaseUrl}/storage/v1/object/public/imagenes-plataforma/${fileName}`
 }
@@ -3130,10 +3155,10 @@ const formatRelativeDate = (dateStr: string) => {
             <div class="form-group full-width">
               <label>Imágenes (Flyers / Fotos)</label>
               <div class="image-upload-wrapper">
-                <label class="btn-admin" style="width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                <button type="button" class="btn-admin" @click="eventImagesInput?.click()" style="width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
                   <i class="fa-solid fa-images"></i> Añadir Imágenes
-                  <input type="file" @change="handleEventImagesUpload" accept="image/*" multiple style="display: none;" />
-                </label>
+                </button>
+                <input ref="eventImagesInput" type="file" @change="handleEventImagesUpload" accept="image/*" multiple style="display: none;" />
                 
                 <div v-if="isUploadingImages" style="font-size: 0.85rem; color: var(--color-eco); display: flex; align-items: center; gap: 8px;">
                   <i class="fa-solid fa-spinner fa-spin"></i> Subiendo imágenes...
