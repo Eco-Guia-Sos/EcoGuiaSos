@@ -1721,6 +1721,18 @@ const handleItemImageUpload = async (e: Event, targetField: 'imagen' | 'imagen_u
   }
 }
 
+const handleProfileAdminAvatarUpload = async (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  try {
+    const publicUrl = await compressAndUploadFile(file)
+    profileAdminForm.value.avatar_url = publicUrl
+  } catch (err: any) {
+    alert('Error al subir imagen: ' + err.message)
+  }
+}
+
 const handleSliderImageUpload = async (e: Event, targetField: 'imagen_url' | 'imagen_pc_url' | 'imagen_tablet_url') => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
@@ -3488,13 +3500,16 @@ const formatRelativeDate = (dateStr: string) => {
             </div>
             <div class="modal-body" style="padding: 25px;">
                 <form @submit.prevent="saveProfileAdmin">
-                    <!-- Avatar Upload Section (Omitido para simplificar, se podria agregar despues) -->
                     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
-                        <div class="profile-pic-upload" style="width: 100px; height: 100px;">
-                            <div class="avatar-preview" style="border-radius: 30px; font-size: 2.5rem; background: var(--gradient-eco);">
-                                <img v-if="profileAdminForm.avatar_url" :src="profileAdminForm.avatar_url" style="width:100%; height:100%; object-fit:cover; border-radius:30px;">
-                                <span v-else>{{ profileAdminForm.nombre_completo ? profileAdminForm.nombre_completo.charAt(0).toUpperCase() : 'U' }}</span>
+                        <div class="profile-pic-upload" style="width: 120px; height: 120px;">
+                            <div class="avatar-preview" style="border-radius: 40px; font-size: 3rem; background: var(--gradient-eco);">
+                                <img v-if="profileAdminForm.avatar_url" :src="profileAdminForm.avatar_url" style="width:100%; height:100%; object-fit:cover; border-radius:40px;">
+                                <span v-else style="color: white; font-weight: 600;">{{ profileAdminForm.nombre_completo ? profileAdminForm.nombre_completo.charAt(0).toUpperCase() : 'U' }}</span>
                             </div>
+                            <label for="prof-avatar-input" class="upload-btn" style="cursor: pointer;">
+                                <i class="fa-solid fa-camera"></i>
+                            </label>
+                            <input type="file" id="prof-avatar-input" accept="image/*" style="display: none;" @change="handleProfileAdminAvatarUpload">
                         </div>
                     </div>
 
