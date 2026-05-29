@@ -821,8 +821,16 @@ const handleEventImagesUpload = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const files = target.files
   if (!files || files.length === 0) return
-  
+
+  // Check session first
+  const { data: sessionData } = await supabase.auth.getSession()
+  if (!sessionData?.session) {
+    alert('Tu sesi\u00f3n ha expirado. Por favor recarga la p\u00e1gina e inicia sesi\u00f3n de nuevo.')
+    return
+  }
+
   isUploadingImages.value = true
+  const errors: string[] = []
   try {
     if (!editingItem.value.imagenes) {
       editingItem.value.imagenes = []
@@ -830,14 +838,20 @@ const handleEventImagesUpload = async (e: Event) => {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       if (!file) continue
-      const url = await compressAndUploadFile(file)
-      editingItem.value.imagenes.push(url)
-      if (!editingItem.value.imagen) {
-        editingItem.value.imagen = url
+      try {
+        const url = await compressAndUploadFile(file)
+        editingItem.value.imagenes.push(url)
+        if (!editingItem.value.imagen) {
+          editingItem.value.imagen = url
+        }
+      } catch (fileErr: any) {
+        errors.push(`${file.name}: ${fileErr.message}`)
+        console.error('Error subiendo', file.name, fileErr)
       }
     }
-  } catch (err: any) {
-    alert('Error al subir imágenes: ' + err.message)
+    if (errors.length > 0) {
+      alert('Algunos archivos no pudieron subirse:\n' + errors.join('\n'))
+    }
   } finally {
     isUploadingImages.value = false
     target.value = ''
@@ -1473,65 +1487,112 @@ const updatePassword = async () => {
 
 // Image compression and upload helpers
 const compressAndUploadFile = async (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = (event) => {
-      const img = new Image()
-      img.src = event.target?.result as string
-      img.onload = async () => {
-        const canvas = document.createElement('canvas')
-        const MAX_WIDTH = 1200
-        const MAX_HEIGHT = 800
-        let width = img.width
-        let height = img.height
+  // Verify session before attempting upload
+  const { data: sessionData } = await supabase.auth.getSession()
+  if (!sessionData?.session) {
+    throw new Error('Tu sesi\u00f3n ha expirado. Por favor recarga la p\u00e1gina e inicia sesi\u00f3n de nuevo.')
+  }
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width
-            width = MAX_WIDTH
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height
-            height = MAX_HEIGHT
-          }
-        }
+  // Helper: canvas to blob with timeout and jpeg fallback
+  const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> => {
+    return Promise.race([
+      new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob)
+          else reject(new Error(`toBlob devuelvi\u00f3 null para ${type}`))
+        }, type, quality)
+      }),
+      new Promise<Blob>((_, reject) => setTimeout(() => reject(new Error('Timeout al comprimir imagen (toBlob)')), 15000))
+    ])
+  }
 
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, width, height)
-        
-        canvas.toBlob(async (blob) => {
-          if (!blob) {
-            reject(new Error('No se pudo comprimir la imagen'))
-            return
-          }
-          try {
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`
-            const { error } = await supabase.storage
-              .from('imagenes-plataforma')
-              .upload(fileName, blob, { contentType: 'image/webp' })
-            
-            if (error) throw error
-            
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-            const publicUrl = `${supabaseUrl}/storage/v1/object/public/imagenes-plataforma/${fileName}`
-            resolve(publicUrl)
-          } catch (e) {
-            reject(e)
-          }
-        }, 'image/webp', 0.7)
-      }
-      img.onerror = () => {
-        reject(new Error('El archivo seleccionado no es una imagen válida o no se pudo cargar.'))
-      }
+  // Helper: FileReader to DataURL with timeout
+  const readFileAsDataURL = (f: File): Promise<string> => {
+    return Promise.race([
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.onerror = () => reject(new Error('Error al leer el archivo desde el dispositivo.'))
+        reader.readAsDataURL(f)
+      }),
+      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('Timeout al leer el archivo')), 10000))
+    ])
+  }
+
+  // Helper: load image from src with timeout
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return Promise.race([
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.onerror = () => reject(new Error('El archivo no es una imagen v\u00e1lida o no se pudo cargar.'))
+        img.src = src
+      }),
+      new Promise<HTMLImageElement>((_, reject) => setTimeout(() => reject(new Error('Timeout al cargar la imagen')), 10000))
+    ])
+  }
+
+  const dataUrl = await readFileAsDataURL(file)
+  const img = await loadImage(dataUrl)
+
+  const canvas = document.createElement('canvas')
+  const MAX_WIDTH = 1200
+  const MAX_HEIGHT = 1200
+  let width = img.width
+  let height = img.height
+
+  if (width > MAX_WIDTH) {
+    height = Math.round(height * (MAX_WIDTH / width))
+    width = MAX_WIDTH
+  }
+  if (height > MAX_HEIGHT) {
+    width = Math.round(width * (MAX_HEIGHT / height))
+    height = MAX_HEIGHT
+  }
+  if (width < 1) width = 1
+  if (height < 1) height = 1
+
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('No se pudo obtener el contexto 2D del canvas')
+  ctx.drawImage(img, 0, 0, width, height)
+
+  // Try webp first, fallback to jpeg
+  let blob: Blob | null = null
+  let ext = 'webp'
+  let mimeType = 'image/webp'
+  try {
+    blob = await canvasToBlob(canvas, 'image/webp', 0.8)
+  } catch {
+    // webp failed, try jpeg
+    try {
+      blob = await canvasToBlob(canvas, 'image/jpeg', 0.85)
+      ext = 'jpg'
+      mimeType = 'image/jpeg'
+    } catch (e2: any) {
+      throw new Error('No se pudo comprimir la imagen: ' + e2.message)
     }
-    reader.onerror = () => {
-      reject(new Error('Error al leer el archivo desde el dispositivo.'))
+  }
+
+  if (!blob) throw new Error('Error: el blob de la imagen est\u00e1 vac\u00edo')
+
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`
+  const { error: uploadError, data: uploadData } = await supabase.storage
+    .from('imagenes-plataforma')
+    .upload(fileName, blob, { contentType: mimeType, upsert: false })
+
+  if (uploadError) {
+    // Provide helpful error messages
+    const msg = uploadError.message || String(uploadError)
+    if (msg.includes('Unauthorized') || msg.includes('403') || msg.includes('permission') || msg.includes('policy')) {
+      throw new Error(`Sin permiso para subir im\u00e1genes. Verifica que tu cuenta tenga los permisos necesarios. (${msg})`)
     }
-  })
+    throw new Error(`Error al subir imagen a Supabase: ${msg}`)
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  return `${supabaseUrl}/storage/v1/object/public/imagenes-plataforma/${fileName}`
 }
 
 const handleAvatarUpload = async (e: Event) => {
