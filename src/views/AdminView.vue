@@ -3060,19 +3060,23 @@ const formatRelativeDate = (dateStr: string) => {
               </div>
             </template>
 
-            <!-- Images upload with preview grid -->
-            <div class="form-group full-width" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; margin-top: 5px;">
-              <label>Imágenes / Flyers del Evento (Sube una o más imágenes)</label>
-              <div style="display: flex; flex-direction: column; gap: 10px;">
-                <input type="file" @change="handleEventImagesUpload" accept="image/*" multiple style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 10px; cursor: pointer; width: 100%;" />
+            <div class="form-group full-width">
+              <label>Imágenes (Flyers / Fotos)</label>
+              <div class="image-upload-wrapper">
+                <label class="btn-admin" style="width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                  <i class="fa-solid fa-images"></i> Añadir Imágenes
+                  <input type="file" @change="handleEventImagesUpload" accept="image/*" multiple style="display: none;" />
+                </label>
+                
                 <div v-if="isUploadingImages" style="font-size: 0.85rem; color: var(--color-eco); display: flex; align-items: center; gap: 8px;">
                   <i class="fa-solid fa-spinner fa-spin"></i> Subiendo imágenes...
                 </div>
-                <div v-if="editingItem.imagenes && editingItem.imagenes.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;">
-                  <div v-for="(img, idx) in editingItem.imagenes" :key="idx" style="position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; border: 1px solid rgba(255,255,255,0.1);">
-                    <img :src="img" style="width: 100%; height: 100%; object-fit: cover;" />
-                    <button type="button" @click="removeEventImage(Number(idx))" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.8); border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;">
-                      &times;
+
+                <div v-if="editingItem.imagenes && editingItem.imagenes.length > 0" id="ev-images-preview-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 10px;">
+                  <div v-for="(img, idx) in editingItem.imagenes" :key="idx" style="position: relative; width: 100%; padding-bottom: 100%; border-radius: 8px; overflow: hidden;">
+                    <img :src="img" style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; object-fit: cover;" />
+                    <button type="button" @click="removeEventImage(Number(idx))" style="position: absolute; top: 5px; right: 5px; background: rgba(255, 0, 0, 0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                      <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
                 </div>
