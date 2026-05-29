@@ -3204,7 +3204,7 @@ const formatRelativeDate = (dateStr: string) => {
           <h3>{{ editingItem.id ? 'Editar Contenido' : 'Agregar Contenido' }}</h3>
           <button class="close-modal-btn" @click="closeAllModals">&times;</button>
         </div>
-        <form @submit.prevent="saveItem" class="modal-body" style="display: flex; flex-direction: column; gap: 15px; max-height:80vh; overflow-y:auto;">
+        <form @submit.prevent="saveItem" class="modal-body" style="display: flex; flex-direction: column; gap: 15px;">
           <div class="form-group">
             <label>Título / Nombre</label>
             <input type="text" v-model="editingItem.titulo" required />
@@ -3262,7 +3262,7 @@ const formatRelativeDate = (dateStr: string) => {
           <h3>Permisos de: {{ selectedActorName }}</h3>
           <button class="close-modal-btn" @click="closeAllModals">&times;</button>
         </div>
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px; max-height:75vh; overflow-y:auto;">
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
           
           <div>
             <h4 style="color: var(--color-eco); font-weight: 700; margin-bottom: 10px; font-size:1.05rem;">Acceso a Secciones (Hubs)</h4>
@@ -3363,7 +3363,7 @@ const formatRelativeDate = (dateStr: string) => {
           <h3>{{ sliderForm.id ? 'Editar Slide' : 'Agregar Slide' }}</h3>
           <button class="close-modal-btn" @click="closeAllModals">&times;</button>
         </div>
-        <form @submit.prevent="saveSlide" class="modal-body" style="display: flex; flex-direction: column; gap: 15px; max-height:80vh; overflow-y:auto;">
+        <form @submit.prevent="saveSlide" class="modal-body" style="display: flex; flex-direction: column; gap: 15px;">
           <div class="form-group">
             <label>Título</label>
             <input type="text" v-model="sliderForm.titulo" />
@@ -3472,7 +3472,7 @@ const formatRelativeDate = (dateStr: string) => {
                 </div>
                 <button class="close-modal-btn" @click="closeAllModals"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="modal-body" style="padding: 25px; max-height: 75vh; overflow-y: auto;">
+            <div class="modal-body" style="padding: 25px;">
                 <form @submit.prevent="saveProfileAdmin">
                     <!-- Avatar Upload Section (Omitido para simplificar, se podria agregar despues) -->
                     <div style="display: flex; justify-content: center; margin-bottom: 30px;">
