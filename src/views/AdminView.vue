@@ -772,7 +772,6 @@ const fetchApprovedPlaces = async () => {
     const { data, error } = await supabase
       .from('lugares')
       .select('id, nombre')
-      .eq('estado', 'approved')
       .order('nombre', { ascending: true })
     if (!error && data) {
       approvedPlacesList.value = data
@@ -1516,9 +1515,14 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
             resolve(publicUrl)
           } catch (e) {
             reject(e)
-          }
         }, 'image/webp', 0.7)
       }
+      img.onerror = () => {
+        reject(new Error('El archivo seleccionado no es una imagen válida o no se pudo cargar.'))
+      }
+    }
+    reader.onerror = () => {
+      reject(new Error('Error al leer el archivo desde el dispositivo.'))
     }
   })
 }
