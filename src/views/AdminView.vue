@@ -170,11 +170,11 @@ const openProfileAdminModal = (actor: any) => {
     email: actor.email || '',
     telefono: actor.telefono || '',
     rol: actor.rol || 'user',
-    web: actor.web || '',
+    web: actor.links_sociales?.web || '',
     bio: actor.bio || '',
-    facebook: actor.facebook || '',
-    instagram: actor.instagram || '',
-    twitter: actor.twitter || '',
+    facebook: actor.links_sociales?.facebook || '',
+    instagram: actor.links_sociales?.instagram || '',
+    twitter: actor.links_sociales?.twitter || '',
     avatar_url: actor.avatar_url || ''
   }
   isProfileAdminModalOpen.value = true
@@ -183,9 +183,14 @@ const openProfileAdminModal = (actor: any) => {
 const saveProfileAdmin = async () => {
   if (!selectedActorForProfile.value) return
   try {
-    const payload: any = { ...profileAdminForm.value }
-    // En supabase no podemos cambiar el email con una simple actualizacion si esta vinculado a auth
-    delete payload.email
+    const { web, facebook, instagram, twitter, email, ...rest } = profileAdminForm.value
+    const payload: any = { 
+        ...rest,
+        links_sociales: {
+            ...(selectedActorForProfile.value.links_sociales || {}),
+            web, facebook, instagram, twitter
+        }
+    }
     const { error } = await supabase.from('perfiles').update(payload).eq('id', selectedActorForProfile.value.id)
     if (error) throw error
     alert('Perfil guardado exitosamente.')
