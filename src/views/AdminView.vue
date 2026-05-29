@@ -1009,17 +1009,27 @@ const openEditModal = (item: any) => {
 }
 
 const saveItem = async () => {
+  console.log('[Save Debug] saveItem function triggered!')
   if (!authStore.user) {
+    console.warn('[Save Debug] Save aborted: authStore.user is null')
     alert('Tu sesión ha expirado o no estás logueado. Por favor, recarga la página o vuelve a iniciar sesión.')
     return
   }
-  if (!selectedSection.value) return
+  console.log('[Save Debug] Logged user email:', authStore.user.email, 'ID:', authStore.user.id)
+  console.log('[Save Debug] selectedSection:', selectedSection.value)
+  if (!selectedSection.value) {
+    console.warn('[Save Debug] Save aborted: selectedSection is empty')
+    return
+  }
 
   eventErrors.value = {}
   placeErrors.value = {}
 
   try {
     const isEditing = editingItem.value.id !== null
+    console.log('[Save Debug] Mode:', isEditing ? 'EDITING existing item' : 'CREATING new item', 'Item ID:', editingItem.value.id)
+    console.log('[Save Debug] Raw editingItem value:', JSON.parse(JSON.stringify(editingItem.value)))
+    
     let dbPayload: any = {}
 
     if (selectedSection.value === 'eventos') {
@@ -1048,9 +1058,12 @@ const saveItem = async () => {
         fecha_fin: formatToISO(editingItem.value.fecha_fin)
       }
 
+      console.log('[Save Debug] Event data structured for validation:', eventData)
       const { valid, errors } = validateForm(EventoSchema, eventData)
+      console.log('[Save Debug] Event validation result:', { valid, errors })
       if (!valid) {
         eventErrors.value = errors
+        console.warn('[Save Debug] Validation failed. Errors:', errors)
         alert('Por favor, revisa los errores indicados en el formulario de Evento.')
         return
       }
@@ -1071,9 +1084,12 @@ const saveItem = async () => {
         lng: Number(editingItem.value.lng)
       }
 
+      console.log('[Save Debug] Place data structured for validation:', placeData)
       const { valid, errors } = validateForm(LugarSchema, placeData)
+      console.log('[Save Debug] Place validation result:', { valid, errors })
       if (!valid) {
         placeErrors.value = errors
+        console.warn('[Save Debug] Validation failed. Errors:', errors)
         alert('Por favor, revisa los errores indicados en el formulario de Lugar.')
         return
       }
@@ -1104,40 +1120,52 @@ const saveItem = async () => {
       dbPayload.owner_id = authStore.user.id
     }
 
+    console.log('[Save Debug] Final DB payload:', dbPayload)
+
     let error: any
     if (selectedSection.value === 'eventos') {
       if (isEditing) {
+        console.log('[Save Debug] Calling Supabase events UPDATE for ID:', editingItem.value.id)
         const { error: e } = await supabase.from('eventos').update(dbPayload).eq('id', editingItem.value.id)
         error = e
       } else {
+        console.log('[Save Debug] Calling Supabase events INSERT')
         const { error: e } = await supabase.from('eventos').insert(dbPayload)
         error = e
       }
     } else if (selectedSection.value === 'lugares') {
       if (isEditing) {
+        console.log('[Save Debug] Calling Supabase places UPDATE for ID:', editingItem.value.id)
         const { error: e } = await supabase.from('lugares').update(dbPayload).eq('id', editingItem.value.id)
         error = e
       } else {
+        console.log('[Save Debug] Calling Supabase places INSERT')
         const { error: e } = await supabase.from('lugares').insert(dbPayload)
         error = e
       }
     } else {
       if (isEditing) {
+        console.log('[Save Debug] Calling Supabase contenido_secciones UPDATE for ID:', editingItem.value.id)
         const { error: e } = await supabase.from('contenido_secciones').update(dbPayload).eq('id', editingItem.value.id)
         error = e
       } else {
+        console.log('[Save Debug] Calling Supabase contenido_secciones INSERT')
         const { error: e } = await supabase.from('contenido_secciones').insert(dbPayload)
         error = e
       }
     }
 
-    if (error) throw error
+    if (error) {
+      console.error('[Save Debug] Supabase returned database error:', error)
+      throw error
+    }
 
+    console.log('[Save Debug] Save query completed successfully!')
     alert('Registro guardado correctamente.')
     closeAllModals()
     fetchListData()
   } catch (e: any) {
-    console.error('Error saving:', e)
+    console.error('[Save Debug] Exception caught in saveItem:', e)
     alert('Error al guardar el registro: ' + e.message)
   }
 }
