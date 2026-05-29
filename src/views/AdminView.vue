@@ -981,7 +981,11 @@ const openEditModal = (item: any) => {
 }
 
 const saveItem = async () => {
-  if (!selectedSection.value || !authStore.user) return
+  if (!authStore.user) {
+    alert('Tu sesión ha expirado o no estás logueado. Por favor, recarga la página o vuelve a iniciar sesión.')
+    return
+  }
+  if (!selectedSection.value) return
 
   eventErrors.value = {}
   placeErrors.value = {}
