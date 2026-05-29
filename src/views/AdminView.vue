@@ -1515,6 +1515,7 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
             resolve(publicUrl)
           } catch (e) {
             reject(e)
+          }
         }, 'image/webp', 0.7)
       }
       img.onerror = () => {
