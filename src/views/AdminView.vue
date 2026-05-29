@@ -828,11 +828,11 @@ const handleEventImagesUpload = async (e: Event) => {
     return
   }
 
-  console.log('[Upload Debug] Checking session...')
-  const { data: sessionData } = await supabase.auth.getSession()
-  console.log('[Upload Debug] Session data:', sessionData)
-  if (!sessionData?.session) {
-    console.warn('[Upload Debug] Session not active')
+  console.log('[Upload Debug] Checking session from authStore...')
+  const session = authStore.session
+  console.log('[Upload Debug] Session user:', session?.user?.email)
+  if (!session) {
+    console.warn('[Upload Debug] Session not active in authStore')
     alert('Tu sesión ha expirado. Por favor recarga la página e inicia sesión de nuevo.')
     return
   }
@@ -1503,10 +1503,10 @@ const updatePassword = async () => {
 const compressAndUploadFile = async (file: File): Promise<string> => {
   console.log('[Upload Debug] compressAndUploadFile start for:', file.name, 'mime:', file.type)
   // Verify session before attempting upload
-  const { data: sessionData } = await supabase.auth.getSession()
-  if (!sessionData?.session) {
-    console.warn('[Upload Debug] compressAndUploadFile: No session active')
-    throw new Error('Tu sesión ha expirado. Por favor recarga la página e inicia sesión de nuevo.')
+  const session = authStore.session
+  if (!session) {
+    console.warn('[Upload Debug] compressAndUploadFile: No session active in authStore')
+    throw new Error('Tu sesión ha expirado o no está activa. Por favor recarga la página.')
   }
 
   // Helper: canvas to blob with timeout and jpeg fallback
