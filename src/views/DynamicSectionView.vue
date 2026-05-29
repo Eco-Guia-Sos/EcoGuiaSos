@@ -169,7 +169,7 @@ watch(() => authStore.user, () => {
 </script>
 
 <template>
-  <div>
+  <div :class="`theme-${props.parentHub}`">
     <header class="interior-hero">
       <div class="hero-glass-panel">
         <span class="category-badge">{{ currentHub.badge }}</span>

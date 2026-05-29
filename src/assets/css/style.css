@@ -131,15 +131,14 @@ html {
     position: relative;
     overflow: visible;
     width: 100%; /* Ancho total para expandir el fondo blanco */
-    margin: 0; /* Sin mÃ¡rgenes laterales para pegar a los bordes */
+    max-width: 100% !important; /* Fuerza ancho completo ignorando interior-pages.css global */
+    margin: 0; /* Sin márgenes laterales para pegar a los bordes */
     padding: 3rem 0 4rem;
-    background-color: #ffffff; /* Blanco sÃ³lido puro */
+    background-color: #ffffff; /* Blanco sólido puro */
     margin-top: 0; /* Corte perfecto sin solapamiento */
     z-index: 50;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.03); /* Sombra muy tenue para separar secciones */
-    display: flex;
-    flex-direction: column;
-    align-items: center; 
+    display: block; /* Cambiado de flex a block para que margin: auto funcione correctamente en hijos */
 }
 
 /* M2: ReducciÃ³n de blur en mÃ³vil para fluidez */
@@ -163,16 +162,16 @@ html {
     }
 }
 
-/* Contenedores internos para mantener el ancho de lectura cÃ³modo */
-.content-section > div:not(#particles-main):not(.search-bar-row):not(.toggle-row):not(.action-buttons-row):not(.advanced-search-panel):not(.pagination-container), 
-.content-section > section, 
-.content-section > .card-grid-container {
+/* Contenedores internos para mantener el ancho de lectura cómodo */
+.content-section > div:not(#particles-main):not(#contenedor-tarjetas), 
+.content-section > section {
     width: 100%;
-    max-width: 1300px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    box-sizing: border-box;
 }
 
 #particles-main {
@@ -547,6 +546,7 @@ html {
     font-weight: 600;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 0.8rem;
     color: white !important;
     text-decoration: none;
@@ -577,7 +577,7 @@ html {
 /* PANEL DE BÃšSQUEDA AVANZADA (MODERNIZADO) */
 .advanced-search-panel {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1100px !important;
     background: rgba(30, 40, 45, 0.7); /* M7: Fondo solicitado por usuario */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1005,7 +1005,7 @@ html {
     text-decoration: none;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.5rem;
     flex-grow: 1;
     white-space: nowrap;
@@ -1722,47 +1722,38 @@ html {
    DISEÃ‘O TARJETAS: CARTELERA CDMX (Dark Mode) + MATES.MX
    ========================================================= */
 
+/* .card-grid-container: Clase genérica — sin max-width fijo para permitir que el ID #contenedor-tarjetas controle su propio ancho */
 .card-grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
     justify-content: center;
     gap: 2rem;
     margin: 0 auto 1rem auto;
-    /* Reducido de 4rem a 1rem */
-    max-width: 1200px;
-    /* Evita que crezcan infinitamente en PC */
     padding: 0 1rem;
-    /* Margen de seguridad en bordes */
+    box-sizing: border-box;
 }
 
 @media (max-width: 600px) {
-    .card-grid-container {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
-        /* Strict 2 columns on phones or auto-fit if very small */
-        gap: 12px !important;
+    .card-grid-container:not(#contenedor-tarjetas) {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
         justify-content: center;
     }
 }
 
 @media (min-width: 601px) and (max-width: 1024px) {
-    .card-grid-container {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 240px)) !important;
-        gap: 1.5rem !important;
+    .card-grid-container:not(#contenedor-tarjetas) {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 240px));
+        gap: 1.5rem;
         justify-content: center;
-        max-width: 1200px !important;
-        margin: 0 auto !important;
-        /* Reducimos espacio para que quepan */
     }
 }
 
 @media (min-width: 1025px) {
-    .card-grid-container {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 360px)) !important;
+    .card-grid-container:not(#contenedor-tarjetas) {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 360px));
         justify-content: center;
-        gap: 1.5rem !important;
-        max-width: 1200px !important;
-        margin: 0 auto !important;
-        /* Muy poco espacio en PC para compactar */
+        gap: 1.5rem;
     }
 }
 
@@ -2468,19 +2459,11 @@ footer {
     }
 
     .action-buttons,
-    .action-buttons-row,
-    .main-map-actions,
     .level-buttons-container {
         flex-direction: column;
         width: 100%;
         gap: 1rem;
         align-items: stretch;
-    }
-
-    .main-map-actions .btn-pill-map,
-    .action-buttons-row .btn {
-        width: 100%;
-        justify-content: center;
     }
 
     .btn-wrapper {
@@ -2915,10 +2898,14 @@ footer {
    ========================================================= */
 
 #contenedor-tarjetas {
-    max-width: 1600px !important; 
+    display: grid !important;
+    width: 100% !important;
+    max-width: 1600px !important;
     grid-template-columns: repeat(5, 1fr) !important;
     gap: 1.5rem !important;
     padding: 0 1.5rem !important;
+    margin: 2rem auto !important;
+    box-sizing: border-box !important;
 }
 
 /* Forzamos diseño vertical para las 5 columnas con ratio 5:3 */
@@ -2988,4 +2975,16 @@ footer {
     #contenedor-tarjetas .card-title {
         font-size: 0.8rem !important;
     }
+}
+
+/* Indicador de menú desplegable (flechita) en botones de niveles */
+.dropdown-arrow {
+    margin-left: auto;
+    font-size: 0.8rem;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.85;
+}
+
+.level-btn-group.dropdown-open .dropdown-arrow {
+    transform: rotate(180deg);
 }

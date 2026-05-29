@@ -62,7 +62,12 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = false
   }
 
+  const initialized = ref(false)
+
   const init = async () => {
+    if (initialized.value) return
+    initialized.value = true
+    
     loading.value = true
     
     // Initial session check
@@ -76,8 +81,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
-    // handleSession will trigger via onAuthStateChange to clean up state
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.warn('[AuthStore] Error llamando a signOut:', error)
+    } finally {
+      await handleSession(null)
+    }
   }
 
   return {
@@ -85,6 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     profile,
     loading,
+    initialized,
     init,
     logout
   }

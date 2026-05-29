@@ -306,6 +306,8 @@ body.is-admin .stat-card.only-admin {
     display: flex;
     flex-direction: column;
     position: fixed;
+    top: 0;
+    left: 0;
     height: 100vh;
     z-index: 100;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1725,4 +1727,278 @@ input:checked + .slider:before {
         order: 2; /* Mover cerrar abajo del de cargar */
     }
 }
+
+/* =========================================================
+   ESTILOS NUEVOS: LAYOUT ADMIN FULL-SCREEN (sin nav global)
+   ========================================================= */
+
+/* Garantizar que el admin ocupa toda la pantalla */
+.admin-body {
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.admin-content-area {
+    flex: 1;
+    padding: 0;
+    overflow-y: auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Contenedor principal admin ajustado */
+.admin-main-wrapper {
+    margin-left: 280px;
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: all 0.4s;
+}
+
+/* El header ahora tiene su propio padding */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 40px;
+    border-bottom: 1px solid var(--admin-border);
+    background: rgba(5, 20, 33, 0.6);
+    backdrop-filter: blur(10px);
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+/* Fila del saludo + badge de rol */
+.header-main-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.header-titles h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.8rem;
+    margin: 0 0 4px;
+    font-weight: 800;
+    color: white;
+}
+
+/* Lado derecho del header: fecha + toggle */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.header-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--admin-text-muted);
+    font-size: 0.88rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    text-transform: capitalize;
+}
+
+.header-date i {
+    color: var(--admin-accent);
+}
+
+/* Botón toggle sidebar en el header */
+.desktop-sidebar-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--admin-border);
+    color: var(--admin-text-muted);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.desktop-sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Contenido admin con padding */
+.admin-content-area > *:not(.admin-header) {
+    padding: 40px;
+}
+
+/* Ocultar el toggle del sidebar en el logo en móvil */
+.desktop-only {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none;
+    }
+    .header-date {
+        display: none;
+    }
+    .admin-header {
+        padding: 16px 20px;
+    }
+}
+
+/* Indicador online (punto verde pulsante) */
+.profile-avatar-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background: #10b981;
+    border-radius: 50%;
+    border: 2px solid var(--admin-sidebar);
+    animation: pulse-online 2s infinite;
+}
+
+@keyframes pulse-online {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+    50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+
+/* Wrapper del dashboard con scroll */
+.dashboard-wrapper {
+    padding: 40px;
+    flex: 1;
+}
+
+/* Collapsed sidebar adjustments */
+.admin-sidebar.collapsed .logo-main span,
+.admin-sidebar.collapsed .sidebar-profile-card .profile-info,
+.admin-sidebar.collapsed .admin-menu span,
+.admin-sidebar.collapsed .menu-category {
+    display: none;
+}
+
+.admin-sidebar.collapsed {
+    width: 80px;
+}
+
+.admin-sidebar.collapsed ~ .admin-main-wrapper,
+.admin-sidebar.collapsed + .sidebar-backdrop + .admin-main-wrapper {
+    margin-left: 80px;
+}
+
+.admin-sidebar.collapsed .sidebar-logo {
+    padding: 20px 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 15px;
+}
+
+.admin-sidebar.collapsed .sidebar-profile-card {
+    padding: 12px 0;
+    justify-content: center;
+    margin: 12px 8px;
+}
+
+.admin-sidebar.collapsed .admin-menu a {
+    justify-content: center;
+    padding: 12px;
+}
+
+/* Main wrapper cuando sidebar está colapsado */
+.admin-main-wrapper.sidebar-collapsed {
+    margin-left: 80px;
+}
+
+/* Actions Dropdown */
+.actions-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-actions-trigger {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-actions-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.actions-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 5px);
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    min-width: 200px;
+    padding: 8px;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.actions-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.actions-menu a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    color: #e2e8f0;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.actions-menu a:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.actions-menu a.text-danger {
+    color: #f43f5e;
+}
+
+.actions-menu a.text-danger:hover {
+    background: rgba(244, 63, 94, 0.1);
+}
+
+.actions-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 8px 0;
+}
+
 

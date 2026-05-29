@@ -4,15 +4,18 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
 
+import { useHomeStore } from '../stores/homeStore'
+
 const router = useRouter()
 const authStore = useAuthStore()
+const homeStore = useHomeStore()
 
 // State
-const todosLosProyectos = ref<any[]>([])
-const carruselSlides = ref<any[]>([])
-const filtroActual = ref<'evento' | 'lugar'>('evento')
+const todosLosProyectos = computed(() => homeStore.todosLosProyectos)
+const carruselSlides = computed(() => homeStore.carruselSlides)
+const loading = computed(() => homeStore.loading)
+const filtroActual = ref<'evento' | 'en_linea' | 'lugar'>('evento')
 const buscadorInput = ref('')
-const loading = ref(true)
 
 // Navigation/View toggles
 const isMapVisible = ref(false)
@@ -48,6 +51,7 @@ const activeDateEvents = ref<any[]>([])
 // Calendar state
 const currentMonth = ref(new Date().getMonth())
 const currentYear = ref(new Date().getFullYear())
+const calFiltro = ref<'todos' | 'presencial' | 'en_linea'>('todos')
 
 // Tooltip state
 const activeTooltip = ref<string | null>(null)
@@ -66,7 +70,22 @@ const handleWindowClick = () => {
   activeTooltip.value = null
 }
 
-onMounted(() => {
+watch(() => authStore.user, (newUser) => {
+  if (newUser) {
+    setTimeout(() => obtenerUbicacionSilenciosa(), 1000)
+  }
+}, { immediate: true })
+
+// Watch slides to initialize/reinitialize Swiper when they load or change
+watch(carruselSlides, (newSlides) => {
+  if (newSlides && newSlides.length > 0) {
+    nextTick(() => {
+      iniciarCarrusel()
+    })
+  }
+})
+
+onMounted(async () => {
   window.addEventListener('resize', handleResize)
   window.addEventListener('click', handleWindowClick)
   
@@ -75,19 +94,22 @@ onMounted(() => {
     authStore.init()
   }
   
-  // Listen for auth change to get GPS
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      if (session) {
-        setTimeout(() => obtenerUbicacionSilenciosa(), 1000)
-      }
-    }
+  await homeStore.cargarDatos()
+  
+  nextTick(() => {
+    iniciarCarrusel()
+    iniciarParticulas()
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('click', handleWindowClick)
+  if (swiperInstance) {
+    try {
+      swiperInstance.destroy(true, true)
+    } catch (e) {}
+  }
 })
 
 // Globals declarations
@@ -98,95 +120,10 @@ declare const lucide: any
 
 let mapInstance: any = null
 let currentMarkers: any[] = []
+let swiperInstance: any = null
 
-// Fetch Data
-const cargarDatos = async () => {
-  loading.value = true
-  try {
-    // Fetch carrusel
-    const { data: slides } = await supabase
-      .from('carrusel_principal')
-      .select('*')
-      .eq('activo', true)
-      .order('orden', { ascending: true })
-    
-    if (slides) carruselSlides.value = slides
-
-    // Fetch events
-    const { data: eventosData } = await supabase
-      .from('eventos')
-      .select('*')
-
-    // Fetch places
-    const { data: lugaresData } = await supabase
-      .from('lugares')
-      .select('*, eventos(count)')
-
-    // Fetch profiles for owner names
-    const ownerIds = [
-      ...(eventosData || []).map(r => r.owner_id),
-      ...(lugaresData || []).map(r => r.owner_id)
-    ].filter((v, i, a) => v && a.indexOf(v) === i)
-
-    const profilesMap: Record<string, string> = {}
-    if (ownerIds.length > 0) {
-      const { data: pData } = await supabase
-        .from('perfiles')
-        .select('id, nombre_completo')
-        .in('id', ownerIds)
-      
-      if (pData) {
-        pData.forEach(p => {
-          profilesMap[p.id] = p.nombre_completo
-        })
-      }
-    }
-
-    const parseRow = (row: any, tipo: 'evento' | 'lugar') => {
-      let conteo = 0
-      if (tipo === 'lugar' && row.eventos && row.eventos.length > 0) {
-        conteo = row.eventos[0].count || 0
-      }
-      
-      let firstImg = row.imagen_url || row.imagen
-      if (row.imagenes && Array.isArray(row.imagenes) && row.imagenes.length > 0) {
-        firstImg = row.imagenes[0]
-      }
-
-      return {
-        id: row.id,
-        nombre: row.nombre,
-        categoria: row.categoria || 'General',
-        ubicacion: row.ubicacion || 'CDMX',
-        mapa_url: row.mapa_url || null,
-        imagen: firstImg || '/assets/img/kpop.webp',
-        descripcion: row.descripcion || 'Sin descripción.',
-        tipo: tipo,
-        coordenadas: (row.lat && row.lng) ? { lat: row.lat, lng: row.lng } : null,
-        conteo_eventos: conteo,
-        fecha: row.fecha_inicio || row.fecha || row.created_at,
-        es_gratuito: row.es_gratuito,
-        pet_friendly: row.pet_friendly,
-        apto_ninos: row.apto_ninos,
-        owner_id: row.owner_id,
-        actor_nombre: row.owner_id ? (profilesMap[row.owner_id] || null) : null
-      }
-    }
-
-    const parseadosEventos = (eventosData || []).map(r => parseRow(r, 'evento'))
-    const parseadosLugares = (lugaresData || []).map(r => parseRow(r, 'lugar'))
-
-    todosLosProyectos.value = [...parseadosEventos, ...parseadosLugares]
-  } catch (error) {
-    console.error('Error cargando datos:', error)
-  } finally {
-    loading.value = false
-    nextTick(() => {
-      iniciarCarrusel()
-      iniciarParticulas()
-    })
-  }
-}
+// Data loading is managed by homeStore
+// Carga de datos local removida
 
 // Distance Calculation
 const calcularDistancia = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -198,9 +135,16 @@ const calcularDistancia = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c
 }
 
-// Filtering
 const filteredProyectos = computed(() => {
-  let list = todosLosProyectos.value.filter(p => p.tipo === filtroActual.value)
+  let list = todosLosProyectos.value.filter(p => {
+    if (filtroActual.value === 'evento') {
+      return p.tipo === 'evento' && p.modalidad === 'presencial'
+    } else if (filtroActual.value === 'en_linea') {
+      return p.tipo === 'evento' && (p.modalidad === 'en_linea' || p.tiene_sesion_online === true)
+    } else {
+      return p.tipo === 'lugar'
+    }
+  })
 
   // Search Input
   if (buscadorInput.value) {
@@ -534,7 +478,13 @@ const obtenerUbicacionSilenciosa = () => {
 
 // Calendar Logic
 const allEvents = computed(() => {
-  return todosLosProyectos.value.filter(p => p.tipo === 'evento')
+  let list = todosLosProyectos.value.filter(p => p.tipo === 'evento')
+  if (calFiltro.value === 'presencial') {
+    return list.filter(p => p.modalidad === 'presencial')
+  } else if (calFiltro.value === 'en_linea') {
+    return list.filter(p => p.modalidad === 'en_linea' || p.tiene_sesion_online === true)
+  }
+  return list
 })
 
 const daysInMonthList = computed(() => {
@@ -604,7 +554,12 @@ const toggleCalendario = () => {
 // Swiper & Particles initializations
 const iniciarCarrusel = () => {
   if (typeof Swiper !== 'undefined' && carruselSlides.value.length > 0) {
-    new Swiper('.hero-carousel', {
+    if (swiperInstance) {
+      try {
+        swiperInstance.destroy(true, true)
+      } catch (e) {}
+    }
+    swiperInstance = new Swiper('.hero-carousel', {
       loop: carruselSlides.value.length > 1,
       autoplay: {
         delay: 6000,
@@ -646,7 +601,7 @@ const iniciarParticulas = () => {
 const getNivelClass = (categoria: string) => {
   const cat = (categoria || '').toLowerCase()
   const colibri = ['agua', 'cursos', 'ecotecnias', 'lecturas', 'documentales', 'educación', 'naturaleza', 'ecología']
-  const ajolote = ['agentes', 'voluntariados', 'comunidad', 'social', 'convocatorias']
+  const ajolote = ['agentes', 'voluntariados', 'comunidad', 'social', 'convocatoria', 'convocatorias']
   const lobo = ['fondos', 'normativa', 'legal', 'estrategia', 'finanzas']
 
   if (colibri.some(c => cat.includes(c))) return 'card-colibri'
@@ -697,9 +652,7 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-onMounted(() => {
-  cargarDatos()
-})
+// Carga en onMounted unificado
 </script>
 
 <template>
@@ -766,9 +719,10 @@ onMounted(() => {
         <div class="level-buttons-container main-levels">
           <!-- COLIBRÍ -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-colibri glass-effect" @click="toggleTooltip('colibri', $event)">
+            <div class="level-btn-group level-btn-colibri" :class="{ 'dropdown-open': activeTooltip === 'colibri' }" @click="toggleTooltip('colibri', $event)">
               <a href="#seccion-colibri" class="level-btn-link" @click.prevent>
                 <i class="fa-solid fa-dove"></i> Colibrí (Polinización)
+                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
               </a>
             </div>
             <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'colibri' }" @click.stop>
@@ -784,15 +738,16 @@ onMounted(() => {
 
           <!-- AJOLOTE -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-ajolote glass-effect" @click="toggleTooltip('ajolote', $event)">
+            <div class="level-btn-group level-btn-ajolote" :class="{ 'dropdown-open': activeTooltip === 'ajolote' }" @click="toggleTooltip('ajolote', $event)">
               <a href="#seccion-ajolote" class="level-btn-link" @click.prevent>
                 <i class="fa-solid fa-frog"></i> Ajolote (Regeneración)
+                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
               </a>
             </div>
             <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'ajolote' }" @click.stop>
               <ul>
                 <li><RouterLink to="/agentes">👥 Agentes</RouterLink></li>
-                <li><RouterLink to="/convocatorias">📣 Convocatorias</RouterLink></li>
+                <li><RouterLink to="/convocatoria">📣 Convocatorias</RouterLink></li>
                 <li><RouterLink to="/voluntariados">🤝 Ayuda</RouterLink></li>
               </ul>
             </div>
@@ -800,9 +755,10 @@ onMounted(() => {
 
           <!-- LOBO -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-lobo glass-effect" @click="toggleTooltip('lobo', $event)">
+            <div class="level-btn-group level-btn-lobo" :class="{ 'dropdown-open': activeTooltip === 'lobo' }" @click="toggleTooltip('lobo', $event)">
               <a href="#seccion-lobo" class="level-btn-link" @click.prevent>
                 <i class="fa-solid fa-dog"></i> Lobo (Estrategia)
+                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
               </a>
             </div>
             <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'lobo' }" @click.stop>
@@ -835,28 +791,34 @@ onMounted(() => {
 
       <!-- INTERRUPTOR DE EVENTOS/LUGARES (CENTRED) -->
       <div class="toggle-row">
-        <div class="toggle-container">
-          <span 
-            class="toggle-label" 
+        <div class="toggle-container" style="display: flex; gap: 8px; padding: 6px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 30px; position: relative;">
+          <button 
+            type="button"
+            class="tab-btn" 
             :class="{ 'active': filtroActual === 'evento' }"
             @click="filtroActual = 'evento'"
+            style="border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
           >
-            Eventos
-          </span>
-          <div 
-            class="toggle-switch" 
-            :class="{ 'active': filtroActual === 'lugar' }"
-            @click="filtroActual = filtroActual === 'evento' ? 'lugar' : 'evento'"
+            📍 Eventos
+          </button>
+          <button 
+            type="button"
+            class="tab-btn" 
+            :class="{ 'active': filtroActual === 'en_linea' }"
+            @click="filtroActual = 'en_linea'"
+            style="border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
           >
-            <div class="toggle-handle"></div>
-          </div>
-          <span 
-            class="toggle-label" 
+            🖥️ En Línea
+          </button>
+          <button 
+            type="button"
+            class="tab-btn" 
             :class="{ 'active': filtroActual === 'lugar' }"
             @click="filtroActual = 'lugar'"
+            style="border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
           >
-            Lugares
-          </span>
+            🌿 Lugares
+          </button>
         </div>
       </div>
 
@@ -899,43 +861,49 @@ onMounted(() => {
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'all' }"
                 @click="filtrosAvanzados.categoria = 'all'"
+                data-cat="all"
               >
-                Todo
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="globe" aria-hidden="true" class="lucide lucide-globe"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Todo
               </button>
               <button 
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'Taller' }"
                 @click="filtrosAvanzados.categoria = 'Taller'"
+                data-cat="Taller"
               >
-                Talleres
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="palette" aria-hidden="true" class="lucide lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg> Talleres
               </button>
               <button 
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'Voluntariado' }"
                 @click="filtrosAvanzados.categoria = 'Voluntariado'"
+                data-cat="Voluntariado"
               >
-                Voluntarios
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="sprout" aria-hidden="true" class="lucide lucide-sprout"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"></path><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"></path><path d="M5 21h14"></path></svg> Voluntarios
               </button>
               <button 
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'Parque' }"
                 @click="filtrosAvanzados.categoria = 'Parque'"
+                data-cat="Parque"
               >
-                Parques
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="trees" aria-hidden="true" class="lucide lucide-trees"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"></path><path d="M7 16v6"></path><path d="M13 19v3"></path><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"></path></svg> Parques
               </button>
               <button 
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'Huerto' }"
                 @click="filtrosAvanzados.categoria = 'Huerto'"
+                data-cat="Huerto"
               >
-                Huertos
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="leaf" aria-hidden="true" class="lucide lucide-leaf"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg> Huertos
               </button>
               <button 
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'General' }"
                 @click="filtrosAvanzados.categoria = 'General'"
+                data-cat="General"
               >
-                General
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg> General
               </button>
             </div>
           </div>
@@ -948,6 +916,7 @@ onMounted(() => {
                 class="loc-pill" 
                 :class="{ 'active': filtrosAvanzados.ubicacion === 'all' }"
                 @click="filtrosAvanzados.ubicacion = 'all'; toggleProximidad()"
+                data-loc="all"
               >
                 📍 Todo
               </button>
@@ -955,6 +924,7 @@ onMounted(() => {
                 class="loc-pill" 
                 :class="{ 'active': filtrosAvanzados.ubicacion === 'nearby' }"
                 @click="filtrosAvanzados.ubicacion = 'nearby'; toggleProximidad()"
+                data-loc="nearby"
               >
                 🎯 Cerca de mí
               </button>
@@ -965,10 +935,11 @@ onMounted(() => {
               :class="{ 'hidden': filtrosAvanzados.ubicacion !== 'nearby' }"
             >
               <div class="slider-header">
-                <span>Radio: <strong>{{ filtrosAvanzados.distancia }}</strong> km</span>
+                <span>Radio: <strong id="distance-value">{{ filtrosAvanzados.distancia }}</strong> km</span>
               </div>
               <input 
                 type="range" 
+                id="distance-slider"
                 v-model.number="filtrosAvanzados.distancia" 
                 min="1" 
                 max="100" 
@@ -985,6 +956,7 @@ onMounted(() => {
                 class="date-pill" 
                 :class="{ 'active': filtrosAvanzados.fechas === 'all' && !filtrosAvanzados.fechaExacta }"
                 @click="filtrosAvanzados.fechas = 'all'; filtrosAvanzados.fechaExacta = ''"
+                data-date="all"
               >
                 📅 Todas
               </button>
@@ -992,6 +964,7 @@ onMounted(() => {
                 class="date-pill" 
                 :class="{ 'active': filtrosAvanzados.fechas === 'today' && !filtrosAvanzados.fechaExacta }"
                 @click="filtrosAvanzados.fechas = 'today'; filtrosAvanzados.fechaExacta = ''"
+                data-date="today"
               >
                 Hoy
               </button>
@@ -999,6 +972,7 @@ onMounted(() => {
                 class="date-pill" 
                 :class="{ 'active': filtrosAvanzados.fechas === 'tomorrow' && !filtrosAvanzados.fechaExacta }"
                 @click="filtrosAvanzados.fechas = 'tomorrow'; filtrosAvanzados.fechaExacta = ''"
+                data-date="tomorrow"
               >
                 Mañana
               </button>
@@ -1006,6 +980,7 @@ onMounted(() => {
                 class="date-pill" 
                 :class="{ 'active': filtrosAvanzados.fechas === 'weekend' && !filtrosAvanzados.fechaExacta }"
                 @click="filtrosAvanzados.fechas = 'weekend'; filtrosAvanzados.fechaExacta = ''"
+                data-date="weekend"
               >
                 Finde
               </button>
@@ -1014,6 +989,7 @@ onMounted(() => {
               <span>O una fecha exacta:</span>
               <input 
                 type="date" 
+                id="calendar-input"
                 v-model="filtrosAvanzados.fechaExacta" 
                 class="custom-date-input"
                 @change="filtrosAvanzados.fechas = 'all'"
@@ -1021,20 +997,20 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Col 4: Audiencia -->
+          <!-- Col 4: Preferencias -->
           <div class="search-col">
             <h3>Preferencias</h3>
             <div class="audience-grid">
               <label class="filter-chip">
-                <input type="checkbox" v-model="filtrosAvanzados.mascotas">
+                <input type="checkbox" id="filter-pets" v-model="filtrosAvanzados.mascotas">
                 <span class="chip-content">🐶 Mascotas</span>
               </label>
               <label class="filter-chip">
-                <input type="checkbox" v-model="filtrosAvanzados.ninos">
+                <input type="checkbox" id="filter-kids" v-model="filtrosAvanzados.ninos">
                 <span class="chip-content">🧒 Niños</span>
               </label>
               <label class="filter-chip">
-                <input type="checkbox" v-model="filtrosAvanzados.soloGratis">
+                <input type="checkbox" id="switch-gratis" v-model="filtrosAvanzados.soloGratis">
                 <span class="chip-content">💰 Gratis</span>
               </label>
             </div>
@@ -1042,11 +1018,11 @@ onMounted(() => {
         </div>
 
         <div class="search-panel-footer">
-          <button class="btn" @click="resetFiltros" style="background-color: #d32f2f; color: white; border-radius: 15px; font-weight: 800; padding: 1rem 2rem; border: none; cursor: pointer;">
+          <button class="btn" id="btn-reset-filters" @click="resetFiltros" style="background-color: #d32f2f; color: white; border-radius: 15px; font-weight: 800; padding: 1rem 2rem; box-shadow: 0 10px 20px rgba(211, 47, 47, 0.2); transition: all 0.3s; border: none; cursor: pointer;">
             <i class="fa-solid fa-rotate-left"></i> Limpiar
           </button>
-          <button class="btn" @click="isAdvancedSearchOpen = false" style="background-color: #0077b6; color: white; border: none; cursor: pointer; border-radius: 15px; font-weight: 800; padding: 1rem 2rem;">
-            Mostrar <span>{{ filteredProyectos.length }}</span> resultados
+          <button class="btn" id="btn-apply-filters" @click="isAdvancedSearchOpen = false" style="background-color: #0077b6; color: white; border: none; cursor: pointer; border-radius: 15px; font-weight: 800; padding: 1rem 2rem; box-shadow: 0 10px 20px rgba(0, 119, 182, 0.2); transition: all 0.3s;">
+            Mostrar <span id="results-count">{{ filteredProyectos.length }}</span> resultados
           </button>
         </div>
       </div>
@@ -1091,7 +1067,15 @@ onMounted(() => {
             </div>
           </div>
           <div class="card-content">
-            <div class="card-header"><span class="card-category">{{ p.categoria }}</span></div>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="card-category">{{ p.categoria }}</span>
+              <span v-if="p.tipo === 'evento' && p.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                🖥️ En Línea
+              </span>
+              <span v-else-if="p.tipo === 'evento' && p.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                🔄 Híbrido
+              </span>
+            </div>
             <h3 class="card-title" style="margin-bottom:2px;">{{ p.nombre }}</h3>
             <span v-if="formatearFechaSubtext(p.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.8rem; display:block; margin-top:4px; font-weight:600;">
               <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(p.fecha) }}
@@ -1138,9 +1122,38 @@ onMounted(() => {
         id="calendar-section" 
         class="calendar-section fade-in"
       >
-        <div class="calendar-header">
-          <h2>{{ currentMonthLabel }}</h2>
-          <div class="calendar-nav">
+        <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+          <h2 style="margin: 0;">{{ currentMonthLabel }}</h2>
+          <div class="calendar-filters" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 0 auto 0 0;">
+            <button 
+              type="button"
+              class="tab-btn" 
+              :class="{ 'active': calFiltro === 'todos' }" 
+              @click="calFiltro = 'todos'"
+              style="padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border: none; border-radius: 20px; transition: all 0.3s; cursor: pointer;"
+            >
+              Todos
+            </button>
+            <button 
+              type="button"
+              class="tab-btn" 
+              :class="{ 'active': calFiltro === 'presencial' }" 
+              @click="calFiltro = 'presencial'"
+              style="padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border: none; border-radius: 20px; transition: all 0.3s; cursor: pointer;"
+            >
+              📍 Presencial
+            </button>
+            <button 
+              type="button"
+              class="tab-btn" 
+              :class="{ 'active': calFiltro === 'en_linea' }" 
+              @click="calFiltro = 'en_linea'"
+              style="padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border: none; border-radius: 20px; transition: all 0.3s; cursor: pointer;"
+            >
+              🖥️ En Línea
+            </button>
+          </div>
+          <div class="calendar-nav" style="display: flex; gap: 10px;">
             <button class="calendar-nav-btn" @click="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
             <button class="calendar-nav-btn" @click="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
@@ -1335,7 +1348,7 @@ onMounted(() => {
             <span class="nivel-btn-title">👥 Agentes de cambio</span>
             <p class="nivel-btn-desc">Conoce a quienes lideran el cambio.</p>
           </RouterLink>
-          <RouterLink to="/convocatorias" class="nivel-btn-item glass-effect">
+          <RouterLink to="/convocatoria" class="nivel-btn-item glass-effect">
             <span class="nivel-btn-title">📣 Convocatorias</span>
             <p class="nivel-btn-desc">Oportunidades para tus proyectos.</p>
           </RouterLink>

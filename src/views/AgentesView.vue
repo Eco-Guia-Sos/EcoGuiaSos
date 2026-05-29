@@ -38,7 +38,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="theme-ajolote">
     <header class="interior-hero">
       <div class="hero-glass-panel">
         <span class="category-badge">🦎 Ajolote</span>

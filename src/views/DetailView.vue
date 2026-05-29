@@ -581,15 +581,30 @@ watch(() => route.path, () => {
         <!-- 3. SIDEBAR -->
         <aside class="side-panel">
           <div class="sticky-card glass-effect">
-            <div class="sidebar-map-container">
+            <!-- Sidebar Map (Only if presencial or hybrid, i.e. has coordinates) -->
+            <div v-if="item.modalidad !== 'en_linea' && item.lat && item.lng" class="sidebar-map-container" style="margin-bottom: 15px;">
               <div id="detail-mini-map"></div>
             </div>
             
             <div class="sidebar-info">
-              <div class="location-box">
-                <p class="location-label">UBICACIÓN</p>
-                <h4 id="detail-location-name">{{ item.nombre }}</h4>
-                <p id="detail-address" class="location-address">{{ item.ubicacion || 'Dirección no especificada' }}</p>
+              <!-- Location block -->
+              <div class="location-box" style="margin-bottom: 20px;">
+                <p class="location-label">MODALIDAD</p>
+                <h4 style="color: var(--color-eco); margin: 4px 0 8px 0; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
+                  <span v-if="item.modalidad === 'en_linea'">🖥️ Virtual / En Línea</span>
+                  <span v-else-if="item.tiene_sesion_online">🔄 Híbrido (Presencial + En Línea)</span>
+                  <span v-else>📍 Presencial</span>
+                </h4>
+                
+                <template v-if="item.modalidad !== 'en_linea'">
+                  <p class="location-label" style="margin-top: 12px;">UBICACIÓN</p>
+                  <h4 id="detail-location-name" style="margin: 4px 0;">{{ item.nombre }}</h4>
+                  <p id="detail-address" class="location-address">{{ item.ubicacion || 'Dirección no especificada' }}</p>
+                </template>
+                <template v-else>
+                  <p class="location-label" style="margin-top: 12px;">PLATAFORMA</p>
+                  <p style="color: #94a3b8; font-size: 0.9rem; margin: 4px 0 0 0;">Acceso virtual a través del enlace de sesión</p>
+                </template>
               </div>
 
               <!-- Social links for this event/place -->
@@ -615,9 +630,9 @@ watch(() => route.path, () => {
               </div>
 
               <div class="action-buttons">
-                <!-- Google Maps redirection -->
+                <!-- Google Maps redirection (Presencial / Hybrid only) -->
                 <a 
-                  v-if="item.lat && item.lng"
+                  v-if="item.modalidad !== 'en_linea' && item.lat && item.lng"
                   :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
                   target="_blank" 
                   class="btn btn-secondary full-width"
@@ -640,15 +655,64 @@ watch(() => route.path, () => {
                   {{ isFavorite ? 'Guardado' : 'Guardar en Favoritos' }}
                 </button>
                 
-                <!-- Smart Sumate Button -->
-                <a 
-                  v-if="item.reg_link"
-                  :href="item.reg_link" 
-                  target="_blank" 
-                  class="btn btn-primary full-width shimmer-extra"
-                >
-                  <i class="fa-solid fa-hand-holding-heart"></i> Súmate ahora
-                </a>
+                <!-- Smart Sumate Buttons -->
+                <!-- Case 1: Pure Online -->
+                <template v-if="item.modalidad === 'en_linea'">
+                  <!-- Session link (Required) -->
+                  <a 
+                    v-if="item.sesion_online_link"
+                    :href="item.sesion_online_link" 
+                    target="_blank" 
+                    class="btn btn-primary full-width shimmer-extra"
+                    style="margin-bottom: 8px;"
+                  >
+                    <i class="fa-solid fa-desktop"></i> Unirse a la sesión
+                  </a>
+                  <!-- Registration form link (Optional) -->
+                  <a 
+                    v-if="item.reg_link"
+                    :href="item.reg_link" 
+                    target="_blank" 
+                    class="btn btn-secondary full-width"
+                  >
+                    <i class="fa-solid fa-clipboard-list"></i> Registrarse al evento
+                  </a>
+                </template>
+                
+                <!-- Case 2: Hybrid -->
+                <template v-else-if="item.tiene_sesion_online">
+                  <!-- Registration / Presencial link (Optional) -->
+                  <a 
+                    v-if="item.reg_link"
+                    :href="item.reg_link" 
+                    target="_blank" 
+                    class="btn btn-primary full-width shimmer-extra"
+                    style="margin-bottom: 8px;"
+                  >
+                    <i class="fa-solid fa-hand-holding-heart"></i> Súmate presencialmente
+                  </a>
+                  <!-- Session link (Required) -->
+                  <a 
+                    v-if="item.sesion_online_link"
+                    :href="item.sesion_online_link" 
+                    target="_blank" 
+                    class="btn btn-secondary full-width"
+                  >
+                    <i class="fa-solid fa-desktop"></i> Ver sesión en línea
+                  </a>
+                </template>
+
+                <!-- Case 3: Pure Presencial -->
+                <template v-else>
+                  <a 
+                    v-if="item.reg_link"
+                    :href="item.reg_link" 
+                    target="_blank" 
+                    class="btn btn-primary full-width shimmer-extra"
+                  >
+                    <i class="fa-solid fa-hand-holding-heart"></i> Súmate ahora
+                  </a>
+                </template>
               </div>
             </div>
           </div>
@@ -658,7 +722,7 @@ watch(() => route.path, () => {
       <!-- UI MOBILE: Bottom Action Bar -->
       <div class="mobile-action-bar">
         <a 
-          v-if="item.lat && item.lng"
+          v-if="item.modalidad !== 'en_linea' && item.lat && item.lng"
           :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
           target="_blank"
           class="btn-circular"
@@ -674,7 +738,61 @@ watch(() => route.path, () => {
         >
           <i class="fa-bookmark" :class="isFavorite ? 'fa-solid' : 'fa-regular'"></i>
         </button>
-        <a v-if="item.reg_link" :href="item.reg_link" target="_blank" class="btn btn-primary flex-grow" style="display: flex; justify-content: center; align-items: center; text-decoration: none;">Súmate</a>
+        <!-- Smart Sumate Buttons (Mobile) -->
+        <!-- Case 1: Pure Online -->
+        <template v-if="item.modalidad === 'en_linea'">
+          <a 
+            v-if="item.sesion_online_link" 
+            :href="item.sesion_online_link" 
+            target="_blank" 
+            class="btn btn-primary flex-grow" 
+            style="display: flex; justify-content: center; align-items: center; text-decoration: none;"
+          >
+            🖥️ Unirse
+          </a>
+          <a 
+            v-if="item.reg_link" 
+            :href="item.reg_link" 
+            target="_blank" 
+            class="btn btn-secondary flex-grow" 
+            style="display: flex; justify-content: center; align-items: center; text-decoration: none;"
+          >
+            📋 Registro
+          </a>
+        </template>
+        <!-- Case 2: Hybrid -->
+        <template v-else-if="item.tiene_sesion_online">
+          <a 
+            v-if="item.reg_link" 
+            :href="item.reg_link" 
+            target="_blank" 
+            class="btn btn-primary flex-grow" 
+            style="display: flex; justify-content: center; align-items: center; text-decoration: none;"
+          >
+            📍 Presencial
+          </a>
+          <a 
+            v-if="item.sesion_online_link" 
+            :href="item.sesion_online_link" 
+            target="_blank" 
+            class="btn btn-secondary flex-grow" 
+            style="display: flex; justify-content: center; align-items: center; text-decoration: none;"
+          >
+            🖥️ Online
+          </a>
+        </template>
+        <!-- Case 3: Pure Presencial -->
+        <template v-else>
+          <a 
+            v-if="item.reg_link" 
+            :href="item.reg_link" 
+            target="_blank" 
+            class="btn btn-primary flex-grow" 
+            style="display: flex; justify-content: center; align-items: center; text-decoration: none;"
+          >
+            Súmate
+          </a>
+        </template>
       </div>
     </main>
   </div>

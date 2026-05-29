@@ -5,7 +5,7 @@ import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
 import { useValidation } from '../composables/useValidation'
 import { useServiceCall } from '../composables/useServiceCall'
-import { AuthSchema } from '../schemas'
+import { AuthSchema, LoginSchema } from '../schemas'
 
 declare const particlesJS: any
 
@@ -232,7 +232,7 @@ const getSocialDataStr = (socialValues: Record<string, string>) => {
 // Auth Handlers
 const handleLogin = async () => {
   loginErrors.value = {}
-  const { valid, errors } = validateForm(AuthSchema, {
+  const { valid, errors } = validateForm(LoginSchema, {
     email: loginEmail.value,
     password: loginPassword.value
   })

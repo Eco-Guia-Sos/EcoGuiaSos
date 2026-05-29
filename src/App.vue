@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onErrorCaptured } from 'vue'
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/authStore'
+import { useHomeStore } from './stores/homeStore'
 import { supabase } from './services/supabase.service'
 import * as Sentry from '@sentry/vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const homeStore = useHomeStore()
+
+const routerLoading = ref(false)
+const showGlobalLoader = computed(() => {
+  return authStore.loading || homeStore.loading || routerLoading.value
+})
 
 // Menu toggles
 const isMenuOpen = ref(false)
@@ -159,8 +167,42 @@ watch(() => authStore.user, (newUser) => {
   }
 })
 
+// Rutas de admin y de atlas de mapa — layout completamente independiente (sin navbar ni footer del sitio)
+const isFullLayoutHidden = computed(() =>
+  route.path.startsWith('/admin') || route.path === '/mapa'
+)
+
+// Rutas que necesitan fondo oscuro (todas excepto Home y Mapa)
+const darkRoutes = [
+  '/cursos', '/ecotecnias', '/agua', '/lecturas', '/documentales', '/firmas',
+  '/agentes', '/voluntariados', '/convocatoria', '/normativa', '/fondos',
+  '/nosotros', '/auth', '/como-usar', '/favoritos', '/admin',
+  '/eventos/', '/lugares/', '/guia-usuario', '/guia-actor',
+  '/reset-password', '/admin-login'
+]
+
+watch(() => route.path, (newPath) => {
+  const isDark = darkRoutes.some(r => newPath.startsWith(r))
+  if (isDark) {
+    document.body.classList.add('dark-theme')
+  } else {
+    document.body.classList.remove('dark-theme')
+  }
+}, { immediate: true })
+
 onMounted(() => {
   authStore.init()
+
+  // Listen to route changes to trigger loading
+  router.beforeEach((to, from) => {
+    routerLoading.value = true
+  })
+
+  router.afterEach(() => {
+    setTimeout(() => {
+      routerLoading.value = false
+    }, 300)
+  })
 
   // Close dropdowns on window click
   window.addEventListener('click', () => {
@@ -180,14 +222,24 @@ onErrorCaptured((err, instance, info) => {
 
 <template>
   <div>
+    <!-- GLOBAL LOADING SCREEN -->
+    <transition name="fade">
+      <div v-if="showGlobalLoader" class="global-page-loader">
+        <div class="loader-content">
+          <img src="/assets/gif/EGSBOOK.webp" alt="EcoGuía SOS Cargando..." class="loader-gif" />
+          <p class="loader-text">Cargando...</p>
+        </div>
+      </div>
+    </transition>
+
     <!-- Banner de error global -->
     <div v-if="globalError" class="global-error-banner" style="background-color: #ef4444; color: white; padding: 12px; text-align: center; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 100000;">
       <span>{{ globalError }}</span>
       <button @click="globalError = null" style="background: transparent; border: 1px solid white; color: white; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Cerrar</button>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) -->
-    <nav class="main-nav">
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) — oculta en admin y mapa -->
+    <nav v-if="!isFullLayoutHidden" class="main-nav">
       <div class="nav-container">
         <RouterLink to="/" class="nav-brand" @click="closeMenu(); closeDropdowns()">
           <img src="/assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo" />
@@ -286,7 +338,7 @@ onErrorCaptured((err, instance, info) => {
               
               <!-- Panel for Admin/Actor -->
               <RouterLink v-if="isAdminOrActor" to="/admin" class="dropdown-item" @click="closeDropdowns(); closeMenu()">
-                <i class="fa-solid fa-layout-dashboard"></i> Mi Panel
+                <i class="fa-solid fa-gauge"></i> Mi Panel
               </RouterLink>
               
               <!-- Profile link -->
@@ -318,8 +370,8 @@ onErrorCaptured((err, instance, info) => {
     <!-- VISTA DINÁMICA -->
     <RouterView />
 
-    <!-- FOOTER -->
-    <footer>
+    <!-- FOOTER — oculto en admin y mapa -->
+    <footer v-if="!isFullLayoutHidden">
       <div class="footer-content">
         <div class="footer-section">
           <h4>EcoGuía SOS</h4>
@@ -410,5 +462,51 @@ onErrorCaptured((err, instance, info) => {
   .user-dropdown-menu.active {
     transform: translate(-50%, 0) scale(1);
   }
+}
+
+.global-page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #0b0f19;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
+}
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.loader-gif {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+.loader-text {
+  color: #72b04d;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0;
+  animation: loaderPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes loaderPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

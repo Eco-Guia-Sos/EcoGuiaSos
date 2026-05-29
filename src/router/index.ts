@@ -157,12 +157,16 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['admin', 'actor'] }
     }
   ],
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
 // ⚠️ IMPORTANTE: Este guardián es SOLO para UX (evitar clicks a rutas protegidas)
 // El control de acceso REAL está en RLS de Supabase.
 // Si un usuario hace un POST directo a /api/admin, Supabase lo rechazará.
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const allowedRoles = to.meta.roles as string[] | undefined
 
@@ -173,14 +177,10 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (!authStore.user) {
-      next({ name: 'auth', query: { tab: 'login', redirect: to.fullPath } })
+      return { name: 'auth', query: { tab: 'login', redirect: to.fullPath } }
     } else if (allowedRoles && (!authStore.profile?.rol || !allowedRoles.includes(authStore.profile.rol))) {
-      next({ name: 'home' })
-    } else {
-      next()
+      return { name: 'home' }
     }
-  } else {
-    next()
   }
 })
 
