@@ -874,7 +874,7 @@ const openAddModal = () => {
     titulo: '',
     descripcion: '',
     descripcion_texto: '',
-    categoria: 'General',
+    categoria: '',
     ubicacion: 'CDMX',
     lat: 19.4326,
     lng: -99.1332,
@@ -1019,6 +1019,7 @@ const saveItem = async () => {
       const { valid, errors } = validateForm(EventoSchema, eventData)
       if (!valid) {
         eventErrors.value = errors
+        alert('Por favor, revisa los errores indicados en el formulario de Evento.')
         return
       }
 
@@ -1041,6 +1042,7 @@ const saveItem = async () => {
       const { valid, errors } = validateForm(LugarSchema, placeData)
       if (!valid) {
         placeErrors.value = errors
+        alert('Por favor, revisa los errores indicados en el formulario de Lugar.')
         return
       }
 
