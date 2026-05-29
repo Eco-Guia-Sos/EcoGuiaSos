@@ -197,6 +197,20 @@ const saveProfileAdmin = async () => {
   }
 }
 
+const sendResetPasswordEmail = async () => {
+  if (!profileAdminForm.value.email) {
+    alert('El usuario no tiene un correo electrónico registrado.')
+    return
+  }
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(profileAdminForm.value.email)
+    if (error) throw error
+    alert('Se ha enviado un enlace de recuperación al correo: ' + profileAdminForm.value.email)
+  } catch (err: any) {
+    alert('Error al enviar enlace: ' + err.message)
+  }
+}
+
 
 // Config tab state
 const configForm = ref({
@@ -3529,6 +3543,48 @@ const formatRelativeDate = (dateStr: string) => {
                             <i class="fa-brands fa-x-twitter" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #f8fafc; font-size: 1.2rem;"></i>
                             <input type="url" v-model="profileAdminForm.twitter" placeholder="X / Twitter" style="width:100%; padding:12px 12px 12px 44px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white; outline: none;">
                         </div>
+                    </div>
+
+                    <!-- SECCIÓN DE SEGURIDAD EN MODAL -->
+                    <div class="form-section security-section-admin" style="margin-bottom: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <h3 style="font-size: 0.9rem; color: var(--admin-accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-shield-halved"></i> Seguridad de la Cuenta
+                        </h3>
+                        
+                        <!-- Controles para el usuario actual -->
+                        <div id="security-controls-self" style="display: none;">
+                            <div class="security-split-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group">
+                                    <label>Nuevo Correo Electrónico</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="email" id="prof-email" placeholder="nuevo@correo.com" style="flex: 1; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                                        <button type="button" class="btn-admin" id="btn-prof-update-email" style="padding: 0 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--admin-border); color: white;"><i class="fa-solid fa-envelope"></i></button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Nueva Contraseña</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="password" id="prof-password" placeholder="••••••••" style="flex: 1; padding:10px; background:rgba(255,255,255,0.03); border:1px solid var(--admin-border); border-radius:8px; color:white;">
+                                        <button type="button" class="btn-admin" id="btn-prof-update-pass" style="padding: 0 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--admin-border); color: white;"><i class="fa-solid fa-lock"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Controles para el Admin editando a otro -->
+                        <div id="security-controls-other" style="display: block; background: rgba(114, 176, 77, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed var(--admin-accent);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="color: white; font-weight: 500; margin-bottom: 4px;">Asistencia de Acceso</p>
+                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted);">El usuario recibirá un correo para restablecer su propia contraseña.</p>
+                                </div>
+                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmail" style="background: var(--admin-accent); color: black; border: none; font-weight: 600; padding: 10px 20px;">
+                                    <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                </button>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;" id="security-note-admin">Nota: Por seguridad, como administrador solo puedes enviar un enlace de recuperación.</p>
                     </div>
 
                     <div style="display:flex; justify-content:flex-end; gap:10px; border-top: 1px solid var(--admin-border); padding-top: 20px;">
