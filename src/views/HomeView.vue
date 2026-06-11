@@ -31,9 +31,11 @@ const isMobile = ref(getInitialIsMobile())
 const isTablet = ref(getInitialIsTablet())
 
 const maxRendered = computed(() => {
-  if (isMobile.value) return 4
-  if (isTablet.value) return 8
-  return 10
+  let val = 10
+  if (isMobile.value) val = 4
+  else if (isTablet.value) val = 8
+  console.log('[Pagination Debug] maxRendered computed recalculated:', val, '(isMobile:', isMobile.value, 'isTablet:', isTablet.value, ', window.innerWidth:', typeof window !== 'undefined' ? window.innerWidth : 'undefined', ')')
+  return val
 })
 
 // Geolocation
@@ -78,6 +80,7 @@ let tabletQuery: MediaQueryList | null = null
 const updateMatch = () => {
   if (mobileQuery) isMobile.value = mobileQuery.matches
   if (tabletQuery) isTablet.value = tabletQuery.matches
+  console.log('[Pagination Debug] updateMatch triggered. isMobile:', isMobile.value, 'isTablet:', isTablet.value, 'window.innerWidth:', window.innerWidth)
 }
 
 const handleWindowClick = () => {
@@ -100,9 +103,12 @@ watch(carruselSlides, (newSlides) => {
 })
 
 onMounted(async () => {
+  console.log('[Pagination Debug] onMounted called')
   mobileQuery = window.matchMedia('(max-width: 600px)')
   tabletQuery = window.matchMedia('(min-width: 601px) and (max-width: 1024px)')
   
+  console.log('[Pagination Debug] Initial matchMedia - isMobile:', mobileQuery.matches, 'isTablet:', tabletQuery.matches, 'window.innerWidth:', window.innerWidth)
+
   if (mobileQuery.addEventListener) {
     mobileQuery.addEventListener('change', updateMatch)
     tabletQuery.addEventListener('change', updateMatch)
