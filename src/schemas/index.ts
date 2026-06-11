@@ -78,7 +78,7 @@ export const PerfilSchema = z.object({
   avatar_url: z.string().max(500).nullable().optional(),
   bio: z.string().max(500).nullable().optional(),
   telefono: z.string().regex(/^[0-9+\-()]*$/, 'Teléfono inválido').nullable().optional(),
-  links_sociales: z.record(z.string(), z.string().url('URL inválida')).nullable().optional(),
+  links_sociales: z.record(z.string(), z.string().url('URL inválida').or(z.literal(''))).nullable().optional(),
   especialidad: z.string().max(100).nullable().optional(),
   organizacion: z.string().max(100).nullable().optional(),
   mision: z.string().max(300).nullable().optional(),
@@ -91,7 +91,10 @@ export const PerfilSchema = z.object({
   redes_x: z.string().max(500).nullable().optional(),
   redes_web: z.string().max(500).nullable().optional(),
   redes_wa: z.string().max(100).nullable().optional(),
-})
+  videos_presentacion: z.array(z.string().url()).max(5).nullable().optional(),
+  permitir_edicion_videos: z.boolean().nullable().optional(),
+  zonas_impacto: z.array(z.string()).nullable().optional(),
+}).passthrough() // Permite campos adicionales de la BD (habilidades, causas_interes, etc.)
 
 // Validación de inicio de sesión / registro
 export const AuthSchema = z.object({

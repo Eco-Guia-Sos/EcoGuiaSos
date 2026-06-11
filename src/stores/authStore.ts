@@ -8,11 +8,7 @@ import * as Sentry from '@sentry/vue'
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session | null>(null)
   const user = ref<User | null>(null)
-  const profile = ref<{
-    nombre_completo: string | null
-    rol: string | null
-    avatar_url: string | null
-  } | null>(null)
+  const profile = ref<any | null>(null)
   
   const loading = ref(true)
 
@@ -25,10 +21,11 @@ export const useAuthStore = defineStore('auth', () => {
         .maybeSingle()
 
       if (!error && data) {
-        const { success } = PerfilSchema.safeParse(data)
-        if (!success) {
-          console.warn('Perfil con campos inesperados:', data)
-          Sentry.captureMessage(`Perfil con campos inesperados: ${JSON.stringify(data)}`, 'warning')
+        const result = PerfilSchema.safeParse(data)
+        if (!result.success) {
+          console.warn('Perfil con campos inesperados (errores de validación):', result.error.format())
+          console.warn('Datos recibidos del perfil:', data)
+          Sentry.captureMessage(`Perfil con campos inesperados: ${JSON.stringify(result.error.format())}`, 'warning')
         }
 
         profile.value = data

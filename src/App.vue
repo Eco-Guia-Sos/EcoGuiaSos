@@ -13,7 +13,9 @@ const homeStore = useHomeStore()
 
 const routerLoading = ref(false)
 const showGlobalLoader = computed(() => {
-  return authStore.loading || homeStore.loading || routerLoading.value
+  const requiresAuth = route.meta.requiresAuth === true
+  const isHomeRoute = route.path === '/'
+  return (requiresAuth && authStore.loading) || (isHomeRoute && homeStore.loading) || routerLoading.value
 })
 
 // Menu toggles
@@ -342,7 +344,11 @@ onErrorCaptured((err, instance, info) => {
               </RouterLink>
               
               <!-- Profile link -->
-              <RouterLink :to="`/agentes/${authStore.user.id}`" class="dropdown-item" @click="closeDropdowns(); closeMenu()">
+              <RouterLink
+                :to="authStore.profile?.rol === 'user' ? '/mi-perfil' : `/agentes/${authStore.user.id}`"
+                class="dropdown-item"
+                @click="closeDropdowns(); closeMenu()"
+              >
                 <i class="fa-solid fa-circle-user"></i> Mi Perfil
               </RouterLink>
 

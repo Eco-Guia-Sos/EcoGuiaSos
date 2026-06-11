@@ -41,6 +41,7 @@ const messageType = ref<'error' | 'success'>('error')
 // Form state - Login
 const loginEmail = ref('')
 const loginPassword = ref('')
+const showLoginPassword = ref(false)
 const isLoginSubmitting = ref(false)
 
 // Form state - Signup
@@ -50,6 +51,7 @@ const regName = ref('')
 const regEmail = ref('')
 const regPhone = ref('')
 const regPassword = ref('')
+const showRegPassword = ref(false)
 const activeRegSocials = ref<string[]>([])
 const regSocialValues = ref<Record<string, string>>({})
 const isSignupSubmitting = ref(false)
@@ -61,6 +63,7 @@ const actorName = ref('')
 const actorEmail = ref('')
 const actorPhone = ref('')
 const actorPassword = ref('')
+const showActorPassword = ref(false)
 const actorBio = ref('')
 const activeActorSocials = ref<string[]>([])
 const actorSocialValues = ref<Record<string, string>>({})
@@ -463,9 +466,12 @@ const handleActorRequest = async () => {
 
           <div class="input-group">
             <label for="login-password">Contraseña</label>
-            <div class="input-wrapper">
+            <div class="input-wrapper password-wrapper">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="login-password" v-model="loginPassword" placeholder="••••••••" required>
+              <input :type="showLoginPassword ? 'text' : 'password'" id="login-password" v-model="loginPassword" placeholder="••••••••" required>
+              <button type="button" class="password-toggle-btn" @click="showLoginPassword = !showLoginPassword" tabindex="-1">
+                <i :class="showLoginPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+              </button>
             </div>
             <span v-if="loginErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ loginErrors.password }}</span>
             <div class="forgot-password-container">
@@ -554,9 +560,12 @@ const handleActorRequest = async () => {
 
           <div class="input-group">
             <label for="reg-password">Contraseña</label>
-            <div class="input-wrapper">
+            <div class="input-wrapper password-wrapper">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="reg-password" v-model="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+              <input :type="showRegPassword ? 'text' : 'password'" id="reg-password" v-model="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+              <button type="button" class="password-toggle-btn" @click="showRegPassword = !showRegPassword" tabindex="-1">
+                <i :class="showRegPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+              </button>
             </div>
             <span v-if="signupErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ signupErrors.password }}</span>
           </div>
@@ -642,9 +651,12 @@ const handleActorRequest = async () => {
 
           <div class="input-group">
             <label for="actor-password">Contraseña para tu cuenta <span class="required-badge">Obligatorio</span></label>
-            <div class="input-wrapper">
+            <div class="input-wrapper password-wrapper">
               <i class="fa-solid fa-lock"></i>
-              <input type="password" id="actor-password" v-model="actorPassword" placeholder="Crea tu clave de acceso" required minlength="6">
+              <input :type="showActorPassword ? 'text' : 'password'" id="actor-password" v-model="actorPassword" placeholder="Crea tu clave de acceso" required minlength="6">
+              <button type="button" class="password-toggle-btn" @click="showActorPassword = !showActorPassword" tabindex="-1">
+                <i :class="showActorPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+              </button>
             </div>
             <span v-if="actorErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ actorErrors.password }}</span>
           </div>

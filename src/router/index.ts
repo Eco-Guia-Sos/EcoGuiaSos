@@ -155,6 +155,13 @@ const router = createRouter({
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
       meta: { requiresAuth: true, roles: ['admin', 'actor'] }
+    },
+    // Volunteer Profile View
+    {
+      path: '/mi-perfil',
+      name: 'mi-perfil',
+      component: () => import('../views/MiPerfilVoluntarioView.vue'),
+      meta: { requiresAuth: true }
     }
   ],
   scrollBehavior(_to, _from, savedPosition) {

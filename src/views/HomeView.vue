@@ -652,6 +652,13 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+const scrollToSection = (id: string) => {
+  const el = document.getElementById(id)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
 // Carga en onMounted unificado
 </script>
 
@@ -719,11 +726,13 @@ const scrollToTop = () => {
         <div class="level-buttons-container main-levels">
           <!-- COLIBRÍ -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-colibri" :class="{ 'dropdown-open': activeTooltip === 'colibri' }" @click="toggleTooltip('colibri', $event)">
-              <a href="#seccion-colibri" class="level-btn-link" @click.prevent>
+            <div class="level-btn-group level-btn-colibri" :class="{ 'dropdown-open': activeTooltip === 'colibri' }">
+              <a href="#seccion-colibri" class="level-btn-link" @click.prevent="scrollToSection('seccion-colibri')">
                 <i class="fa-solid fa-dove"></i> Colibrí (Polinización)
-                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
               </a>
+              <button type="button" class="mobile-info-toggle" @click.stop="toggleTooltip('colibri', $event)">
+                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+              </button>
             </div>
             <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'colibri' }" @click.stop>
               <ul>
@@ -738,11 +747,13 @@ const scrollToTop = () => {
 
           <!-- AJOLOTE -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-ajolote" :class="{ 'dropdown-open': activeTooltip === 'ajolote' }" @click="toggleTooltip('ajolote', $event)">
-              <a href="#seccion-ajolote" class="level-btn-link" @click.prevent>
+            <div class="level-btn-group level-btn-ajolote" :class="{ 'dropdown-open': activeTooltip === 'ajolote' }">
+              <a href="#seccion-ajolote" class="level-btn-link" @click.prevent="scrollToSection('seccion-ajolote')">
                 <i class="fa-solid fa-frog"></i> Ajolote (Regeneración)
-                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
               </a>
+              <button type="button" class="mobile-info-toggle" @click.stop="toggleTooltip('ajolote', $event)">
+                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+              </button>
             </div>
             <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'ajolote' }" @click.stop>
               <ul>
@@ -755,11 +766,13 @@ const scrollToTop = () => {
 
           <!-- LOBO -->
           <div class="btn-wrapper">
-            <div class="level-btn-group level-btn-lobo" :class="{ 'dropdown-open': activeTooltip === 'lobo' }" @click="toggleTooltip('lobo', $event)">
-              <a href="#seccion-lobo" class="level-btn-link" @click.prevent>
+            <div class="level-btn-group level-btn-lobo" :class="{ 'dropdown-open': activeTooltip === 'lobo' }">
+              <a href="#seccion-lobo" class="level-btn-link" @click.prevent="scrollToSection('seccion-lobo')">
                 <i class="fa-solid fa-dog"></i> Lobo (Estrategia)
-                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
               </a>
+              <button type="button" class="mobile-info-toggle" @click.stop="toggleTooltip('lobo', $event)">
+                <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+              </button>
             </div>
             <div class="tooltip-list" :class="{ 'activo': activeTooltip === 'lobo' }" @click.stop>
               <ul>
@@ -791,13 +804,12 @@ const scrollToTop = () => {
 
       <!-- INTERRUPTOR DE EVENTOS/LUGARES (CENTRED) -->
       <div class="toggle-row">
-        <div class="toggle-container" style="display: flex; gap: 8px; padding: 6px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 30px; position: relative;">
+        <div class="toggle-container">
           <button 
             type="button"
             class="tab-btn" 
             :class="{ 'active': filtroActual === 'evento' }"
             @click="filtroActual = 'evento'"
-            style="border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
           >
             📍 Eventos
           </button>
@@ -806,7 +818,6 @@ const scrollToTop = () => {
             class="tab-btn" 
             :class="{ 'active': filtroActual === 'en_linea' }"
             @click="filtroActual = 'en_linea'"
-            style="border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
           >
             🖥️ En Línea
           </button>
@@ -815,7 +826,6 @@ const scrollToTop = () => {
             class="tab-btn" 
             :class="{ 'active': filtroActual === 'lugar' }"
             @click="filtroActual = 'lugar'"
-            style="border: none; padding: 10px 24px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"
           >
             🌿 Lugares
           </button>
@@ -1389,4 +1399,60 @@ const scrollToTop = () => {
 
 <style scoped>
 /* Swiper styles and particles are handled globally, but scoped overrides can go here if needed */
+
+.toggle-container {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 30px;
+  position: relative;
+  width: fit-content;
+  margin: 0 auto 2.5rem;
+}
+
+:global(body.dark-theme) .toggle-container {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+  background: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #1f2937;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+:global(body.dark-theme) .tab-btn {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+:global(body.dark-theme) .tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: #72B04D;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(114, 176, 77, 0.3);
+}
+
+:global(body.dark-theme) .tab-btn.active {
+  box-shadow: 0 4px 15px rgba(114, 176, 77, 0.4);
+}
 </style>

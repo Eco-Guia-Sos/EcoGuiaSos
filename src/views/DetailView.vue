@@ -35,14 +35,46 @@ const typeLabel = computed(() => isEventType.value ? 'evento' : 'lugar')
 // Slide images helper
 const images = computed(() => {
   if (!item.value) return ['/assets/img/kpop.webp']
-  let imgs = item.value.imagenes || []
-  if (!Array.isArray(imgs)) imgs = []
-  if (imgs.length === 0 && (item.value.imagen_url || item.value.imagen)) {
-    imgs.push(item.value.imagen_url || item.value.imagen)
+  let imgs = item.value.imagenes
+  
+  if (imgs) {
+    if (typeof imgs === 'string') {
+      try {
+        const parsed = JSON.parse(imgs)
+        if (Array.isArray(parsed)) {
+          imgs = parsed
+        } else {
+          imgs = [imgs]
+        }
+      } catch (e) {
+        if (imgs.trim()) {
+          imgs = [imgs.trim()]
+        } else {
+          imgs = []
+        }
+      }
+    }
+  } else {
+    imgs = []
   }
+
+  if (!Array.isArray(imgs)) {
+    imgs = []
+  }
+
+  imgs = imgs.filter((u: any) => typeof u === 'string' && u.trim() !== '')
+
+  if (imgs.length === 0) {
+    const singleImg = item.value.imagen || item.value.imagen_url
+    if (singleImg && typeof singleImg === 'string' && singleImg.trim()) {
+      imgs.push(singleImg.trim())
+    }
+  }
+
   if (imgs.length === 0) {
     imgs.push('/assets/img/kpop.webp')
   }
+
   return imgs
 })
 
@@ -73,13 +105,22 @@ const getMetaTitle = (net: any) => {
 const socialNetworks = computed(() => {
   if (!item.value) return []
   const keys = ['social_web', 'social_fb', 'social_ig', 'social_wa', 'social_x', 'social_yt']
+  const classes: Record<string, string> = {
+    social_web: 'web',
+    social_fb: 'facebook',
+    social_ig: 'instagram',
+    social_wa: 'whatsapp',
+    social_x: 'x-twitter',
+    social_yt: 'youtube'
+  }
   const nets = keys
     .filter(key => item.value[key])
     .map(key => ({
       key,
       url: item.value[key],
       icon: getMetaIcon(key),
-      title: getMetaTitle(key)
+      title: getMetaTitle(key),
+      className: classes[key] || 'web'
     }))
   return nets
 })
@@ -150,6 +191,9 @@ const loadDetailData = async () => {
       await checkFavoriteStatus()
     }
 
+    // Apagar la carga para que Vue renderice el contenedor del mapa en el DOM
+    loading.value = false
+
     await nextTick()
     
     // Map init
@@ -157,7 +201,6 @@ const loadDetailData = async () => {
   } catch (err: any) {
     console.error('Error cargando detalles:', err)
     errorMsg.value = err.message || 'Ocurrió un error inesperado.'
-  } finally {
     loading.value = false
   }
 }
@@ -319,29 +362,89 @@ const handleFavoriteToggle = async () => {
 
 // Mini Map initialization
 const initMiniMap = () => {
-  if (!item.value || !item.value.lat || !item.value.lng) return
+  console.log('[MiniMap] initMiniMap triggered');
+  if (!item.value) {
+    console.log('[MiniMap] Return early: item.value is null');
+    return;
+  }
+  console.log('[MiniMap] item values:', { modality: item.value.modalidad, lat: item.value.lat, lng: item.value.lng });
+  
+  if (item.value.lat == null || item.value.lng == null) {
+    console.log('[MiniMap] Return early: lat or lng is null/undefined');
+    return;
+  }
+
+  const lat = parseFloat(item.value.lat)
+  const lng = parseFloat(item.value.lng)
+  console.log('[MiniMap] parsed coordinates:', { lat, lng });
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    console.log('[MiniMap] Return early: lat or lng is NaN');
+    return;
+  }
 
   const container = document.getElementById('detail-mini-map')
-  if (!container) return
+  if (!container) {
+    console.log('[MiniMap] Return early: container #detail-mini-map not found in DOM');
+    return;
+  }
+  console.log('[MiniMap] Container found:', container);
+
+  if (typeof maplibregl === 'undefined') {
+    console.warn('[MiniMap] MapLibre GL library not loaded yet on window.');
+    return
+  }
 
   try {
     if (mapInstance) {
+      console.log('[MiniMap] Removing previous map instance');
       mapInstance.remove()
     }
 
+    console.log('[MiniMap] Instantiating new MapLibre instance...');
     mapInstance = new maplibregl.Map({
       container: 'detail-mini-map',
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-      center: [item.value.lng, item.value.lat],
+      style: {
+        version: 8,
+        sources: {
+          'carto-dark': {
+            type: 'raster',
+            tiles: [
+              'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+              'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+              'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+          }
+        },
+        layers: [
+          {
+            id: 'carto-dark-layer',
+            type: 'raster',
+            source: 'carto-dark',
+            minzoom: 0,
+            maxzoom: 20
+          }
+        ]
+      },
+      center: [lng, lat],
       zoom: 15,
       interactive: false
     })
 
-    new maplibregl.Marker({ color: '#72B04D' })
-      .setLngLat([item.value.lng, item.value.lat])
-      .addTo(mapInstance)
+    mapInstance.on('load', () => {
+      console.log('[MiniMap] MapInstance loaded event fired');
+      if (!mapInstance) return
+      mapInstance.resize()
+      
+      console.log('[MiniMap] Adding marker...');
+      new maplibregl.Marker({ color: '#72B04D' })
+        .setLngLat([lng, lat])
+        .addTo(mapInstance)
+    })
   } catch (e) {
-    console.error('Error loading MapLibre in detail view:', e)
+    console.error('[MiniMap] Exception caught:', e)
   }
 }
 
@@ -618,7 +721,7 @@ watch(() => route.path, () => {
                       :href="net.url" 
                       target="_blank"
                       class="social-btn"
-                      :class="net.key.split('_')[1]"
+                      :class="net.className"
                       :title="net.title"
                       style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); color: white; transition: 0.3s; border: 1px solid rgba(255,255,255,0.08);"
                     >

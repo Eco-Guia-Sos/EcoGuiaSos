@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
 import { useValidation } from '../composables/useValidation'
 import { EventoSchema, LugarSchema } from '../schemas'
+import { TerritoryService, type Territory } from '../services/territory.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -34,6 +35,13 @@ const formatToISO = (dateStr: string) => {
   } catch {
     return ''
   }
+}
+
+const resolveItemSection = (item: any) => {
+  if (selectedSection.value) return selectedSection.value
+  if (item.seccion_id) return item.seccion_id
+  if (item.fecha_inicio) return 'eventos'
+  return 'lugares'
 }
 
 // State
@@ -70,6 +78,39 @@ const isContentModalOpen = ref(false)
 const isPermissionsModalOpen = ref(false)
 const isProfileAdminModalOpen = ref(false)
 const isNotifReviewModalOpen = ref(false)
+
+// Volunteer profile details modal state
+const isVolunteerDetailModalOpen = ref(false)
+const selectedVolunteer = ref<any | null>(null)
+const volunteerFormEditable = ref(false)
+const volunteerFormSaving = ref(false)
+interface VolunteerFormType {
+  email: string
+  nombre_completo: string
+  telefono: string
+  zona_preferida: string
+  bio: string
+  habilidades: string
+  nivel_experiencia: string
+  disponibilidad: string
+  tiene_vehiculo: boolean
+  causas_interes: string[]
+  links_sociales: Record<string, any>
+}
+
+const volunteerForm = ref<VolunteerFormType>({
+  email: '',
+  nombre_completo: '',
+  telefono: '',
+  zona_preferida: '',
+  bio: '',
+  habilidades: '',
+  nivel_experiencia: '',
+  disponibilidad: '',
+  tiene_vehiculo: false,
+  causas_interes: [],
+  links_sociales: {}
+})
 
 const editingItem = ref<any>({
   id: null,
@@ -140,10 +181,26 @@ const profileForm = ref({
   whatsapp: '',
   twitter: '',
   youtube: '',
-  web: ''
+  web: '',
+  videos_presentacion: [] as string[],
+  zonas_impacto: [] as string[]
 })
 const activeProfileSocial = ref('facebook')
 const profileSaving = ref(false)
+
+// Estados y Municipios reactivos
+const estadosList = ref<Territory[]>([])
+
+// Para perfil propio
+const selectedEstado = ref('')
+const selectedMunicipio = ref('')
+const municipiosList = ref<Territory[]>([])
+
+// Para modal de administración
+const selectedEstadoAdmin = ref('')
+const selectedMunicipioAdmin = ref('')
+const municipiosListAdmin = ref<Territory[]>([])
+
 const avatarFile = ref<File | null>(null)
 const avatarUploading = ref(false)
 
@@ -159,8 +216,114 @@ const profileAdminForm = ref({
   facebook: '',
   instagram: '',
   twitter: '',
-  avatar_url: ''
+  avatar_url: '',
+  videos_presentacion: [] as string[],
+  permitir_edicion_videos: true,
+  is_validated: false,
+  zonas_impacto: [] as string[]
 })
+
+const SOCIAL_NETWORKS = [
+  { id: 'facebook', name: 'Facebook', icon: 'fa-brands fa-facebook', placeholder: 'https://facebook.com/tu-usuario' },
+  { id: 'instagram', name: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'https://instagram.com/tu-usuario' },
+  { id: 'twitter', name: 'X / Twitter', icon: 'fa-brands fa-x-twitter', placeholder: 'https://x.com/tu-usuario' },
+  { id: 'whatsapp', name: 'WhatsApp', icon: 'fa-brands fa-whatsapp', placeholder: 'https://wa.me/5255...' },
+  { id: 'youtube', name: 'YouTube', icon: 'fa-brands fa-youtube', placeholder: 'https://youtube.com/@tu-canal' },
+  { id: 'web', name: 'Sitio Web', icon: 'fa-solid fa-globe', placeholder: 'https://tu-sitio.com' }
+]
+
+const CAUSAS_OPTIONS = [
+  { id: 'reforestacion', emoji: '🌱', label: 'Reforestación' },
+  { id: 'agua', emoji: '💧', label: 'Agua' },
+  { id: 'fauna', emoji: '🦎', label: 'Fauna Silvestre' },
+  { id: 'educacion', emoji: '🌍', label: 'Educación Ambiental' },
+  { id: 'reciclaje', emoji: '♻️', label: 'Reciclaje' },
+  { id: 'huertos', emoji: '🌆', label: 'Huertos Urbanos' },
+  { id: 'conservacion_marina', emoji: '🌊', label: 'Conservación Marina' },
+  { id: 'polinizadores', emoji: '🦋', label: 'Polinizadores' },
+  { id: 'normativa', emoji: '📜', label: 'Normativa Ambiental' },
+]
+
+const ZONAS_DISPONIBLES = [
+  'Álvaro Obregón', 'Azcapotzalco', 'Benito Juárez', 'Coyoacán',
+  'Cuajimalpa', 'Cuauhtémoc', 'Gustavo A. Madero', 'Iztacalco',
+  'Iztapalapa', 'La Magdalena Contreras', 'Miguel Hidalgo', 'Milpa Alta',
+  'Tláhuac', 'Tlalpan', 'Venustiano Carranza', 'Xochimilco',
+  'Estado de México', 'Morelos', 'Hidalgo', 'Puebla',
+  'Nacional', 'Internacional'
+]
+
+
+const verPerfilVoluntario = (volu: any, editable: boolean) => {
+  closeActionsMenu()
+  selectedVolunteer.value = volu
+  volunteerFormEditable.value = editable
+  volunteerForm.value = {
+    email: volu.email || '',
+    nombre_completo: volu.nombre_completo || '',
+    telefono: volu.telefono || '',
+    zona_preferida: volu.zona_preferida || '',
+    bio: volu.bio || '',
+    habilidades: volu.habilidades || '',
+    nivel_experiencia: volu.nivel_experiencia || '',
+    disponibilidad: volu.disponibilidad || '',
+    tiene_vehiculo: volu.tiene_vehiculo || false,
+    causas_interes: volu.causas_interes ? [...volu.causas_interes] : [],
+    links_sociales: volu.links_sociales ? { ...volu.links_sociales } : {}
+  }
+  isVolunteerDetailModalOpen.value = true
+}
+
+const saveVolunteerProfile = async () => {
+  if (!selectedVolunteer.value) return
+  volunteerFormSaving.value = true
+  try {
+    const { error } = await supabase
+      .from('perfiles')
+      .update({
+        email: volunteerForm.value.email.trim(),
+        nombre_completo: volunteerForm.value.nombre_completo.trim(),
+        telefono: volunteerForm.value.telefono.trim(),
+        zona_preferida: volunteerForm.value.zona_preferida.trim(),
+        bio: volunteerForm.value.bio.trim(),
+        habilidades: volunteerForm.value.habilidades.trim(),
+        nivel_experiencia: volunteerForm.value.nivel_experiencia,
+        disponibilidad: volunteerForm.value.disponibilidad,
+        tiene_vehiculo: volunteerForm.value.tiene_vehiculo,
+        causas_interes: volunteerForm.value.causas_interes,
+        links_sociales: volunteerForm.value.links_sociales
+      })
+      .eq('id', selectedVolunteer.value.id)
+
+    if (error) throw error
+    alert('Perfil de voluntario guardado exitosamente.')
+    isVolunteerDetailModalOpen.value = false
+    
+    if (selectedSection.value === 'seguidores') {
+      fetchListData()
+    }
+    loadVoluntariosList()
+  } catch (err: any) {
+    alert('Error al guardar perfil de voluntario: ' + err.message)
+  } finally {
+    volunteerFormSaving.value = false
+  }
+}
+
+const sendResetPasswordEmailForVolunteer = async () => {
+  const emailToReset = volunteerForm.value.email || selectedVolunteer.value?.email
+  if (!emailToReset) {
+    alert('El voluntario no tiene un correo electrónico registrado.')
+    return
+  }
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(emailToReset)
+    if (error) throw error
+    alert('Se ha enviado un enlace de recuperación al correo: ' + emailToReset)
+  } catch (err: any) {
+    alert('Error al enviar enlace: ' + err.message)
+  }
+}
 
 const openProfileAdminModal = (actor: any) => {
   closeActionsMenu()
@@ -175,7 +338,11 @@ const openProfileAdminModal = (actor: any) => {
     facebook: actor.links_sociales?.facebook || '',
     instagram: actor.links_sociales?.instagram || '',
     twitter: actor.links_sociales?.twitter || '',
-    avatar_url: actor.avatar_url || ''
+    avatar_url: actor.avatar_url || '',
+    videos_presentacion: Array.isArray(actor.videos_presentacion) ? [...actor.videos_presentacion] : [],
+    permitir_edicion_videos: actor.permitir_edicion_videos ?? true,
+    is_validated: actor.is_validated || false,
+    zonas_impacto: Array.isArray(actor.zonas_impacto) ? [...actor.zonas_impacto] : []
   }
   isProfileAdminModalOpen.value = true
 }
@@ -186,6 +353,8 @@ const saveProfileAdmin = async () => {
     const { web, facebook, instagram, twitter, email, ...rest } = profileAdminForm.value
     const payload: any = { 
         ...rest,
+        zonas_impacto: [...(profileAdminForm.value.zonas_impacto || [])],
+        videos_presentacion: [...(profileAdminForm.value.videos_presentacion || [])],
         links_sociales: {
             ...(selectedActorForProfile.value.links_sociales || {}),
             web, facebook, instagram, twitter
@@ -479,10 +648,15 @@ const selectSection = (sectionId: string) => {
 
 // Load List data based on selection
 const fetchListData = async () => {
-  if (!selectedSection.value) return
+  // Always reset loading state first — avoids infinite spinner if called early
   loadingList.value = true
   listError.value = ''
   listItems.value = []
+
+  if (!selectedSection.value) {
+    loadingList.value = false
+    return
+  }
 
   try {
     if (selectedSection.value === 'seguidores') {
@@ -492,7 +666,12 @@ const fetchListData = async () => {
           id,
           created_at,
           actor_id,
-          user:perfiles!fk_seguimientos_user (id, nombre_completo, email, avatar_url, rol),
+          user:perfiles!fk_seguimientos_user (
+            id, nombre_completo, email, avatar_url, rol,
+            telefono, bio, zona_preferida, disponibilidad,
+            causas_interes, habilidades, nivel_experiencia,
+            tiene_vehiculo, links_sociales
+          ),
           actor:perfiles!fk_seguimientos_actor (id, nombre_completo, email, avatar_url)
         `)
       
@@ -539,7 +718,11 @@ const fetchListData = async () => {
 
     // Moderation status constraints
     if (moderationFilter.value !== 'all') {
-      query = query.eq('estado', moderationFilter.value)
+      if (moderationFilter.value === 'approved') {
+        query = query.in('estado', ['approved', 'publicado'])
+      } else {
+        query = query.eq('estado', moderationFilter.value)
+      }
     }
 
     const { data, error } = await query.order('created_at', { ascending: false })
@@ -684,7 +867,7 @@ const loadVoluntariosList = async () => {
   if (!isUserAdmin.value) return
   const { data } = await supabase
     .from('perfiles')
-    .select('id, nombre_completo, email, rol, created_at')
+    .select('id, nombre_completo, email, rol, created_at, avatar_url, telefono, bio, zona_preferida, disponibilidad, causas_interes, habilidades, nivel_experiencia, tiene_vehiculo, links_sociales')
     .eq('rol', 'user')
     .order('created_at', { ascending: false })
   
@@ -955,6 +1138,41 @@ const openEditModal = (item: any) => {
   placeErrors.value = {}
   gmapsLink.value = ''
 
+  // Determine section if on dashboard
+  if (!selectedSection.value) {
+    selectedSection.value = resolveItemSection(item)
+  }
+
+  // Parse images robustly
+  let imgs = item.imagenes
+  if (imgs) {
+    if (typeof imgs === 'string') {
+      try {
+        const parsed = JSON.parse(imgs)
+        if (Array.isArray(parsed)) {
+          imgs = parsed
+        } else {
+          imgs = [imgs]
+        }
+      } catch (e) {
+        if (imgs.trim()) {
+          imgs = [imgs.trim()]
+        } else {
+          imgs = []
+        }
+      }
+    }
+  } else {
+    imgs = []
+  }
+  if (!Array.isArray(imgs)) {
+    imgs = []
+  }
+  imgs = imgs.filter((u: any) => typeof u === 'string' && u.trim() !== '')
+  if (imgs.length === 0 && (item.imagen || item.imagen_url)) {
+    imgs.push(item.imagen || item.imagen_url)
+  }
+
   // Load data for editing
   editingItem.value = { 
     ...item,
@@ -969,7 +1187,7 @@ const openEditModal = (item: any) => {
     social_x: item.social_x || '',
     social_yt: item.social_yt || '',
     social_web: item.social_web || '',
-    imagenes: item.imagenes || []
+    imagenes: imgs
   }
 
   if (selectedSection.value === 'eventos') {
@@ -992,16 +1210,29 @@ const openEditModal = (item: any) => {
   } else {
     // Parse meta fields from description JSON
     let descTxt = item.descripcion || ''
-    let metaFields = {}
+    const metaFields: any = {}
+    
+    // Pre-initialize metadata keys based on section config
+    if (selectedSection.value) {
+      const config = SECTION_CONFIGS[selectedSection.value]
+      if (config) {
+        config.fields.forEach(f => {
+          metaFields[f.id] = f.type === 'select' ? f.options?.[0] || '' : ''
+        })
+      }
+    }
+
     try {
       if (descTxt.trim().startsWith('{')) {
         const parsed = JSON.parse(descTxt)
-        metaFields = parsed
+        Object.assign(metaFields, parsed)
         descTxt = parsed.descripcion_texto || ''
       }
     } catch (e) {
       // Ignored
     }
+
+    editingItem.value.titulo = item.titulo || item.nombre || ''
     editingItem.value.descripcion_texto = descTxt
     editingItem.value.meta = metaFields
     isContentModalOpen.value = true
@@ -1070,7 +1301,7 @@ const saveItem = async () => {
 
       dbPayload = {
         ...eventData,
-        imagen: editingItem.value.imagen || '',
+        imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
         imagenes: editingItem.value.imagenes || [],
         estado: isEditing ? editingItem.value.estado : (isUserAdmin.value ? 'approved' : 'pending')
       }
@@ -1105,8 +1336,16 @@ const saveItem = async () => {
         ...editingItem.value.meta,
         descripcion_texto: editingItem.value.descripcion_texto
       })
+      
+      let hub = 'colibri'
+      if (selectedSection.value) {
+        if (['voluntariados', 'convocatoria'].includes(selectedSection.value)) hub = 'ajolote'
+        else if (['normativa', 'fondos'].includes(selectedSection.value)) hub = 'lobo'
+      }
+
       dbPayload = {
         seccion_id: selectedSection.value,
+        parent_hub: hub,
         titulo: editingItem.value.titulo,
         descripcion: fullDesc,
         imagen_url: editingItem.value.imagen_url,
@@ -1161,9 +1400,14 @@ const saveItem = async () => {
     }
 
     console.log('[Save Debug] Save query completed successfully!')
-    alert('Registro guardado correctamente.')
     closeAllModals()
-    fetchListData()
+    if (activeTab.value === 'dashboard') {
+      fetchDashboardList()
+      fetchGlobalStats()
+    } else {
+      fetchListData()
+    }
+    alert('Registro guardado correctamente.')
   } catch (e: any) {
     console.error('[Save Debug] Exception caught in saveItem:', e)
     alert('Error al guardar el registro: ' + e.message)
@@ -1175,10 +1419,12 @@ const deleteItem = async (item: any) => {
   if (!confirm('¿Estás seguro de que deseas eliminar este registro?')) return
   try {
     let error: any
-    if (selectedSection.value === 'eventos') {
+    const section = resolveItemSection(item)
+    
+    if (section === 'eventos') {
       const { error: e } = await supabase.from('eventos').delete().eq('id', item.id)
       error = e
-    } else if (selectedSection.value === 'lugares') {
+    } else if (section === 'lugares') {
       const { error: e } = await supabase.from('lugares').delete().eq('id', item.id)
       error = e
     } else {
@@ -1188,7 +1434,13 @@ const deleteItem = async (item: any) => {
 
     if (error) throw error
     alert('Registro eliminado.')
-    fetchListData()
+    
+    if (activeTab.value === 'dashboard') {
+      fetchDashboardList()
+      fetchGlobalStats()
+    } else {
+      fetchListData()
+    }
   } catch (e: any) {
     alert('Error al eliminar: ' + e.message)
   }
@@ -1200,11 +1452,12 @@ const updateModerationStatus = async (item: any, newStatus: 'approved' | 'reject
   try {
     let error: any
     const payload = { estado: newStatus }
+    const section = resolveItemSection(item)
 
-    if (selectedSection.value === 'eventos') {
+    if (section === 'eventos') {
       const { error: e } = await supabase.from('eventos').update(payload).eq('id', item.id)
       error = e
-    } else if (selectedSection.value === 'lugares') {
+    } else if (section === 'lugares') {
       const { error: e } = await supabase.from('lugares').update(payload).eq('id', item.id)
       error = e
     } else {
@@ -1215,10 +1468,16 @@ const updateModerationStatus = async (item: any, newStatus: 'approved' | 'reject
     if (error) throw error
     
     // Optionally trigger revision notifications as in Vanilla JS
-    await enviarNotificacionRevision(item.owner_id, selectedSection.value || 'contenido', newStatus)
+    await enviarNotificacionRevision(item.owner_id, section || 'contenido', newStatus)
 
     alert(`Estado actualizado a: ${newStatus === 'approved' ? 'Aprobado' : 'Rechazado'}`)
-    fetchListData()
+    
+    if (activeTab.value === 'dashboard') {
+      fetchDashboardList()
+      fetchGlobalStats()
+    } else {
+      fetchListData()
+    }
   } catch (e: any) {
     alert('Error al moderar: ' + e.message)
   }
@@ -1360,6 +1619,74 @@ const savePermissions = async () => {
   }
 }
 
+// Métodos para cargar municipios y gestionar zonas de impacto
+const onEstadoChange = async (formType: 'own' | 'admin') => {
+  const code = formType === 'own' ? selectedEstado.value : selectedEstadoAdmin.value
+  try {
+    if (formType === 'own') {
+      selectedMunicipio.value = ''
+      municipiosList.value = []
+      if (code) {
+        municipiosList.value = await TerritoryService.getMunicipalities(code)
+      }
+    } else {
+      selectedMunicipioAdmin.value = ''
+      municipiosListAdmin.value = []
+      if (code) {
+        municipiosListAdmin.value = await TerritoryService.getMunicipalities(code)
+      }
+    }
+  } catch (err) {
+    console.error('Error al cargar municipios:', err)
+  }
+}
+
+const agregarZonaImpacto = (formType: 'own' | 'admin') => {
+  if (formType === 'own') {
+    if (!selectedEstado.value) return
+    const est = estadosList.value.find(e => e.code === selectedEstado.value)
+    if (!est) return
+    
+    let zonaStr = est.name
+    if (selectedMunicipio.value) {
+      zonaStr = `${selectedMunicipio.value}, ${est.name}`
+    }
+    
+    if (!profileForm.value.zonas_impacto) {
+      profileForm.value.zonas_impacto = []
+    }
+    if (!profileForm.value.zonas_impacto.includes(zonaStr)) {
+      profileForm.value.zonas_impacto.push(zonaStr)
+    }
+    selectedMunicipio.value = ''
+  } else {
+    if (!selectedEstadoAdmin.value) return
+    const est = estadosList.value.find(e => e.code === selectedEstadoAdmin.value)
+    if (!est) return
+    
+    let zonaStr = est.name
+    if (selectedMunicipioAdmin.value) {
+      zonaStr = `${selectedMunicipioAdmin.value}, ${est.name}`
+    }
+    
+    if (!profileAdminForm.value.zonas_impacto) {
+      profileAdminForm.value.zonas_impacto = []
+    }
+    if (!profileAdminForm.value.zonas_impacto.includes(zonaStr)) {
+      profileAdminForm.value.zonas_impacto.push(zonaStr)
+    }
+    selectedMunicipioAdmin.value = ''
+  }
+}
+
+const removerZonaImpacto = (zona: string, formType: 'own' | 'admin') => {
+  if (formType === 'own') {
+    profileForm.value.zonas_impacto = (profileForm.value.zonas_impacto || []).filter(z => z !== zona)
+  } else {
+    profileAdminForm.value.zonas_impacto = (profileAdminForm.value.zonas_impacto || []).filter(z => z !== zona)
+  }
+}
+
 // Profile edit methods
 const loadProfileForm = () => {
   if (!authStore.profile) return
@@ -1373,7 +1700,9 @@ const loadProfileForm = () => {
     whatsapp: p.links_sociales?.whatsapp || '',
     twitter: p.links_sociales?.twitter || '',
     youtube: p.links_sociales?.youtube || '',
-    web: p.links_sociales?.web || ''
+    web: p.links_sociales?.web || '',
+    videos_presentacion: Array.isArray(p.videos_presentacion) ? [...p.videos_presentacion] : [],
+    zonas_impacto: Array.isArray(p.zonas_impacto) ? [...p.zonas_impacto] : []
   }
 }
 
@@ -1391,10 +1720,11 @@ const saveProfile = async () => {
   if (!authStore.user) return
   profileSaving.value = true
   try {
-    const payload = {
+    const payload: any = {
       nombre_completo: profileForm.value.nombre_completo,
       bio: profileForm.value.bio,
       telefono: profileForm.value.telefono,
+      zonas_impacto: [...(profileForm.value.zonas_impacto || [])],
       links_sociales: {
         facebook: profileForm.value.facebook,
         instagram: profileForm.value.instagram,
@@ -1403,6 +1733,10 @@ const saveProfile = async () => {
         youtube: profileForm.value.youtube,
         web: profileForm.value.web
       }
+    }
+
+    if (authStore.profile?.permitir_edicion_videos !== false) {
+      payload.videos_presentacion = [...(profileForm.value.videos_presentacion || [])]
     }
 
     const { error } = await supabase.from('perfiles').update(payload).eq('id', authStore.user.id)
@@ -1910,6 +2244,10 @@ const closeAllModals = () => {
   isSliderModalOpen.value = false
   eventErrors.value = {}
   placeErrors.value = {}
+
+  if (activeTab.value === 'dashboard') {
+    selectedSection.value = null
+  }
 }
 
 // Handle query parameter deep linking
@@ -1917,15 +2255,25 @@ const checkQueryParams = () => {
   const action = route.query.action
   const section = route.query.section as string
   const hub = route.query.hub as 'colibri' | 'ajolote' | 'lobo'
+  const tab = route.query.tab as string
 
   if (action === 'new' && section && hub) {
     showHubMenu(hub)
     selectSection(section)
     setTimeout(() => openAddModal(), 300)
+  } else if (tab) {
+    activeTab.value = tab
   }
 }
 
 onMounted(async () => {
+  // Cargar estados
+  try {
+    estadosList.value = await TerritoryService.getStates()
+  } catch (e) {
+    console.error('Error al cargar estados en panel:', e)
+  }
+
   if (!authStore.initialized) {
     await authStore.init()
   } else if (authStore.loading) {
@@ -1953,6 +2301,20 @@ onMounted(async () => {
   // Add global click listener for actions menu
   document.addEventListener('click', closeActionsMenu)
 })
+
+// Defensive watcher: if profile resolves asynchronously after mount (race condition),
+// reload dashboard data so the UI is never left empty or stuck.
+watch(() => authStore.profile, (newProfile, oldProfile) => {
+  if (newProfile && !oldProfile && listItems.value.length === 0) {
+    // Profile just resolved — ensure data is loaded
+    Promise.all([
+      fetchActorPermissions(),
+      fetchGlobalStats(),
+      fetchDashboardList()
+    ])
+    loadProfileForm()
+  }
+}, { immediate: false })
 
 onUnmounted(() => {
   document.removeEventListener('click', closeActionsMenu)
@@ -2199,9 +2561,6 @@ const formatRelativeDate = (dateStr: string) => {
               <i class="fa-solid fa-calendar-day"></i>
               <span>{{ new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) }}</span>
             </div>
-            <button class="desktop-sidebar-toggle" @click="isSidebarCollapsed = !isSidebarCollapsed" title="Contraer sidebar">
-              <i :class="isSidebarCollapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left'"></i>
-            </button>
           </div>
         </header>
 
@@ -2275,7 +2634,7 @@ const formatRelativeDate = (dateStr: string) => {
               </h2>
             </div>
 
-            <div v-if="selectedSection !== 'seguidores'" class="moderation-tabs-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div v-if="selectedSection !== 'seguidores' && isUserAdmin" class="moderation-tabs-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
               <button class="tab-btn" :class="{ 'active': moderationFilter === 'all' }" @click="moderationFilter = 'all'">Todos</button>
               <button class="tab-btn" :class="{ 'active': moderationFilter === 'approved' }" @click="moderationFilter = 'approved'">Aprobados</button>
               <button class="tab-btn" :class="{ 'active': moderationFilter === 'pending' }" @click="moderationFilter = 'pending'">Pendientes</button>
@@ -2365,7 +2724,16 @@ const formatRelativeDate = (dateStr: string) => {
                     <td style="padding: 15px 20px; text-align: right; color: #64748b; font-size: 0.85rem;">
                       {{ formatRelativeDate(item.created_at) }}
                     </td>
-                    <td v-if="!isUserAdmin || seguidoresTabFilter === 'mis_seguidores'" style="padding: 15px 20px; text-align: right;">
+                    <td v-if="!isUserAdmin || seguidoresTabFilter === 'mis_seguidores'" style="padding: 15px 20px; text-align: right; display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                      <button 
+                        v-if="item.user?.rol === 'user'" 
+                        class="action-btn" 
+                        @click="verPerfilVoluntario(item.user, false)" 
+                        title="Ver Perfil de Voluntario" 
+                        style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                      >
+                        <i class="fa-solid fa-circle-user"></i>
+                      </button>
                       <button class="action-btn" @click="openMessageModal(item.user)" title="Enviar Mensaje" style="background: rgba(114, 176, 77, 0.15); color: #72B04D; border: 1px solid rgba(114, 176, 77, 0.2); width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
                         <i class="fa-solid fa-paper-plane"></i>
                       </button>
@@ -2583,7 +2951,7 @@ const formatRelativeDate = (dateStr: string) => {
                         Acciones <i class="fa-solid fa-ellipsis"></i>
                       </button>
                       <div class="actions-menu" :class="{ 'active': activeDropdown === actor.id }">
-                        <a href="#" @click.stop.prevent="openProfileAdminModal(actor)">
+                        <a href="#" @click.stop.prevent="verPerfilVoluntario(actor, true)">
                           <i class="fa-solid fa-user-gear"></i> Gestión de Voluntario
                         </a>
                         <div class="actions-divider"></div>
@@ -2680,9 +3048,104 @@ const formatRelativeDate = (dateStr: string) => {
                     </div>
                 </div>
 
+                <!-- ZONAS DE IMPACTO EN PERFIL PROPIO -->
+                <div class="form-section">
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                      <i class="fa-solid fa-earth-americas" style="color: var(--color-eco); margin-right: 8px;"></i> Zonas de Impacto
+                    </h3>
+                    <p style="color: var(--admin-text-muted); font-size: 0.85rem; margin-bottom: 15px;">Selecciona el Estado y Municipio / Alcaldía para agregar tus áreas de impacto.</p>
+                    
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                      <div style="flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.8rem; color: #a3aab1; font-weight: 600; text-transform: uppercase;">Estado</label>
+                        <select v-model="selectedEstado" @change="onEstadoChange('own')" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white;">
+                          <option value="">Selecciona un Estado</option>
+                          <option v-for="est in estadosList" :key="est.code" :value="est.code">{{ est.name }}</option>
+                        </select>
+                      </div>
+                      <div style="flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 0.8rem; color: #a3aab1; font-weight: 600; text-transform: uppercase;">Municipio / Alcaldía</label>
+                        <select v-model="selectedMunicipio" :disabled="!selectedEstado || municipiosList.length === 0" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white;">
+                          <option value="">Todo el Estado (General)</option>
+                          <option v-for="mun in municipiosList" :key="mun.code" :value="mun.name">{{ mun.name }}</option>
+                        </select>
+                      </div>
+                      <div style="display: flex; align-items: flex-end;">
+                        <button type="button" @click="agregarZonaImpacto('own')" class="btn-admin" style="background: var(--color-eco); color: black; font-weight: 700; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; height: 42px; display: flex; align-items: center; gap: 6px;">
+                          <i class="fa-solid fa-plus"></i> Agregar
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Lista de Zonas Agregadas (Chips) -->
+                    <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 15px;">
+                      <label style="font-size: 0.8rem; color: #a3aab1; display: block; margin-bottom: 10px; font-weight: 600; text-transform: uppercase;">Mis Zonas de Impacto Agregadas</label>
+                      <div class="chips-grid" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span 
+                          v-for="zona in profileForm.zonas_impacto" 
+                          :key="zona" 
+                          class="zona-chip"
+                          style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 20px; background: rgba(114, 176, 77, 0.15); border: 1px solid rgba(114, 176, 77, 0.3); color: #72B04D; font-size: 0.8rem; font-weight: 600;"
+                        >
+                          <span>{{ zona }}</span>
+                          <button type="button" @click="removerZonaImpacto(zona, 'own')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem; padding: 0; display: inline-flex; align-items: center;" title="Eliminar zona">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                          </button>
+                        </span>
+                        <p v-if="!profileForm.zonas_impacto || profileForm.zonas_impacto.length === 0" style="color: #666; font-size: 0.85rem; font-style: italic; margin: 0;">No has agregado zonas de impacto aún.</p>
+                      </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN VIDEOS DE PRESENTACIÓN EN PERFIL PROPIO -->
+                <div class="form-section">
+                    <h3><i class="fa-brands fa-youtube" style="color: #FF0000; margin-right: 8px;"></i> Videos de Presentación</h3>
+                    
+                    <div v-if="authStore.profile?.permitir_edicion_videos === false" style="background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+                      <p style="color: #ef4444; font-size: 0.9rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-lock"></i> La edición de tus videos de presentación ha sido deshabilitada por el administrador.
+                      </p>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <div v-for="(videoUrl, index) in profileForm.videos_presentacion" :key="index" style="display: flex; gap: 10px; align-items: center;">
+                        <div style="position: relative; flex: 1;">
+                          <i class="fa-brands fa-youtube" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #FF0000;"></i>
+                          <input 
+                            type="url" 
+                            v-model="profileForm.videos_presentacion[index]" 
+                            placeholder="https://www.youtube.com/watch?v=..." 
+                            :disabled="authStore.profile?.permitir_edicion_videos === false"
+                            style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px 12px 12px 44px; outline: none;"
+                          >
+                        </div>
+                        <button 
+                          type="button" 
+                          class="action-btn btn-danger" 
+                          @click="profileForm.videos_presentacion.splice(index, 1)"
+                          :disabled="authStore.profile?.permitir_edicion_videos === false"
+                          style="width: 44px; height: 44px; border-radius: 8px;"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
+
+                      <button 
+                        v-if="profileForm.videos_presentacion.length < 5"
+                        type="button" 
+                        class="btn-admin" 
+                        @click="profileForm.videos_presentacion.push('')"
+                        :disabled="authStore.profile?.permitir_edicion_videos === false"
+                        style="width: fit-content; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;"
+                      >
+                        <i class="fa-solid fa-plus"></i> Agregar enlace de video
+                      </button>
+                    </div>
+                </div>
+
                 <div class="form-section">
                     <h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="shield-check" aria-hidden="true" style="width: 18px;" class="lucide lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg> Seguridad de la Cuenta</h3>
-                    <div class="security-split-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="security-split-grid">
                         <!-- Columna Email -->
                         <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
                             <h4 style="color: white; margin-bottom: 15px; font-size: 0.95rem;">Correo Electrónico</h4>
@@ -2720,7 +3183,7 @@ const formatRelativeDate = (dateStr: string) => {
         </div>
 
         <!-- 6. NOTIFICATIONS VIEW -->
-        <div v-else-if="activeTab === 'notificaciones'" class="notif-view-container" style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
+        <div v-else-if="activeTab === 'notificaciones'" class="notif-view-container">
           <!-- SEND NOTIFICATION FORM -->
           <div class="notif-composer glass-effect" style="padding: 25px; border-radius: 20px;">
             <h2 style="color: white; font-weight: 800; font-size: 1.3rem; margin-bottom: 20px;">Redactar Alerta</h2>
@@ -3694,6 +4157,116 @@ const formatRelativeDate = (dateStr: string) => {
                         </div>
                     </div>
 
+                    <!-- CONTROL VIDEOS (Admin config) -->
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--admin-border); padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+                      <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: white;">
+                        <span style="font-size: 0.95rem; font-weight: 600;">Permitir al actor gestionar sus videos de presentación</span>
+                        <div style="position: relative; width: 44px; height: 24px;">
+                          <input type="checkbox" v-model="profileAdminForm.permitir_edicion_videos" style="opacity: 0; width: 0; height: 0;">
+                          <span class="slider round" :style="{ background: profileAdminForm.permitir_edicion_videos ? 'var(--color-eco)' : 'rgba(255,255,255,0.2)', position: 'absolute', cursor: 'pointer', top: '0', left: '0', right: '0', bottom: '0', borderRadius: '34px', transition: '.4s' }">
+                            <span :style="{ position: 'absolute', height: '18px', width: '18px', left: profileAdminForm.permitir_edicion_videos ? '22px' : '3px', bottom: '3px', backgroundColor: 'white', borderRadius: '50%', transition: '.4s' }"></span>
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <!-- CONTROL VERIFICACION (Admin config) -->
+                    <div v-if="profileAdminForm.rol === 'actor'" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--admin-border); padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+                      <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: white;">
+                        <span style="font-size: 0.95rem; font-weight: 600;">Verificar Perfil (Eco Actor Verificado)</span>
+                        <div style="position: relative; width: 44px; height: 24px;">
+                          <input type="checkbox" v-model="profileAdminForm.is_validated" style="opacity: 0; width: 0; height: 0;">
+                          <span class="slider round" :style="{ background: profileAdminForm.is_validated ? 'var(--color-eco)' : 'rgba(255,255,255,0.2)', position: 'absolute', cursor: 'pointer', top: '0', left: '0', right: '0', bottom: '0', borderRadius: '34px', transition: '.4s' }">
+                            <span :style="{ position: 'absolute', height: '18px', width: '18px', left: profileAdminForm.is_validated ? '22px' : '3px', bottom: '3px', backgroundColor: 'white', borderRadius: '50%', transition: '.4s' }"></span>
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <!-- ZONAS DE IMPACTO (Admin view/edit) -->
+                    <div v-if="profileAdminForm.rol === 'actor'" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--admin-border); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                      <label style="color: white; font-weight: 700; margin-bottom: 5px; display: block;">Zonas de Impacto</label>
+                      <p style="color: var(--admin-text-muted); font-size: 0.8rem; margin-bottom: 12px;">Selecciona el Estado y Municipio para agregar a las zonas del actor:</p>
+                      
+                      <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px;">
+                          <label style="font-size: 0.75rem; color: #a3aab1; font-weight: 600; text-transform: uppercase;">Estado</label>
+                          <select v-model="selectedEstadoAdmin" @change="onEstadoChange('admin')" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; font-size: 0.85rem;">
+                            <option value="">Selecciona un Estado</option>
+                            <option v-for="est in estadosList" :key="est.code" :value="est.code">{{ est.name }}</option>
+                          </select>
+                        </div>
+                        <div style="flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px;">
+                          <label style="font-size: 0.75rem; color: #a3aab1; font-weight: 600; text-transform: uppercase;">Municipio / Alcaldía</label>
+                          <select v-model="selectedMunicipioAdmin" :disabled="!selectedEstadoAdmin || municipiosListAdmin.length === 0" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; font-size: 0.85rem;">
+                            <option value="">Todo el Estado (General)</option>
+                            <option v-for="mun in municipiosListAdmin" :key="mun.code" :value="mun.name">{{ mun.name }}</option>
+                          </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                          <button type="button" @click="agregarZonaImpacto('admin')" class="btn-admin" style="background: var(--color-eco); color: black; font-weight: 700; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; height: 35px; display: flex; align-items: center; gap: 4px; font-size: 0.8rem;">
+                            <i class="fa-solid fa-plus"></i> Agregar
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Lista de Zonas Agregadas (Chips) -->
+                      <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 12px;">
+                        <label style="font-size: 0.75rem; color: #a3aab1; display: block; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Zonas Agregadas</label>
+                        <div class="chips-grid" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                          <span 
+                            v-for="zona in profileAdminForm.zonas_impacto" 
+                            :key="zona" 
+                            class="zona-chip"
+                            style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(114, 176, 77, 0.15); border: 1px solid rgba(114, 176, 77, 0.3); color: #72B04D; font-size: 0.75rem; font-weight: 600;"
+                          >
+                            <span>{{ zona }}</span>
+                            <button type="button" @click="removerZonaImpacto(zona, 'admin')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.85rem; padding: 0; display: inline-flex; align-items: center;" title="Eliminar zona">
+                              <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                          </span>
+                          <p v-if="!profileAdminForm.zonas_impacto || profileAdminForm.zonas_impacto.length === 0" style="color: #666; font-size: 0.8rem; font-style: italic; margin: 0;">No se han agregado zonas de impacto.</p>
+                        </div>
+                      </div>
+                    </div>
+
+
+                    <!-- VIDEOS DE PRESENTACION (Admin view/edit) -->
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="color: white; font-weight: 700; margin-bottom: 10px; display: block;">Videos de Presentación (Admin/Actor)</label>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                          <div v-for="(videoUrl, index) in profileAdminForm.videos_presentacion" :key="index" style="display: flex; gap: 10px; align-items: center;">
+                            <div style="position: relative; flex: 1;">
+                              <i class="fa-brands fa-youtube" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #FF0000;"></i>
+                              <input 
+                                type="url" 
+                                v-model="profileAdminForm.videos_presentacion[index]" 
+                                placeholder="https://www.youtube.com/watch?v=..." 
+                                style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px 12px 12px 44px; outline: none;"
+                              >
+                            </div>
+                            <button 
+                              type="button" 
+                              class="action-btn btn-danger" 
+                              @click="profileAdminForm.videos_presentacion.splice(index, 1)"
+                              style="width: 44px; height: 44px; border-radius: 8px;"
+                            >
+                              <i class="fa-solid fa-trash"></i>
+                            </button>
+                          </div>
+
+                          <button 
+                            v-if="profileAdminForm.videos_presentacion.length < 5"
+                            type="button" 
+                            class="btn-admin" 
+                            @click="profileAdminForm.videos_presentacion.push('')"
+                            style="width: fit-content; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;"
+                          >
+                            <i class="fa-solid fa-plus"></i> Agregar enlace de video
+                          </button>
+                        </div>
+                    </div>
+
                     <!-- SECCIÓN DE SEGURIDAD EN MODAL -->
                     <div class="form-section security-section-admin" style="margin-bottom: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
                         <h3 style="font-size: 0.9rem; color: var(--admin-accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
@@ -3744,12 +4317,245 @@ const formatRelativeDate = (dateStr: string) => {
             </div>
         </div>
     </div>
+
+    <!-- MODAL DETALLE DE VOLUNTARIO (VER / EDITAR) -->
+    <div v-if="isVolunteerDetailModalOpen" class="modal-overlay">
+        <div class="modal-content glass-effect" style="max-width: 650px; width: 90%; max-height: 90vh; overflow-y: auto; text-align: left;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="header-icon-box" style="background: rgba(114, 176, 77, 0.15); color: #72B04D; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <h2 style="margin: 0; color: white; font-weight: 700; font-size: 1.2rem;">{{ volunteerFormEditable ? 'Gestión de Voluntario' : 'Perfil del Voluntario' }}</h2>
+                        <p style="color: var(--admin-text-muted); font-size: 0.85rem; margin: 2px 0 0 0;">
+                            {{ volunteerFormEditable ? 'Edita la información del voluntario.' : 'Información detallada del seguidor.' }}
+                        </p>
+                    </div>
+                </div>
+                <button class="close-modal-btn" @click="isVolunteerDetailModalOpen = false" style="background: none; border: none; color: #64748b; font-size: 1.2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="modal-body" style="padding: 25px;">
+                <form @submit.prevent="saveVolunteerProfile">
+                    
+                    <!-- Avatar & Nombre -->
+                    <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 25px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <img 
+                          :src="selectedVolunteer?.avatar_url || '/assets/img/logo-app.webp'" 
+                          alt="Avatar" 
+                          style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #72B04D;"
+                        />
+                        <div style="flex: 1;">
+                            <div v-if="volunteerFormEditable" style="display: flex; flex-direction: column; gap: 10px;">
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Nombre Completo</label>
+                                    <input type="text" v-model="volunteerForm.nombre_completo" required style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Correo Electrónico</label>
+                                    <input type="email" v-model="volunteerForm.email" required style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white;">
+                                </div>
+                            </div>
+                            <div v-else>
+                                <h3 style="margin: 0 0 5px 0; color: white; font-weight: 700; font-size: 1.2rem;">{{ volunteerForm.nombre_completo || 'Sin nombre' }}</h3>
+                                <p style="margin: 0; color: #64748b; font-size: 0.9rem;">{{ volunteerForm.email || selectedVolunteer?.email || 'N/A' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos de Contacto y Ubicación -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Teléfono</label>
+                            <input v-if="volunteerFormEditable" type="text" v-model="volunteerForm.telefono" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white;">
+                            <p v-else style="color: white; margin: 5px 0 0 0; font-size: 0.95rem;">
+                                <i class="fa-solid fa-phone" style="color: #72B04D; margin-right: 8px;"></i>
+                                {{ volunteerForm.telefono || 'No proporcionado' }}
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Zona / Alcaldía</label>
+                            <input v-if="volunteerFormEditable" type="text" v-model="volunteerForm.zona_preferida" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white;">
+                            <p v-else style="color: white; margin: 5px 0 0 0; font-size: 0.95rem;">
+                                <i class="fa-solid fa-location-dot" style="color: #72B04D; margin-right: 8px;"></i>
+                                {{ volunteerForm.zona_preferida || 'No proporcionada' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Bio / Habilidades -->
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Biografía / Presentación</label>
+                        <textarea v-if="volunteerFormEditable" v-model="volunteerForm.bio" rows="2" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; resize: vertical; outline: none;"></textarea>
+                        <p v-else style="color: #cbd5e1; margin: 5px 0 0 0; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">
+                            {{ volunteerForm.bio || 'Sin biografía' }}
+                        </p>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Habilidades que aporta</label>
+                        <textarea v-if="volunteerFormEditable" v-model="volunteerForm.habilidades" rows="2" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; resize: vertical; outline: none;"></textarea>
+                        <p v-else style="color: #cbd5e1; margin: 5px 0 0 0; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">
+                            {{ volunteerForm.habilidades || 'Ninguna descrita' }}
+                        </p>
+                    </div>
+
+                    <!-- Disponibilidad y Vehículo -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Nivel de Experiencia</label>
+                            <select v-if="volunteerFormEditable" v-model="volunteerForm.nivel_experiencia" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; outline: none;">
+                                <option value="" disabled hidden>Selecciona experiencia</option>
+                                <option value="Principiante">🐦 Colibrí (Principiante / Con ganas de aprender)</option>
+                                <option value="Intermedio">🦎 Ajolote (Intermedio / Con alguna experiencia)</option>
+                                <option value="Experimentado">🐺 Lobo (Experimentado / Experto en la materia)</option>
+                            </select>
+                            <p v-else style="color: white; margin: 5px 0 0 0; font-size: 0.95rem;">
+                                <i class="fa-solid fa-award" style="color: #72B04D; margin-right: 8px;"></i>
+                                {{ 
+                                  volunteerForm.nivel_experiencia === 'Principiante' ? '🐦 Colibrí (Principiante / Con ganas de aprender)' :
+                                  volunteerForm.nivel_experiencia === 'Intermedio' ? '🦎 Ajolote (Intermedio / Con alguna experiencia)' :
+                                  volunteerForm.nivel_experiencia === 'Experimentado' ? '🐺 Lobo (Experimentado / Experto en la materia)' :
+                                  volunteerForm.nivel_experiencia || 'No especificado'
+                                }}
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Disponibilidad</label>
+                            <select v-if="volunteerFormEditable" v-model="volunteerForm.disponibilidad" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; outline: none;">
+                                <option value="" disabled hidden>Selecciona disponibilidad</option>
+                                <option value="Fines de semana">Fines de semana</option>
+                                <option value="Entre semana">Entre semana</option>
+                                <option value="Ambas">Fines de semana y Entre semana</option>
+                                <option value="Tiempo completo">Tiempo completo</option>
+                            </select>
+                            <p v-else style="color: white; margin: 5px 0 0 0; font-size: 0.95rem;">
+                                <i class="fa-solid fa-calendar-days" style="color: #72B04D; margin-right: 8px;"></i>
+                                {{ volunteerForm.disponibilidad || 'No especificada' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">¿Cuenta con vehículo propio?</label>
+                        <div v-if="volunteerFormEditable" style="margin-top: 8px;">
+                            <label class="switch-toggle">
+                                <input type="checkbox" v-model="volunteerForm.tiene_vehiculo" />
+                                <span class="slider-toggle-round"></span>
+                            </label>
+                        </div>
+                        <p v-else style="color: white; margin: 5px 0 0 0; font-size: 0.95rem;">
+                            <i :class="volunteerForm.tiene_vehiculo ? 'fa-solid fa-circle-check text-success' : 'fa-solid fa-circle-xmark text-danger'" style="margin-right: 8px;"></i>
+                            {{ volunteerForm.tiene_vehiculo ? 'Sí cuenta con vehículo' : 'No cuenta con vehículo' }}
+                        </p>
+                    </div>
+
+                    <!-- Causas de Interés -->
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Causas de interés ambiental</label>
+                        <div v-if="volunteerFormEditable" class="causes-chips-grid" style="grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin-top: 10px;">
+                            <button
+                              type="button"
+                              v-for="causa in CAUSAS_OPTIONS"
+                              :key="causa.id"
+                              class="cause-chip-btn"
+                              :class="{ 'active': volunteerForm.causas_interes.includes(causa.id) }"
+                              @click="() => {
+                                if (volunteerForm.causas_interes.includes(causa.id)) {
+                                  volunteerForm.causas_interes = volunteerForm.causas_interes.filter(id => id !== causa.id)
+                                } else {
+                                  volunteerForm.causas_interes = [...volunteerForm.causas_interes, causa.id]
+                                }
+                              }"
+                              style="padding: 8px 12px; font-size: 0.85rem;"
+                            >
+                              <span class="cause-emoji">{{ causa.emoji }}</span>
+                              <span class="cause-label">{{ causa.label }}</span>
+                              <i class="fa-solid fa-circle-check check-indicator"></i>
+                            </button>
+                        </div>
+                        <div v-else style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                            <span 
+                              v-for="causaId in volunteerForm.causas_interes" 
+                              :key="causaId" 
+                              style="background: rgba(114, 176, 77, 0.12); border: 1px solid #72B04D; color: white; padding: 5px 12px; border-radius: 12px; font-size: 0.85rem;"
+                            >
+                              {{ CAUSAS_OPTIONS.find(c => c.id === causaId)?.emoji || '🌱' }}
+                              {{ CAUSAS_OPTIONS.find(c => c.id === causaId)?.label || causaId }}
+                            </span>
+                            <span v-if="!volunteerForm.causas_interes || volunteerForm.causas_interes.length === 0" style="color: var(--admin-text-muted); font-size: 0.9rem; font-style: italic;">Ninguna seleccionada</span>
+                        </div>
+                    </div>
+
+                    <!-- Redes Sociales -->
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; display: block;">Redes Sociales</label>
+                        <div v-if="volunteerFormEditable">
+                            <div v-for="net in SOCIAL_NETWORKS" :key="net.id" class="form-group" style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                <span style="width: 100px; font-size: 0.85rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i :class="net.icon" style="color: #72B04D;"></i> {{ net.name }}
+                                </span>
+                                <input type="url" v-model="volunteerForm.links_sociales[net.id]" :placeholder="net.placeholder" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 6px; color: white; font-size: 0.9rem; outline: none;">
+                            </div>
+                        </div>
+                        <div v-else style="display: flex; gap: 15px; margin-top: 8px; font-size: 1.3rem;">
+                            <template v-for="net in SOCIAL_NETWORKS" :key="net.id">
+                                <a 
+                                  v-if="volunteerForm.links_sociales?.[net.id]"
+                                  :href="volunteerForm.links_sociales?.[net.id] || '#'" 
+                                  target="_blank" 
+                                  :title="net.name"
+                                  style="color: #72B04D; transition: color 0.2s;"
+                                >
+                                    <i :class="net.icon"></i>
+                                </a>
+                            </template>
+                            <span v-if="!volunteerForm.links_sociales || Object.keys(volunteerForm.links_sociales || {}).length === 0" style="color: var(--admin-text-muted); font-size: 0.9rem; font-style: italic;">Sin redes sociales</span>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE SEGURIDAD EN MODAL VOLUNTARIO -->
+                    <div v-if="isUserAdmin" class="form-section security-section-admin" style="margin-bottom: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <h3 style="font-size: 0.95rem; color: var(--admin-accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <i class="fa-solid fa-shield-halved" style="color: #72B04D;"></i> Seguridad de la Cuenta
+                        </h3>
+                        
+                        <div style="background: rgba(114, 176, 77, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed var(--admin-accent);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div>
+                                    <p style="color: white; font-weight: 500; margin: 0 0 4px 0; font-size: 0.9rem;">Asistencia de Acceso</p>
+                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin: 0;">El voluntario recibirá un correo para restablecer su propia contraseña.</p>
+                                </div>
+                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmailForVolunteer" style="background: #72B04D; color: white; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                </button>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;">Nota: Por seguridad, como administrador solo puedes enviar un enlace de recuperación de contraseña.</p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display:flex; justify-content:flex-end; gap:10px; border-top: 1px solid var(--admin-border); padding-top: 20px; margin-top: 25px;">
+                        <button type="button" class="btn btn-secondary" @click="isVolunteerDetailModalOpen = false">Cerrar</button>
+                        <button v-if="volunteerFormEditable" type="submit" class="btn btn-primary" :disabled="volunteerFormSaving" style="background: #72B04D; color: white; border: none; font-weight: 700;">
+                            <i class="fa-solid fa-floppy-disk"></i> {{ volunteerFormSaving ? 'Guardando...' : 'Guardar Cambios' }}
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
   </div>
 </template>
 
 <style>
 @import '../assets/css/admin.css';
 
+/* Fix dropdown background color in select element */
+select option {
+  background-color: #0b0f19 !important;
+  color: white !important;
+}
 
 .role-badge {
   padding: 4px 10px;

@@ -2001,4 +2001,125 @@ input:checked + .slider:before {
     margin: 8px 0;
 }
 
+/* =========================================================
+   ESTILOS ADICIONALES: OPTIMIZACIÓN RESPONSIVA MÓVIL
+   ========================================================= */
+
+/* Ocultar toggle de sidebar de escritorio en móviles */
+@media (max-width: 768px) {
+    .desktop-sidebar-toggle {
+        display: none !important;
+    }
+}
+
+/* Reducción de padding de área de contenido y pestañas deslizables en móvil */
+@media (max-width: 640px) {
+    .admin-content-area > *:not(.admin-header) {
+        padding: 16px !important;
+    }
+    .dashboard-wrapper {
+        padding: 16px !important;
+    }
+    .admin-tabs-container {
+        overflow-x: auto !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px !important;
+    }
+    .admin-tab {
+        flex-shrink: 0 !important;
+        padding: 8px 14px !important;
+    }
+}
+
+/* Contenedores de tabla responsivos y scroll independiente */
+.table-responsive {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+.admin-table {
+    min-width: 700px;
+}
+
+/* Layout de notificaciones en grilla responsiva */
+.notif-view-container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+}
+
+@media (max-width: 1024px) {
+    .notif-view-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+/* ========== ESTILOS DE CHIPS DE CAUSAS ========== */
+.causes-chips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.cause-chip-btn {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    color: white !important;
+    cursor: pointer !important;
+    transition: all 0.3s !important;
+    text-align: left !important;
+    position: relative !important;
+    font-family: inherit !important;
+    font-size: 0.9rem !important;
+}
+
+.cause-chip-btn:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.cause-chip-btn.active {
+    background: rgba(114, 176, 77, 0.15) !important;
+    border-color: #72B04D !important;
+    box-shadow: 0 4px 15px rgba(114, 176, 77, 0.1) !important;
+}
+
+.cause-emoji {
+    font-size: 1.1rem !important;
+}
+
+.check-indicator {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    font-size: 0.95rem !important;
+    color: #72B04D !important;
+    opacity: 0 !important;
+    transform: scale(0.8) !important;
+    transition: all 0.2s !important;
+}
+
+.cause-chip-btn.active .check-indicator {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+}
+
+
 
