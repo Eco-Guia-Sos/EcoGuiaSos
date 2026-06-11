@@ -2893,6 +2893,16 @@ footer {
         border-radius: 12px;
     }
 }
+
+@media (max-width: 600px) {
+    .pagination-arrow-text {
+        display: none;
+    }
+    .pagination-arrow {
+        padding: 0 15px;
+        gap: 0;
+    }
+}
 /* =========================================================
    AJUSTE ESPECÍFICO: CARTELERA HOME (5 COLUMNAS)
    ========================================================= */

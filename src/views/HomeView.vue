@@ -24,7 +24,17 @@ const isEventSheetVisible = ref(false)
 
 // Pagination
 const currentPage = ref(1)
-const maxRendered = ref(window.innerWidth <= 600 ? 4 : 9)
+const getInitialIsMobile = () => typeof window !== 'undefined' ? window.matchMedia('(max-width: 600px)').matches : false
+const getInitialIsTablet = () => typeof window !== 'undefined' ? window.matchMedia('(min-width: 601px) and (max-width: 1024px)').matches : false
+
+const isMobile = ref(getInitialIsMobile())
+const isTablet = ref(getInitialIsTablet())
+
+const maxRendered = computed(() => {
+  if (isMobile.value) return 4
+  if (isTablet.value) return 8
+  return 10
+})
 
 // Geolocation
 const proximidadActiva = ref(false)
@@ -62,8 +72,12 @@ const toggleTooltip = (name: string, event: Event) => {
 }
 
 // Window Event Listeners
-const handleResize = () => {
-  maxRendered.value = window.innerWidth <= 600 ? 4 : 9
+let mobileQuery: MediaQueryList | null = null
+let tabletQuery: MediaQueryList | null = null
+
+const updateMatch = () => {
+  if (mobileQuery) isMobile.value = mobileQuery.matches
+  if (tabletQuery) isTablet.value = tabletQuery.matches
 }
 
 const handleWindowClick = () => {
@@ -86,7 +100,17 @@ watch(carruselSlides, (newSlides) => {
 })
 
 onMounted(async () => {
-  window.addEventListener('resize', handleResize)
+  mobileQuery = window.matchMedia('(max-width: 600px)')
+  tabletQuery = window.matchMedia('(min-width: 601px) and (max-width: 1024px)')
+  
+  if (mobileQuery.addEventListener) {
+    mobileQuery.addEventListener('change', updateMatch)
+    tabletQuery.addEventListener('change', updateMatch)
+  } else {
+    mobileQuery.addListener(updateMatch)
+    tabletQuery.addListener(updateMatch)
+  }
+
   window.addEventListener('click', handleWindowClick)
   
   // Init auth store if not already initialized
@@ -103,7 +127,15 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
+  if (mobileQuery) {
+    if (mobileQuery.removeEventListener) {
+      mobileQuery.removeEventListener('change', updateMatch)
+      tabletQuery?.removeEventListener('change', updateMatch)
+    } else {
+      mobileQuery.removeListener(updateMatch)
+      tabletQuery?.removeListener(updateMatch)
+    }
+  }
   window.removeEventListener('click', handleWindowClick)
   if (swiperInstance) {
     try {
@@ -227,6 +259,27 @@ const paginatedProyectos = computed(() => {
   if (currentPage.value > totalPaginas.value) currentPage.value = totalPaginas.value
   const inicio = (currentPage.value - 1) * maxRendered.value
   return filteredProyectos.value.slice(inicio, inicio + maxRendered.value)
+})
+
+const visiblePageNumbers = computed(() => {
+  const total = totalPaginas.value
+  const current = currentPage.value
+  const pages: (number | string)[] = []
+  
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    if (current <= 3) {
+      pages.push(1, 2, 3, 4, '...', total)
+    } else if (current >= total - 2) {
+      pages.push(1, '...', total - 3, total - 2, total - 1, total)
+    } else {
+      pages.push(1, '...', current - 1, current, current + 1, '...', total)
+    }
+  }
+  return pages
 })
 
 // Watch filters to reset page and update map markers
@@ -1103,17 +1156,20 @@ const scrollToSection = (id: string) => {
           class="pagination-btn pagination-arrow" 
           :class="{ 'disabled': currentPage === 1 }"
           @click="currentPage > 1 && cambiarPagina(currentPage - 1)"
+          aria-label="Anterior"
         >
-          <i class="fa-solid fa-chevron-left"></i> <span>Anterior</span>
+          <i class="fa-solid fa-chevron-left"></i> <span class="pagination-arrow-text">Anterior</span>
         </button>
 
-        <template v-for="i in totalPaginas" :key="i">
+        <template v-for="(page, idx) in visiblePageNumbers" :key="idx">
+          <span v-if="page === '...'" class="pagination-dots">...</span>
           <button 
+            v-else
             class="pagination-btn" 
-            :class="{ 'active': i === currentPage }"
-            @click="cambiarPagina(i)"
+            :class="{ 'active': Number(page) === currentPage }"
+            @click="cambiarPagina(Number(page))"
           >
-            {{ i }}
+            {{ page }}
           </button>
         </template>
 
@@ -1121,8 +1177,9 @@ const scrollToSection = (id: string) => {
           class="pagination-btn pagination-arrow" 
           :class="{ 'disabled': currentPage === totalPaginas }"
           @click="currentPage < totalPaginas && cambiarPagina(currentPage + 1)"
+          aria-label="Siguiente"
         >
-          <span>Siguiente</span> <i class="fa-solid fa-chevron-right"></i>
+          <span class="pagination-arrow-text">Siguiente</span> <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
 
