@@ -849,7 +849,7 @@ const scrollToSection = (id: string) => {
       <div id="particles-main"></div>
 
       <!-- BARRA DE BÚSQUEDA (TOP) -->
-      <div class="search-bar-row">
+      <div class="search-bar-row" v-reveal>
         <div class="search-bar-container">
           <i class="fa-solid fa-magnifying-glass"></i>
           <input 
@@ -862,7 +862,7 @@ const scrollToSection = (id: string) => {
       </div>
 
       <!-- INTERRUPTOR DE EVENTOS/LUGARES (CENTRED) -->
-      <div class="toggle-row">
+      <div class="toggle-row" v-reveal>
         <div class="toggle-container">
           <button 
             type="button"
@@ -892,7 +892,7 @@ const scrollToSection = (id: string) => {
       </div>
 
       <!-- BOTONES DE ACCIÓN (SEARCH & NEAR ME) -->
-      <div class="action-buttons-row">
+      <div class="action-buttons-row" v-reveal>
         <button 
           class="btn btn-secondary glass-effect" 
           :class="{ 'active': isAdvancedSearchOpen }"
@@ -1106,10 +1106,11 @@ const scrollToSection = (id: string) => {
         <p v-else-if="paginatedProyectos.length === 0" class="txt-loading">No se encontraron resultados.</p>
         
         <article 
-          v-for="p in paginatedProyectos" 
+          v-for="(p, index) in paginatedProyectos" 
           :key="p.id" 
-          class="card fade-in" 
-          :class="getNivelClass(p.categoria)"
+          class="card" 
+          :class="[getNivelClass(p.categoria), 'delay-' + ((index % 4) * 100)]"
+          v-reveal="'scale'"
           @click="router.push(`/${p.tipo}s/${p.id}`)"
           style="cursor: pointer;"
         >
@@ -1373,7 +1374,7 @@ const scrollToSection = (id: string) => {
     </div>
 
     <!-- SECCIÓN COLIBRÍ -->
-    <section id="seccion-colibri" class="nivel-section">
+    <section id="seccion-colibri" class="nivel-section" v-reveal>
       <div class="section-divider"></div>
       <div class="nivel-content">
         <h2><i class="fa-solid fa-dove"></i> Colibrí (Polinización)</h2>
@@ -1411,7 +1412,7 @@ const scrollToSection = (id: string) => {
     </section>
 
     <!-- SECCIÓN AJOLOTE -->
-    <section id="seccion-ajolote" class="nivel-section">
+    <section id="seccion-ajolote" class="nivel-section" v-reveal>
       <div class="section-divider"></div>
       <div class="nivel-content">
         <h2><i class="fa-solid fa-frog"></i> Ajolote (Regeneración)</h2>
@@ -1437,7 +1438,7 @@ const scrollToSection = (id: string) => {
     </section>
 
     <!-- SECCIÓN LOBO -->
-    <section id="seccion-lobo" class="nivel-section">
+    <section id="seccion-lobo" class="nivel-section" v-reveal>
       <div class="section-divider"></div>
       <div class="nivel-content">
         <h2><i class="fa-solid fa-dog"></i> Lobo (Estrategia)</h2>

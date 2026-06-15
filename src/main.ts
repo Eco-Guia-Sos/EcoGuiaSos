@@ -10,6 +10,37 @@ import router from './router'
 import { createPinia } from 'pinia'
 
 const app = createApp(App)
+
+app.directive('reveal', {
+  mounted(el: any, binding: any) {
+    el.classList.add('scroll-reveal')
+    if (binding.value) {
+      el.classList.add(`reveal-${binding.value}`)
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            el.classList.add('reveal-visible')
+            observer.unobserve(el)
+          }
+        })
+      },
+      {
+        threshold: 0.05,
+        rootMargin: '0px 0px -30px 0px'
+      }
+    )
+    observer.observe(el)
+    el._revealObserver = observer
+  },
+  unmounted(el: any) {
+    if (el._revealObserver) {
+      el._revealObserver.unobserve(el)
+    }
+  }
+})
+
 app.use(createPinia())
 app.use(router)
 

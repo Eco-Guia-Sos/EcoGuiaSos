@@ -374,7 +374,11 @@ onErrorCaptured((err, instance, info) => {
     </nav>
 
     <!-- VISTA DINÁMICA -->
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <transition name="page-fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </RouterView>
 
     <!-- FOOTER — oculto en admin y mapa -->
     <footer v-if="!isFullLayoutHidden">

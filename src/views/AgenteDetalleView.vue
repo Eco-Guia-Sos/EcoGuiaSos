@@ -425,7 +425,9 @@ watch(() => authStore.user, (newUser) => {
             <div class="agent-titles">
               <h1 id="agent-name">
                 {{ agente.nombre }}
-                <i v-if="agente.is_verified" class="fa-solid fa-circle-check verified-badge"></i>
+                <span v-if="agente.is_verified" class="verified-badge" style="margin-left: 8px; vertical-align: middle;">
+                  <img src="/assets/img/logo-navbar.webp" alt="Verificado" class="verified-logo-img">
+                </span>
               </h1>
               <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
                 <p id="agent-specialty" style="margin: 0;">
@@ -434,19 +436,23 @@ watch(() => authStore.user, (newUser) => {
                 <!-- Badge de Perfil Verificado -->
                 <span 
                   v-if="agente.is_verified"
-                  class="nivel-badge"
-                  style="border-color: #3897f0; color: #3897f0; background: rgba(56, 151, 240, 0.05);"
+                  class="verified-badge-wrapper"
+                  title="Agente Verificado por EcoGuía SOS"
                   id="agent-verified-badge"
                 >
-                  <i class="fa-solid fa-circle-check"></i> Eco Actor Verificado
+                  <span class="verified-badge">
+                    <img src="/assets/img/logo-navbar.webp" alt="Verificado" class="verified-logo-img">
+                  </span>
+                  <span class="verified-text">Eco Actor Verificado</span>
                 </span>
               </div>
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
                 <button 
                   v-if="authStore.user && !isOwnProfile"
                   id="btn-follow-profile" 
                   class="btn btn-primary" 
-                  style="padding: 5px 15px; font-size: 0.8rem; border-radius: 20px;"
+                  :class="{ 'btn-follow-glow': !isFollowing }"
+                  style="padding: 10px 24px; font-size: 0.95rem; border-radius: 24px; font-weight: 700; cursor: pointer; transition: all 0.2s;"
                   :style="isFollowing ? 'background: #333; border-color: #72B04D; color: #72B04D;' : ''"
                   :disabled="followLoading"
                   @click="handleFollowToggle"
@@ -691,6 +697,81 @@ watch(() => authStore.user, (newUser) => {
 <style>
 @import '../assets/css/interior-pages.css';
 @import '../assets/css/style.css';
+
+/* Verified Badge Styling */
+.verified-badge-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+  background: rgba(56, 151, 240, 0.12) !important;
+  border: 1px solid rgba(56, 151, 240, 0.4) !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 0 12px rgba(56, 151, 240, 0.35) !important;
+  transition: all 0.3s ease;
+  animation: verified-glow 2.5s infinite ease-in-out;
+}
+.verified-badge-wrapper:hover {
+  background: rgba(56, 151, 240, 0.2) !important;
+  border-color: rgba(56, 151, 240, 0.6) !important;
+  box-shadow: 0 0 18px rgba(56, 151, 240, 0.55) !important;
+  animation-play-state: paused;
+}
+@keyframes verified-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(56, 151, 240, 0.3);
+    border-color: rgba(56, 151, 240, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(56, 151, 240, 0.65);
+    border-color: rgba(56, 151, 240, 0.75);
+  }
+}
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: transparent !important;
+  border: 1px solid rgba(56, 151, 240, 0.2) !important;
+  overflow: hidden;
+}
+.verified-logo-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.verified-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3897f0 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Glowing Follow Button */
+.btn-follow-glow {
+  box-shadow: 0 0 10px rgba(114, 176, 77, 0.45) !important;
+  animation: follow-glow-pulse 2.5s infinite ease-in-out !important;
+  border: 1px solid rgba(114, 176, 77, 0.5) !important;
+}
+.btn-follow-glow:hover {
+  box-shadow: 0 0 16px rgba(114, 176, 77, 0.7) !important;
+  transform: scale(1.03) !important;
+  animation-play-state: paused !important;
+}
+@keyframes follow-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(114, 176, 77, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(114, 176, 77, 0.75);
+  }
+}
 
 /* ── Estilos del Perfil del Agente ─────────────────────── */
 .agent-profile-header {

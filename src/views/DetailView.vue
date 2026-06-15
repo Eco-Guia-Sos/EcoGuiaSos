@@ -614,10 +614,11 @@ watch(() => route.path, () => {
                 >
                   Ver perfil
                 </RouterLink>
-                <button 
+                 <button 
                   v-if="authStore.user && authStore.user.id !== actor.id"
                   id="btn-follow-actor" 
                   class="btn btn-primary" 
+                  :class="{ 'btn-follow-glow': !isFollowingActor }"
                   style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px;"
                   :style="isFollowingActor ? 'background: #333; border-color: #72B04D; color: #72B04D;' : ''"
                   :disabled="followActorLoading"
@@ -742,15 +743,13 @@ watch(() => route.path, () => {
                 >
                   <i class="fa-solid fa-map-location-dot"></i> Cómo llegar
                 </a>
-                
-                <button class="btn btn-outline full-width" @click="shareContent">
+                                <button class="btn btn-outline full-width btn-share-effect" @click="shareContent">
                   <i class="fa-solid fa-share-nodes"></i> Compartir
                 </button>
-                
-                <button 
+                                <button 
                   v-if="authStore.user"
-                  class="btn btn-outline full-width" 
-                  :style="isFavorite ? 'background: rgba(114, 176, 77, 0.2); border-color: #72B04D; color: #72B04D;' : ''"
+                  class="btn btn-outline full-width btn-favorite-effect" 
+                  :class="{ 'btn-favorite-active': isFavorite }"
                   :disabled="favoriteLoading"
                   @click="handleFavoriteToggle"
                 >
@@ -985,11 +984,114 @@ watch(() => route.path, () => {
 .social-btn.whatsapp:hover { background: #25d366 !important; }
 .social-btn.x-twitter:hover { background: #111 !important; }
 .social-btn.youtube:hover { background: #ff0000 !important; }
-
 /* Publisher ver perfil button styling */
 .btn-ver-perfil-actor:hover {
   background: #72B04D !important;
   color: white !important;
   box-shadow: 0 4px 12px rgba(114, 176, 77, 0.3);
+}
+
+/* Glowing Follow Button */
+.btn-follow-glow {
+  box-shadow: 0 0 10px rgba(114, 176, 77, 0.45) !important;
+  animation: follow-glow-pulse 2.5s infinite ease-in-out !important;
+  border: 1px solid rgba(114, 176, 77, 0.5) !important;
+}
+.btn-follow-glow:hover {
+  box-shadow: 0 0 16px rgba(114, 176, 77, 0.7) !important;
+  transform: scale(1.03) !important;
+  animation-play-state: paused !important;
+}
+@keyframes follow-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(114, 176, 77, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(114, 176, 77, 0.75);
+  }
+}
+
+/* Favorite Button Styling and Effects */
+.btn-favorite-effect {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(114, 176, 77, 0.45) !important;
+  color: #72B04D !important;
+  box-shadow: 0 0 10px rgba(114, 176, 77, 0.25) !important;
+  animation: favorite-idle-glow 3.0s infinite ease-in-out !important;
+}
+.btn-favorite-effect:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 16px rgba(114, 176, 77, 0.55) !important;
+  border-color: #72B04D !important;
+  color: #72B04D !important;
+  background: rgba(114, 176, 77, 0.08) !important;
+}
+.btn-favorite-effect:active {
+  transform: translateY(1px) !important;
+}
+.btn-favorite-active {
+  background: #72B04D !important;
+  border-color: #72B04D !important;
+  color: white !important;
+  box-shadow: 0 0 16px rgba(114, 176, 77, 0.6) !important;
+  animation: favorite-glow-pulse 2.5s infinite ease-in-out !important;
+  font-weight: 850 !important;
+}
+.btn-favorite-active:hover {
+  background: #649a41 !important;
+  border-color: #649a41 !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(114, 176, 77, 0.75) !important;
+}
+@keyframes favorite-idle-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(114, 176, 77, 0.2);
+    border-color: rgba(114, 176, 77, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(114, 176, 77, 0.5);
+    border-color: rgba(114, 176, 77, 0.85);
+  }
+}
+@keyframes favorite-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(114, 176, 77, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(114, 176, 77, 0.75);
+  }
+}
+
+/* Share Button Styling and Effects */
+.btn-share-effect {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(56, 151, 240, 0.45) !important;
+  color: #3897f0 !important;
+  box-shadow: 0 0 10px rgba(56, 151, 240, 0.25) !important;
+  animation: share-idle-glow 3.0s infinite ease-in-out !important;
+}
+.btn-share-effect:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 16px rgba(56, 151, 240, 0.55) !important;
+  border-color: #3897f0 !important;
+  color: #3897f0 !important;
+  background: rgba(56, 151, 240, 0.08) !important;
+}
+.btn-share-effect:active {
+  transform: translateY(1px) !important;
+}
+@keyframes share-idle-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(56, 151, 240, 0.2);
+    border-color: rgba(56, 151, 240, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(56, 151, 240, 0.5);
+    border-color: rgba(56, 151, 240, 0.85);
+  }
 }
 </style>
