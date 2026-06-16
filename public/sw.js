@@ -15,14 +15,11 @@ const BYPASS_PATTERNS = [
 
 // Recursos estáticos locales para cachear
 const STATIC_ASSETS = [
-    './',
-    './index.html',
-    './assets/css/global.css',
-    './assets/css/style.css',
-    './assets/img/logo-navbar.webp',
-    './assets/img/logo-carga.webp',
-    './assets/img/logo-app.webp',
-    './assets/img/carrusel-hero.webp',
+    '/',
+    '/index.html',
+    '/assets/img/logo-navbar.webp',
+    '/assets/img/logo-carga.webp',
+    '/logo-app.webp'
 ];
 
 // ==========================================
