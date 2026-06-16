@@ -22,6 +22,7 @@ const showGlobalLoader = computed(() => {
 const isMenuOpen = ref(false)
 const isUserDropdownOpen = ref(false)
 const isNotifDropdownOpen = ref(false)
+const isInstallDropdownOpen = ref(false)
 
 // Notifications state
 const unreadCount = ref(0)
@@ -43,6 +44,7 @@ const toggleUserDropdown = (e: Event) => {
   e.stopPropagation()
   isUserDropdownOpen.value = !isUserDropdownOpen.value
   isNotifDropdownOpen.value = false
+  isInstallDropdownOpen.value = false
 }
 
 const toggleNotifDropdown = (e: Event) => {
@@ -50,15 +52,25 @@ const toggleNotifDropdown = (e: Event) => {
   e.stopPropagation()
   isNotifDropdownOpen.value = !isNotifDropdownOpen.value
   isUserDropdownOpen.value = false
+  isInstallDropdownOpen.value = false
   
   if (isNotifDropdownOpen.value && authStore.user) {
     cargarNotificaciones()
   }
 }
 
+const toggleInstallDropdown = (e: Event) => {
+  e.preventDefault()
+  e.stopPropagation()
+  isInstallDropdownOpen.value = !isInstallDropdownOpen.value
+  isUserDropdownOpen.value = false
+  isNotifDropdownOpen.value = false
+}
+
 const closeDropdowns = () => {
   isUserDropdownOpen.value = false
   isNotifDropdownOpen.value = false
+  isInstallDropdownOpen.value = false
 }
 
 const displayName = computed(() => {
@@ -192,8 +204,70 @@ watch(() => route.path, (newPath) => {
   }
 }, { immediate: true })
 
+// PWA Installation state
+const deferredPrompt = ref<any>(null)
+const showInstallBtn = ref(false)
+const isiOS = ref(false)
+const installBannerDismissed = ref(false)
+
+const detectiOS = () => {
+  const ua = window.navigator.userAgent
+  const isIPad = !!ua.match(/iPad/i)
+  const isIPhone = !!ua.match(/iPhone/i)
+  const isSafari = !!ua.match(/Safari/i) && !ua.match(/CriOS/i) && !ua.match(/FxiOS/i)
+  return (isIPad || isIPhone) && isSafari
+}
+
+const triggerInstallPrompt = async () => {
+  closeMenu()
+  if (isiOS.value) {
+    alert('Para instalar EcoGuía SOS en tu iPhone/iPad:\n1. Presiona el botón de "Compartir" en Safari (el icono de la caja con la flecha hacia arriba).\n2. Selecciona "Agregar a inicio" (Add to Home Screen).\n3. Presiona "Agregar".')
+    return
+  }
+  if (!deferredPrompt.value) return
+  deferredPrompt.value.prompt()
+  const { outcome } = await deferredPrompt.value.userChoice
+  console.log(`PWA install prompt outcome: ${outcome}`)
+  deferredPrompt.value = null
+  showInstallBtn.value = false
+}
+
+const dismissInstallBanner = () => {
+  installBannerDismissed.value = true
+  localStorage.setItem('pwa_install_banner_dismissed', 'true')
+}
+
 onMounted(() => {
   authStore.init()
+
+  // Check if user dismissed banner previously
+  if (localStorage.getItem('pwa_install_banner_dismissed') === 'true') {
+    installBannerDismissed.value = true
+  }
+
+  // Detect iOS
+  if (detectiOS()) {
+    isiOS.value = true
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
+    if (!isStandalone && !installBannerDismissed.value) {
+      showInstallBtn.value = true
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt.value = e
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    if (!isStandalone && !installBannerDismissed.value) {
+      showInstallBtn.value = true
+    }
+  })
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt.value = null
+    showInstallBtn.value = false
+    console.log('EcoGuía SOS instalada con éxito.')
+  })
 
   // Listen to route changes to trigger loading
   router.beforeEach((to, from) => {
@@ -292,6 +366,38 @@ onErrorCaptured((err, instance, info) => {
                     </div>
                   </div>
                 </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- PWA Install Icon & Dropdown -->
+          <div v-if="showInstallBtn || deferredPrompt || isiOS" class="nav-install-item" @click.stop>
+            <a 
+              href="#" 
+              class="nav-install-icon-btn" 
+              id="pwa-install-btn"
+              @click="toggleInstallDropdown"
+              aria-label="Instalar como aplicación"
+            >
+              <i class="fa-solid fa-circle-down"></i>
+            </a>
+            
+            <!-- Install Dropdown -->
+            <div 
+              class="install-dropdown" 
+              :class="{ 'hidden': !isInstallDropdownOpen }"
+              id="install-dropdown"
+              style="position: absolute; top: 100%; right: 0; z-index: 10000;"
+            >
+              <div class="install-dropdown-header">
+                <span>Instalar Aplicación</span>
+              </div>
+              <div class="install-dropdown-body">
+                <p v-if="isiOS" class="install-desc">Presiona <i class="fa-solid fa-share-from-square"></i> en Safari y selecciona <strong>"Agregar a inicio"</strong>.</p>
+                <p v-else class="install-desc">Instala EcoGuía SOS para ingresar más rápido y sin internet.</p>
+                <button v-if="!isiOS" class="btn btn-primary btn-install-dropdown" @click="triggerInstallPrompt">
+                  <i class="fa-solid fa-download"></i> Instalar ahora
+                </button>
               </div>
             </div>
           </div>
@@ -452,6 +558,30 @@ onErrorCaptured((err, instance, info) => {
         </div>
       </div>
     </div>
+
+    <!-- PWA Install floating banner/toast -->
+    <transition name="slide-up">
+      <div v-if="showInstallBtn && !installBannerDismissed" class="pwa-install-banner">
+        <div class="pwa-banner-content">
+          <button class="pwa-close-btn" aria-label="Cerrar" @click="dismissInstallBanner">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="pwa-info-row">
+            <img src="/assets/img/logo-app.webp" alt="EcoGuía SOS Logo" class="pwa-app-logo" />
+            <div class="pwa-text-col">
+              <h4>Instalar EcoGuía SOS</h4>
+              <p v-if="isiOS">Presiona <i class="fa-solid fa-share-from-square"></i> y selecciona <strong>"Agregar a inicio"</strong>.</p>
+              <p v-else>Accede más rápido y navega sin conexión.</p>
+            </div>
+          </div>
+          <div class="pwa-action-row" v-if="!isiOS">
+            <button class="btn btn-primary btn-install-now shimmer-extra" @click="triggerInstallPrompt">
+              <i class="fa-solid fa-download"></i> Instalar
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -463,7 +593,7 @@ onErrorCaptured((err, instance, info) => {
   z-index: 10000;
 }
 
-@media (max-width: 850px) {
+@media (max-width: 1024px) {
   .user-dropdown-menu {
     right: auto;
     left: 50%;

@@ -170,7 +170,7 @@ a {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-@media (max-width: 850px) {
+@media (max-width: 1024px) {
     .main-nav, .navbar {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
@@ -238,6 +238,7 @@ main, section, header {
     padding: 8px 12px;
     border-radius: 8px;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .nav-menu a:hover {
@@ -386,7 +387,7 @@ main, section, header {
 }
 
 /* Responsive Menu */
-@media (max-width: 850px) {
+@media (max-width: 1024px) {
     .hamburger-menu {
         display: block;
     }
@@ -1223,6 +1224,257 @@ html, body, #app {
 .nav-menu a:active {
   transform: scale(0.96) !important;
   transition: transform 0.1s ease !important;
+}
+
+/* ==========================================================
+   PWA INSTALL BUTTON & FLOATING BANNER
+   ========================================================== */
+.nav-install-btn {
+  background: linear-gradient(135deg, var(--color-eco) 0%, #4c8231 100%) !important;
+  color: white !important;
+  border-radius: 50px !important;
+  padding: 8px 18px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 15px rgba(114, 176, 77, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  text-decoration: none !important;
+}
+
+.nav-install-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(114, 176, 77, 0.6) !important;
+  background: linear-gradient(135deg, #82c45c 0%, var(--color-eco) 100%) !important;
+}
+
+.pwa-install-banner {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 360px;
+  z-index: 100000;
+  background: rgba(10, 14, 18, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.pwa-banner-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.pwa-close-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: transparent;
+  border: none;
+  color: var(--color-texto-secundario);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.pwa-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.pwa-info-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding-right: 20px;
+}
+
+.pwa-app-logo {
+  width: 55px;
+  height: 55px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pwa-text-col h4 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: white !important;
+  margin-bottom: 4px;
+}
+
+.pwa-text-col p {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario) !important;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.pwa-action-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-install-now {
+  background: var(--color-eco) !important;
+  color: white !important;
+  padding: 8px 20px !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(114, 176, 77, 0.3) !important;
+}
+
+.btn-install-now:hover {
+  background: var(--color-eco-hover) !important;
+  box-shadow: 0 6px 20px rgba(114, 176, 77, 0.5) !important;
+}
+
+/* Transitions */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* Responsividad para móviles (Bottom Sheet) */
+@media (max-width: 600px) {
+  .pwa-install-banner {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px 30px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .pwa-close-btn {
+    top: -10px;
+    right: -5px;
+  }
+}
+
+/* PWA Install Dropdown Styles */
+.nav-install-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-install-icon-btn {
+  color: var(--color-eco) !important;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(114, 176, 77, 0.1);
+  box-shadow: 0 0 10px rgba(114, 176, 77, 0.15);
+  border: 1px solid rgba(114, 176, 77, 0.2);
+}
+
+.nav-install-icon-btn:hover {
+  color: white !important;
+  background: var(--color-eco) !important;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.4);
+  transform: scale(1.05);
+}
+
+.install-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 280px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.install-dropdown-header {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: white;
+}
+
+.install-dropdown-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.install-desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-texto-secundario) !important;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.btn-install-dropdown {
+  background: var(--color-eco) !important;
+  color: white !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(114, 176, 77, 0.25) !important;
+}
+
+.btn-install-dropdown:hover {
+  background: var(--color-eco-hover) !important;
+  box-shadow: 0 6px 15px rgba(114, 176, 77, 0.4) !important;
+}
+
+@media (max-width: 1024px) {
+  .install-dropdown {
+    right: auto;
+    left: 50%;
+    transform: translate(-50%, 0);
+  }
 }
 
 
