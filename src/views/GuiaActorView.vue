@@ -19,6 +19,7 @@ interface GuideTopic {
   icon: string
   description: string
   steps: string[]
+  theme: string
 }
 
 const TOPICS_CONFIG: Record<string, GuideTopic> = {
@@ -30,7 +31,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Crea una cuenta normal desde la vista "Súmate" con el correo de tu colectivo.',
       'Solicita la validación enviando tus credenciales oficiales de colectivo/parque al correo administrativo de la plataforma.',
       'Una vez aprobado, tu perfil cambiará de rol a "Actor", desbloqueando tu acceso al Panel de Administración principal.'
-    ]
+    ],
+    theme: 'green'
   },
   recorrido: {
     title: 'Conocer el Panel Admin',
@@ -40,7 +42,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Inicia sesión y haz click en "Administrar" en tu menú de perfil para acceder a `/admin`.',
       'Usa la barra lateral izquierda para navegar entre el Dashboard, tus Eventos y los Hubs Ecológicos.',
       'El panel es responsivo: en móviles puedes abrir el menú usando el ícono de hamburguesa en la parte superior.'
-    ]
+    ],
+    theme: 'purple'
   },
   publicar: {
     title: 'Publicar un Evento',
@@ -50,7 +53,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Haz click en "Eventos" en la barra lateral del Panel y presiona "Agregar Nuevo".',
       'Llena el formulario con título, descripción y clasifica en categorías como Talleres, Reforestación o Pláticas.',
       'Configura la fecha y hora de inicio/fin del evento, y define si es Gratuito, Pet-friendly o apto para niños.'
-    ]
+    ],
+    theme: 'blue'
   },
   imagenes: {
     title: 'Subir imágenes al Storage',
@@ -60,7 +64,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'En el formulario de creación, haz click en "Sube una imagen" o pega una URL directa.',
       'El cargador de archivos comprimirá la imagen localmente en formato `.webp` de forma automática.',
       'Esto reduce el peso de la imagen hasta en un 80% garantizando una carga rápida para usuarios móviles.'
-    ]
+    ],
+    theme: 'teal'
   },
   coordenadas: {
     title: 'Captura de Ubicación',
@@ -70,7 +75,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Ingresa la dirección en formato de texto legible (ej: Bosque de Chapultepec, CDMX).',
       'Ingresa las coordenadas de Latitud y Longitud del sitio de encuentro.',
       'Usa Google Maps en otra pestaña para buscar el lugar, haz click derecho y copia los dos números decimales directamente en los campos del panel.'
-    ]
+    ],
+    theme: 'yellow'
   },
   revision: {
     title: 'Publicación y Revisión',
@@ -80,7 +86,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Al guardar un nuevo evento, este quedará en estado "Pendiente" y no será visible al público inmediatamente.',
       'Los administradores del sitio recibirán una alerta para verificar los datos y la coherencia ambiental de tu propuesta.',
       'Una vez aprobado, recibirás una notificación de sistema en tu perfil y el evento aparecerá en los catálogos y el Atlas Territorial.'
-    ]
+    ],
+    theme: 'green'
   },
   perfil: {
     title: 'Editar Perfil Público',
@@ -90,7 +97,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Accede a la pestaña "Mi Perfil" en el Panel de Administración.',
       'Sube tu logotipo y escribe tu biografía y misión principal.',
       'Añade enlaces de contacto: página web, Instagram, Facebook y tu número de WhatsApp para recibir consultas directas.'
-    ]
+    ],
+    theme: 'purple'
   },
   gestion: {
     title: 'Gestionar Publicaciones',
@@ -100,7 +108,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Ve a la pestaña "Mis Eventos" o "Mis Lugares" en tu panel.',
       'Usa el botón de lápiz (editar) para corregir ortografías o actualizar fechas sobre registros existentes.',
       'Si un evento se canceló o deseas quitarlo, presiona el botón de basura (eliminar) para retirarlo al instante.'
-    ]
+    ],
+    theme: 'blue'
   }
 }
 </script>
@@ -129,7 +138,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       <article 
         v-for="(topic, key) in TOPICS_CONFIG" 
         :key="key" 
-        class="video-card"
+        :class="['video-card', 'theme-' + topic.theme]"
         style="height: max-content;"
       >
         <header class="video-card-header" @click="toggleTopic(key)">

@@ -644,4 +644,71 @@
     background: rgba(0, 0, 0, 0.2);
 }
 
+/* --- COLORES Y EFECTOS PARA TARJETAS (ESTILO NOSOTROS / VISION / MISION) --- */
+.video-card.theme-green {
+    border-color: rgba(114, 176, 77, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.video-card.theme-green:hover {
+    border-color: #72B04D !important;
+    box-shadow: 0 10px 30px rgba(114, 176, 77, 0.25);
+}
+.video-card.theme-green .topic-icon {
+    color: #72B04D !important;
+    background: rgba(114, 176, 77, 0.08) !important;
+}
+
+.video-card.theme-blue {
+    border-color: rgba(3, 169, 244, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.video-card.theme-blue:hover {
+    border-color: #03A9F4 !important;
+    box-shadow: 0 10px 30px rgba(3, 169, 244, 0.25);
+}
+.video-card.theme-blue .topic-icon {
+    color: #03A9F4 !important;
+    background: rgba(3, 169, 244, 0.08) !important;
+}
+
+.video-card.theme-yellow {
+    border-color: rgba(255, 193, 7, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.video-card.theme-yellow:hover {
+    border-color: #FFC107 !important;
+    box-shadow: 0 10px 30px rgba(255, 193, 7, 0.25);
+}
+.video-card.theme-yellow .topic-icon {
+    color: #FFC107 !important;
+    background: rgba(255, 193, 7, 0.08) !important;
+}
+
+.video-card.theme-purple {
+    border-color: rgba(168, 85, 247, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.video-card.theme-purple:hover {
+    border-color: #a855f7 !important;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.25);
+}
+.video-card.theme-purple .topic-icon {
+    color: #a855f7 !important;
+    background: rgba(168, 85, 247, 0.08) !important;
+}
+
+.video-card.theme-teal {
+    border-color: rgba(42, 157, 143, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.video-card.theme-teal:hover {
+    border-color: #2a9d8f !important;
+    box-shadow: 0 10px 30px rgba(42, 157, 143, 0.25);
+}
+.video-card.theme-teal .topic-icon {
+    color: #2a9d8f !important;
+    background: rgba(42, 157, 143, 0.08) !important;
+}
+
+
 

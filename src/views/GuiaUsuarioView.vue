@@ -19,6 +19,7 @@ interface GuideTopic {
   icon: string
   description: string
   steps: string[]
+  theme: string
 }
 
 const TOPICS_CONFIG: Record<string, GuideTopic> = {
@@ -30,7 +31,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Usa la barra de navegación superior sticky para moverte entre Inicio, Nosotros, Cómo Usar y tu Perfil.',
       'En la página de inicio, explora las categorías divididas por los tres niveles de compromiso: Colibrí (Lecturas, Ecotecnias, Agua), Ajolote (Voluntariado y Convocatorias) y Lobo (Normativas y Fondos).',
       'Despliega los tooltips informativos en cada nivel para entender el impacto de cada categoría.'
-    ]
+    ],
+    theme: 'blue'
   },
   registro: {
     title: 'Registrarte como Voluntario',
@@ -40,7 +42,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Haz click en el botón "Súmate" o "Iniciar Sesión" en la barra de navegación superior.',
       'Llena el formulario con tu correo electrónico y define una contraseña segura de al menos 6 caracteres.',
       'Confirma tu cuenta y accede a tu panel personal para empezar a seguir agentes ambientales y almacenar favoritos.'
-    ]
+    ],
+    theme: 'green'
   },
   busqueda: {
     title: 'Búsqueda en tiempo real',
@@ -50,7 +53,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Localiza la barra de búsqueda en la sección principal de la web.',
       'Escribe palabras clave como "reforestación", "reciclaje" o el nombre de una alcaldía.',
       'La cuadrícula se filtrará de forma instantánea mostrando tarjetas relevantes con títulos e imágenes.'
-    ]
+    ],
+    theme: 'teal'
   },
   filtros: {
     title: 'Filtros de Búsqueda Avanzada',
@@ -60,7 +64,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Haz click en el botón "Búsqueda Avanzada" en la cabecera del catálogo.',
       'Selecciona categorías específicas, rangos de fechas o marca chips como "Gratuito", "Pet-Friendly" o "Apto para Niños".',
       'Los resultados se actualizarán automáticamente respetando todas las condiciones seleccionadas.'
-    ]
+    ],
+    theme: 'purple'
   },
   radar: {
     title: 'Radar de Distancia',
@@ -70,7 +75,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Asegúrate de permitir el acceso de geolocalización en tu navegador móvil o de escritorio.',
       'Usa el control deslizante de distancia (slider de kilómetros) para ajustar tu radio de acción de 1 km hasta 100 km.',
       'El sistema calculará las distancias por fórmula Haversine y listará únicamente los proyectos correspondientes.'
-    ]
+    ],
+    theme: 'yellow'
   },
   detalles: {
     title: 'Detalles y Carrusel',
@@ -80,7 +86,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Haz click en cualquier tarjeta de evento o lugar sustentable en el catálogo.',
       'Lee la descripción detallada, fechas y horarios en la ficha ampliada.',
       'Visualiza la galería de fotos cargadas y usa la ubicación integrada para trazar tu ruta de viaje.'
-    ]
+    ],
+    theme: 'blue'
   },
   mapa: {
     title: 'Visor en Mapa',
@@ -90,7 +97,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Haz click en "Ver Mapa" o accede directamente a la sección de Atlas Territorial.',
       'Verás marcadores interactivos que se agrupan (clustering) para evitar saturación visual.',
       'Selecciona cualquier pin para ver el resumen del proyecto en el panel flotante derecho y centrar la vista del carrusel.'
-    ]
+    ],
+    theme: 'teal'
   },
   favoritos: {
     title: 'Guardar en Favoritos',
@@ -100,7 +108,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'En la vista de detalles de cualquier evento o lugar, presiona el botón "Guardar en Favoritos".',
       'El sistema enlazará el registro a tu cuenta en tiempo real.',
       'Visita tu menú de perfil y selecciona "Mis Favoritos" para consultar tus contenidos almacenados cuando lo desees.'
-    ]
+    ],
+    theme: 'yellow'
   },
   agentes: {
     title: 'Conectar con Agentes',
@@ -110,7 +119,8 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       'Accede a la sección de "Agentes de Cambio" para ver el listado de colectivos validados.',
       'Haz click en cualquiera para ver su banner, biografía, redes sociales y proyectos publicados.',
       'Presiona "+ Seguir" para recibir notificaciones directas en tu panel de alertas cada vez que publiquen novedades.'
-    ]
+    ],
+    theme: 'green'
   }
 }
 </script>
@@ -128,7 +138,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
       <article 
         v-for="(topic, key) in TOPICS_CONFIG" 
         :key="key" 
-        class="video-card"
+        :class="['video-card', 'theme-' + topic.theme]"
         style="height: max-content;"
       >
         <header class="video-card-header" @click="toggleTopic(key)">
