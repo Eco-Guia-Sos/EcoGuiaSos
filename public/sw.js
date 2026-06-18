@@ -1,12 +1,17 @@
-const CACHE_NAME = 'ecoguiasos-v10';
+const CACHE_NAME = 'ecoguiasos-v11';
 
-// URLs que NO deben ser interceptadas por el SW (APIs dinámicas)
+// URLs que NO deben ser interceptadas por el SW (APIs dinámicas y recursos externos CDN/imágenes/fuentes)
 const BYPASS_PATTERNS = [
     'supabase.co',           // Supabase API - AUTH y DB
-    'googleapis.com',        // Google Maps / Gemini
+    'googleapis.com',        // Google Maps / Gemini / Fonts
     'maps.gstatic.com',      // Google Maps assets
+    'fonts.gstatic.com',     // Google Fonts files
+    'fonts.googleapis.com',  // Google Fonts CSS
     'unpkg.com',             // CDN dinámico
     'cdn.jsdelivr.net',      // CDN dinámico
+    'cdnjs.cloudflare.com',  // Font Awesome / CDNs
+    'unsplash.com',          // Unsplash Images
+    'cloudflareinsights.com',// Cloudflare Analytics
     'wa.me',                 // WhatsApp
     'tile.openstreetmap.org', // OpenStreetMap Tiles
     'basemaps.cartocdn.com', // CartoDB Tiles
@@ -83,7 +88,10 @@ self.addEventListener('fetch', event => {
             })
             .catch(() => {
                 // Sin red: buscar en caché (modo offline)
-                return caches.match(event.request);
+                return caches.match(event.request).then(cachedResponse => {
+                    if (cachedResponse) return cachedResponse;
+                    return new Response('Recurso no disponible offline', { status: 404, statusText: 'Offline' });
+                });
             })
     );
 });
