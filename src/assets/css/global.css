@@ -609,7 +609,9 @@ main, section, header {
 
 /* ========== USER DROPDOWN MENU ========== */
 .user-dropdown-menu {
-    position: fixed;
+    position: absolute;
+    top: calc(100% + 15px);
+    right: 0;
     z-index: 99999;
     min-width: 220px;
     background: rgba(15, 22, 30, 0.97);

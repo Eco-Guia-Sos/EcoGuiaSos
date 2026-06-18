@@ -89,14 +89,25 @@ const maxRendered = computed(() => {
 })
 
 // Geolocation
-const proximidadActiva = ref(false)
-const userCoords = ref<{ lat: number; lng: number } | null>(null)
+const getInitialCoords = () => {
+  if (typeof window !== 'undefined') {
+    const cached = localStorage.getItem('eco_user_coords')
+    if (cached) {
+      try {
+        return JSON.parse(cached)
+      } catch (e) {}
+    }
+  }
+  return null
+}
+const userCoords = ref<{ lat: number; lng: number } | null>(getInitialCoords())
+const proximidadActiva = ref(!!userCoords.value)
 
 // Advanced Search Filters
 const isAdvancedSearchOpen = ref(false)
 const filtrosAvanzados = ref({
   categoria: 'all',
-  ubicacion: 'all',
+  ubicacion: userCoords.value ? 'nearby' : 'all',
   distancia: 20,
   fechas: 'all',
   fechaExacta: '',
@@ -196,7 +207,11 @@ onMounted(async () => {
     authStore.init()
   }
   
-  await homeStore.cargarDatos(undefined, undefined, undefined, true)
+  if (proximidadActiva.value && userCoords.value) {
+    await homeStore.cargarDatos(userCoords.value.lat, userCoords.value.lng, filtrosAvanzados.value.distancia, true)
+  } else {
+    await homeStore.cargarDatos(undefined, undefined, undefined, true)
+  }
   
   nextTick(() => {
     iniciarCarrusel()
@@ -616,7 +631,19 @@ const obtenerUbicacionSilenciosa = () => {
   
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      userCoords.value = { lat: position.coords.latitude, lng: position.coords.longitude }
+      const newLat = position.coords.latitude
+      const newLng = position.coords.longitude
+      if (userCoords.value) {
+        const diff = calcularDistancia(userCoords.value.lat, userCoords.value.lng, newLat, newLng)
+        if (diff < 0.05) { // menos de 50 metros
+          console.log('[GPS Silencioso] Ubicación sin cambios significativos (<50m).')
+          proximidadActiva.value = true
+          filtrosAvanzados.value.distancia = 20
+          filtrosAvanzados.value.ubicacion = 'nearby'
+          return
+        }
+      }
+      userCoords.value = { lat: newLat, lng: newLng }
       localStorage.setItem('eco_user_coords', JSON.stringify(userCoords.value))
       proximidadActiva.value = true
       filtrosAvanzados.value.distancia = 20
