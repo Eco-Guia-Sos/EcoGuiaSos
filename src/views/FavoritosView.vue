@@ -387,8 +387,8 @@ onMounted(async () => {
 .favoritos-page-body {
   background-color: #0b0f19;
   background-image: 
-    radial-gradient(circle at 15% 50%, rgba(114, 176, 77, 0.1), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(91, 194, 247, 0.1), transparent 25%);
+    radial-gradient(circle at 15% 50%, rgba(114, 176, 77, 0.08), transparent 30%),
+    radial-gradient(circle at 85% 30%, rgba(91, 194, 247, 0.08), transparent 30%);
   background-attachment: fixed;
   color: #e2e8f0;
   min-height: 100vh;
@@ -407,8 +407,8 @@ onMounted(async () => {
   margin-bottom: 30px;
 }
 .btn-back-home {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #fff;
   padding: 10px 22px;
   border-radius: 30px;
@@ -421,7 +421,7 @@ onMounted(async () => {
   backdrop-filter: blur(10px);
 }
 .btn-back-home:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateX(-5px);
 }
@@ -459,25 +459,27 @@ onMounted(async () => {
   color: #94a3b8;
   font-size: 0.95rem;
 }
+
+/* Tabs / Segmented Control */
 .segmented-control {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 20px;
-  padding: 6px;
+  padding: 5px;
   display: inline-flex;
   gap: 6px;
   margin-bottom: 40px;
-  border: 1px solid rgba(255,255,255,0.05);
 }
 .segment-btn {
   background: transparent;
   border: none;
   color: #94a3b8;
-  padding: 10px 24px;
-  border-radius: 14px;
-  font-size: 0.9rem;
+  padding: 12px 28px;
+  border-radius: 16px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -486,10 +488,11 @@ onMounted(async () => {
   color: white;
 }
 .segment-btn.active {
-  background: rgba(255, 255, 255, 0.08);
-  color: #72b04d;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  background: linear-gradient(135deg, #72b04d 0%, #5ba23a 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(114, 176, 77, 0.35) !important;
 }
+
 .empty-favorites-state {
   text-align: center;
   padding: 60px 20px;
@@ -499,20 +502,116 @@ onMounted(async () => {
   color: #94a3b8;
   font-weight: 500;
 }
+
+/* Events & Places Cards overrides */
+.favoritos-page-body .card-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  padding: 20px 0;
+}
+.favoritos-page-body .card {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.favoritos-page-body .card:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.favoritos-page-body .card.card-colibri:hover {
+  border-color: rgba(91, 194, 247, 0.5) !important;
+  box-shadow: 0 8px 25px rgba(91, 194, 247, 0.2), 0 0 0 1px rgba(91, 194, 247, 0.2) !important;
+}
+.favoritos-page-body .card.card-ajolote:hover {
+  border-color: rgba(114, 176, 77, 0.5) !important;
+  box-shadow: 0 8px 25px rgba(114, 176, 77, 0.2), 0 0 0 1px rgba(114, 176, 77, 0.2) !important;
+}
+.favoritos-page-body .card.card-lobo:hover {
+  border-color: rgba(253, 186, 116, 0.5) !important;
+  box-shadow: 0 8px 25px rgba(253, 186, 116, 0.2), 0 0 0 1px rgba(253, 186, 116, 0.2) !important;
+}
+.favoritos-page-body .card.card-general:hover {
+  border-color: rgba(20, 184, 166, 0.5) !important;
+  box-shadow: 0 8px 25px rgba(20, 184, 166, 0.2), 0 0 0 1px rgba(20, 184, 166, 0.2) !important;
+}
+
+.favoritos-page-body .card-content {
+  padding: 16px 20px 20px 20px !important;
+  flex-grow: 1;
+}
+.favoritos-page-body .card-title {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1.05rem !important;
+  color: #ffffff !important;
+  margin-bottom: 6px !important;
+}
+
+/* Followed Actors Cards overrides */
+.favoritos-page-body .dash-card {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.favoritos-page-body .dash-card:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  border-color: rgba(114, 176, 77, 0.5) !important;
+  box-shadow: 0 12px 30px rgba(114, 176, 77, 0.15), 0 0 0 1px rgba(114, 176, 77, 0.2) !important;
+}
 .dash-card-image-box {
   width: 100%;
   height: 160px;
   overflow: hidden;
   border-radius: 16px 16px 0 0;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.8), rgba(10, 15, 30, 0.95)) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
-.dash-card-image-box img {
-  width: 100%;
-  height: 100%;
+.dash-card-img {
+  width: 90px !important;
+  height: 90px !important;
+  border-radius: 50% !important;
   object-fit: cover;
-  transition: transform 0.4s;
+  border: 3px solid rgba(114, 176, 77, 0.3) !important;
+  box-shadow: 0 0 20px rgba(114, 176, 77, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
-.dash-card:hover .dash-card-image-box img {
-  transform: scale(1.05);
+.favoritos-page-body .dash-card:hover .dash-card-img {
+  transform: scale(1.08) !important;
+  border-color: #72b04d !important;
+  box-shadow: 0 0 25px rgba(114, 176, 77, 0.45);
+}
+.dash-card-body {
+  padding: 20px;
+  text-align: center;
+  flex-grow: 1;
+}
+.dash-card-body h3 {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 .dash-card-category {
   color: #72b04d;
