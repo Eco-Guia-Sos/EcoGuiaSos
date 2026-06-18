@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
@@ -10,11 +10,50 @@ const authStore = useAuthStore()
 // State
 const activeTab = ref<'eventos' | 'lugares' | 'actores'>('eventos')
 const loading = ref(true)
+const eventFilter = ref<'actuales' | 'historial'>('actuales')
 
 const eventos = ref<any[]>([])
 const lugares = ref<any[]>([])
 const actores = ref<any[]>([])
 const userCoords = ref<{ lat: number; lng: number } | null>(null)
+
+const filteredEventos = computed(() => {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() // 0-indexed (5 for June)
+
+  const parseLocalDate = (dateStr: string): Date => {
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (match && match[1] && match[2] && match[3]) {
+      const year = parseInt(match[1], 10)
+      const month = parseInt(match[2], 10) - 1
+      const day = parseInt(match[3], 10)
+      return new Date(year, month, day)
+    }
+    return new Date(dateStr)
+  }
+
+  return eventos.value.filter(ev => {
+    // Falls back from fecha_fin to fecha_inicio or fecha
+    const eventDateStr = ev.fecha_fin || ev.fecha_inicio || ev.fecha
+    if (!eventDateStr) return eventFilter.value === 'actuales' // default to current if no date is found
+    try {
+      const eventDate = parseLocalDate(eventDateStr)
+      const evYear = eventDate.getFullYear()
+      const evMonth = eventDate.getMonth()
+
+      const isCurrentOrFutureMonth = (evYear > currentYear) || (evYear === currentYear && evMonth >= currentMonth)
+
+      if (eventFilter.value === 'actuales') {
+        return isCurrentOrFutureMonth
+      } else {
+        return !isCurrentOrFutureMonth
+      }
+    } catch (e) {
+      return eventFilter.value === 'actuales'
+    }
+  })
+})
 
 const fetchFavoritesData = async () => {
   if (!authStore.user) {
@@ -73,11 +112,16 @@ const fetchFavoritesData = async () => {
       
       actores.value = (profiles || []).map(p => ({
         id: p.id,
-        nombre: p.nombre_completo || 'Agente de Cambio',
-        imagen_url: p.avatar_url || p.imagen_url || '/assets/img/kpop.webp',
-        especialidad: p.especialidad || 'Líder Ambiental',
-        organizacion: p.organizacion || 'Participante',
-        is_verified: p.is_validated || false
+        nombre_completo: p.nombre_completo,
+        avatar_url: p.avatar_url,
+        imagen_url: p.imagen_url,
+        especialidad: p.especialidad,
+        organizacion: p.organizacion,
+        descripcion: p.descripcion,
+        bio: p.bio,
+        redes_ig: p.redes_ig,
+        redes_fb: p.redes_fb,
+        is_validated: p.is_validated
       }))
     } else {
       actores.value = []
@@ -178,6 +222,93 @@ const getNivelClass = (categoria: string) => {
   return 'card-general'
 }
 
+// Agentes helpers and active status query
+const agentesActivosIds = ref<Set<string>>(new Set())
+
+const fetchAgentesConEventos = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('eventos')
+      .select('owner_id')
+      .eq('estado', 'approved')
+
+    if (!error && data) {
+      const activeIds = new Set(data.map((e: any) => e.owner_id).filter(Boolean) as string[])
+      agentesActivosIds.value = activeIds
+    }
+  } catch (e) {
+    console.error('[Agentes] Error fetching active events:', e)
+  }
+}
+
+const getAgenteThemeClass = (especialidad: string) => {
+  const esp = (especialidad || '').toLowerCase()
+  if (
+    esp.includes('agua') ||
+    esp.includes('lluvia') ||
+    esp.includes('ecotecnia') ||
+    esp.includes('energía') ||
+    esp.includes('solar') ||
+    esp.includes('tecnología')
+  ) {
+    return 'theme-blue'
+  }
+  if (
+    esp.includes('huerto') ||
+    esp.includes('permacultura') ||
+    esp.includes('reforestación') ||
+    esp.includes('naturaleza') ||
+    esp.includes('tierra') ||
+    esp.includes('ecología')
+  ) {
+    return 'theme-green'
+  }
+  if (
+    esp.includes('educación') ||
+    esp.includes('taller') ||
+    esp.includes('comunidad') ||
+    esp.includes('social') ||
+    esp.includes('cultura')
+  ) {
+    return 'theme-purple'
+  }
+  return 'theme-default'
+}
+
+const getAgenteCategoryLabel = (especialidad: string) => {
+  const esp = (especialidad || '').toLowerCase()
+  if (
+    esp.includes('agua') ||
+    esp.includes('lluvia') ||
+    esp.includes('ecotecnia') ||
+    esp.includes('energía') ||
+    esp.includes('solar') ||
+    esp.includes('tecnología')
+  ) {
+    return '💧 Agua y Ecotecnias'
+  }
+  if (
+    esp.includes('huerto') ||
+    esp.includes('permacultura') ||
+    esp.includes('reforestación') ||
+    esp.includes('naturaleza') ||
+    esp.includes('tierra') ||
+    esp.includes('ecología')
+  ) {
+    return '🌿 Tierra y Permacultura'
+  }
+  if (
+    esp.includes('educación') ||
+    esp.includes('taller') ||
+    esp.includes('comunidad') ||
+    esp.includes('social') ||
+    esp.includes('cultura')
+  ) {
+    return '👥 Educación y Comunidad'
+  }
+  return '🌐 Líder Ambiental'
+}
+
 onMounted(async () => {
   const cached = localStorage.getItem('eco_user_coords')
   if (cached) {
@@ -188,7 +319,10 @@ onMounted(async () => {
   if (authStore.loading) {
     await authStore.init()
   }
-  await fetchFavoritesData()
+  await Promise.all([
+    fetchFavoritesData(),
+    fetchAgentesConEventos()
+  ])
 })
 </script>
 
@@ -205,8 +339,14 @@ onMounted(async () => {
 
       <!-- Dashboard Header -->
       <header class="dash-header">
-        <div class="dash-avatar">
-          <i class="fa-solid fa-user-astronaut"></i>
+        <div class="dash-avatar" style="overflow: hidden;">
+          <img 
+            v-if="authStore.profile?.avatar_url || authStore.profile?.imagen_url" 
+            :src="authStore.profile.avatar_url || authStore.profile.imagen_url" 
+            alt="Tu Perfil" 
+            style="width: 100%; height: 100%; object-fit: cover;"
+          />
+          <i v-else class="fa-solid fa-user-astronaut"></i>
         </div>
         <div class="dash-info">
           <h1>Tu Panel Personal</h1>
@@ -258,47 +398,75 @@ onMounted(async () => {
             <i class="fa-solid fa-calendar-xmark" style="font-size:3rem; margin-bottom:15px; color:#475569;"></i>
             <p>Aún no has guardado ningún evento.</p>
           </div>
-          <div v-else class="card-grid-container" id="contenedor-tarjetas">
-            <article 
-              v-for="ev in eventos" 
-              :key="ev.id" 
-              class="card fade-in" 
-              :class="getNivelClass(ev.categoria)"
-              @click="router.push(`/eventos/${ev.id}`)" 
-              style="cursor: pointer;"
-            >
-              <div class="card-image">
-                <img 
-                  :src="getImgSrc(ev)" 
-                  :alt="ev.nombre" 
-                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
-                />
-                <!-- Category Icon Badge (Bottom-Left) -->
-                <span class="card-category" :title="formatCategory(ev.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(ev.categoria) }}</span>
-                
-                <span v-if="userCoords && ev.lat && ev.lng" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
-                  <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
-                </span>
-                <div v-if="ev.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${ev.publicador.nombre_completo}`">
-                  <i class="fa-solid fa-user-pen"></i>
-                  <span>{{ ev.publicador.nombre_completo }}</span>
-                </div>
-              </div>
-              <div class="card-content">
-                <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
-                  <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                    🖥️ En Línea
+          <div v-else>
+            <!-- Event filter controls (Segmented pills) -->
+            <div class="event-filter-controls">
+              <button 
+                class="filter-pill-btn" 
+                :class="{ 'active': eventFilter === 'actuales' }"
+                @click="eventFilter = 'actuales'"
+              >
+                <i class="fa-solid fa-calendar-day"></i> Actualmente
+              </button>
+              <button 
+                class="filter-pill-btn" 
+                :class="{ 'active': eventFilter === 'historial' }"
+                @click="eventFilter = 'historial'"
+              >
+                <i class="fa-solid fa-clock-rotate-left"></i> Historial
+              </button>
+            </div>
+
+            <!-- Empty state for specific filter selection -->
+            <div v-if="filteredEventos.length === 0" class="empty-favorites-state" style="border-style: dotted; background: transparent;">
+              <i class="fa-solid fa-calendar-xmark" style="font-size:2.5rem; margin-bottom:12px; color:#475569;"></i>
+              <p v-if="eventFilter === 'actuales'">No tienes eventos vigentes o futuros guardados.</p>
+              <p v-else>No tienes eventos pasados en tu historial.</p>
+            </div>
+
+            <!-- Event Cards Grid -->
+            <div v-else class="card-grid-container" id="contenedor-tarjetas">
+              <article 
+                v-for="ev in filteredEventos" 
+                :key="ev.id" 
+                class="card fade-in" 
+                :class="getNivelClass(ev.categoria)"
+                @click="router.push(`/eventos/${ev.id}`)" 
+                style="cursor: pointer;"
+              >
+                <div class="card-image">
+                  <img 
+                    :src="getImgSrc(ev)" 
+                    :alt="ev.nombre" 
+                    @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                  />
+                  <!-- Category Icon Badge (Bottom-Left) -->
+                  <span class="card-category" :title="formatCategory(ev.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(ev.categoria) }}</span>
+                  
+                  <span v-if="userCoords && ev.lat && ev.lng" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
+                    <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
                   </span>
-                  <span v-else-if="ev.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                    🔄 Híbrido
+                  <div v-if="ev.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${ev.publicador.nombre_completo}`">
+                    <i class="fa-solid fa-user-pen"></i>
+                    <span>{{ ev.publicador.nombre_completo }}</span>
+                  </div>
+                </div>
+                <div class="card-content">
+                  <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
+                    <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                      🖥️ En Línea
+                    </span>
+                    <span v-else-if="ev.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                      🔄 Híbrido
+                    </span>
+                  </div>
+                  <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ ev.nombre }}</h3>
+                  <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
+                    <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(ev.fecha_inicio || ev.fecha) }}
                   </span>
                 </div>
-                <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ ev.nombre }}</h3>
-                <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
-                  <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(ev.fecha_inicio || ev.fecha) }}
-                </span>
-              </div>
-            </article>
+              </article>
+            </div>
           </div>
         </div>
 
@@ -350,34 +518,70 @@ onMounted(async () => {
             <i class="fa-solid fa-user-slash" style="font-size:3rem; margin-bottom:15px; color:#475569;"></i>
             <p>No estás siguiendo a ningún Agente de Cambio por el momento.</p>
           </div>
-          <div class="card-grid-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:25px;">
+          <div v-else class="card-grid-container" id="agentes-container">
             <article 
-              v-for="ac in actores" 
+              v-for="(ac, index) in actores" 
               :key="ac.id" 
-              class="dash-card" 
-              @click="router.push(`/agentes/${ac.id}`)" 
+              class="agente-card glass-card"
+              :class="[
+                'delay-' + ((index % 4) * 100),
+                getAgenteThemeClass(ac.especialidad),
+                { 'agente-activo': agentesActivosIds.has(ac.id) }
+              ]"
+              v-reveal
               style="cursor: pointer;"
+              @click="router.push(`/agentes/${ac.id}`)"
             >
-              <div class="dash-card-image-box" style="height: 180px; display:flex; align-items:center; justify-content:center; background:#0f172a; padding: 20px;">
-                <img 
-                  :src="ac.imagen_url" 
-                  :alt="ac.nombre" 
-                  class="dash-card-img" 
-                  style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(114,176,77,0.3);"
-                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
-                />
-              </div>
-              <div class="dash-card-body" style="text-align: center;">
-                <h3 style="margin-bottom:6px;">
-                  {{ ac.nombre }}
-                  <i v-if="ac.is_verified" class="fa-solid fa-circle-check" style="color: #3897f0; font-size:0.95rem;"></i>
-                </h3>
-                <p class="dash-card-category">{{ ac.especialidad }} | {{ ac.organizacion }}</p>
+              <!-- Badge de actividad absoluto -->
+              <span v-if="agentesActivosIds.has(ac.id)" class="activo-badge">
+                <span class="pulse-dot"></span> Activo
+              </span>
+
+              <img 
+                :src="ac.avatar_url || ac.imagen_url || '/assets/img/kpop.webp'" 
+                :alt="ac.nombre_completo || 'Agente'" 
+                class="agente-img" 
+                @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+              >
+              <div class="agente-info">
+                <h3>{{ ac.nombre_completo || 'Agente de Cambio' }}</h3>
+                <span class="agente-category-pill">
+                  {{ getAgenteCategoryLabel(ac.especialidad) }}
+                </span>
+                <p class="agente-especialidad">{{ ac.especialidad || 'Líder Ambiental' }}</p>
+                <p class="agente-org">{{ ac.organizacion || 'Participante' }}</p>
+                <p class="agente-mini-desc">
+                  {{ ac.descripcion || ac.bio || 'Participante activo de la red EcoGuía SOS.' }}
+                </p>
+                <div class="agente-socials">
+                  <!-- Social networks links if they exist on perfil -->
+                  <a 
+                    v-if="ac.redes_ig" 
+                    :href="ac.redes_ig" 
+                    target="_blank" 
+                    @click.stop
+                  >
+                    <i class="fa-brands fa-instagram"></i>
+                  </a>
+                  <a 
+                    v-if="ac.redes_fb" 
+                    :href="ac.redes_fb" 
+                    target="_blank" 
+                    @click.stop
+                  >
+                    <i class="fa-brands fa-facebook"></i>
+                  </a>
+                  <span v-if="ac.is_validated" class="verified-badge-wrapper" title="Agente Verificado por EcoGuía SOS">
+                    <span class="verified-badge">
+                      <img src="/assets/img/logo-navbar.webp" alt="Verificado" class="verified-logo-img">
+                    </span>
+                    <span class="verified-text">eco-verificado</span>
+                  </span>
+                </div>
               </div>
             </article>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -557,66 +761,348 @@ onMounted(async () => {
   margin-bottom: 6px !important;
 }
 
-/* Followed Actors Cards overrides */
-.favoritos-page-body .dash-card {
-  background: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 24px;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+/* Followed Actors Cards overrides matching AgentesView.vue */
+.agente-card { 
+    padding: 30px 20px; 
+    align-items: center; 
+    text-align: center; 
+    background: var(--tarjeta-bg-dark, rgba(30, 41, 59, 0.45));
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--tarjeta-border-dark, rgba(255, 255, 255, 0.08));
+    box-shadow: var(--shadow-sh, 0 4px 20px rgba(0, 0, 0, 0.3));
+    border-radius: var(--radius-lg, 20px);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
 }
-.favoritos-page-body .dash-card:hover {
-  transform: translateY(-8px) scale(1.02) !important;
-  border-color: rgba(114, 176, 77, 0.5) !important;
-  box-shadow: 0 12px 30px rgba(114, 176, 77, 0.15), 0 0 0 1px rgba(114, 176, 77, 0.2) !important;
+.agente-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color, #72B04D); margin-bottom: 15px; }
+.agente-card h3 { margin: 0 0 5px 0; color: white; font-size: 1.3rem; }
+.agente-especialidad { color: var(--primary-color, #72B04D); font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
+.agente-org { color: #aaa; font-size: 0.85rem; margin-bottom: 5px; }
+.agente-socials { margin-top: 15px; display: flex; gap: 15px; font-size: 1.2rem; justify-content: center; }
+.agente-socials a { color: var(--primary-color, #72B04D); transition: color 0.3s ease; }
+.agente-socials a:hover { color: white; }
+.agente-mini-desc { font-size: 0.8rem; color: #ccc; margin: 10px 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; text-overflow: ellipsis; line-height: 1.4; }
+
+/* Dynamic Theme Colors by Specialty */
+.theme-green {
+  --theme-color: #72B04D;
+  border-left: 5px solid var(--theme-color) !important;
 }
-.dash-card-image-box {
-  width: 100%;
-  height: 160px;
-  overflow: hidden;
-  border-radius: 16px 16px 0 0;
-  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.8), rgba(10, 15, 30, 0.95)) !important;
-  display: flex;
+.theme-blue {
+  --theme-color: #0077b6;
+  border-left: 5px solid var(--theme-color) !important;
+}
+.theme-purple {
+  --theme-color: #6a00a8;
+  border-left: 5px solid var(--theme-color) !important;
+}
+.theme-default {
+  --theme-color: #2a9d8f;
+  border-left: 5px solid var(--theme-color) !important;
+}
+
+/* Specialty Text Highlights */
+.theme-green .agente-especialidad { color: #72B04D !important; }
+.theme-blue .agente-especialidad { color: #0077b6 !important; }
+.theme-purple .agente-especialidad { color: #b862ff !important; }
+.theme-default .agente-especialidad { color: #2a9d8f !important; }
+
+.theme-green .agente-socials a { color: #72B04D !important; }
+.theme-blue .agente-socials a { color: #0077b6 !important; }
+.theme-purple .agente-socials a { color: #b862ff !important; }
+.theme-default .agente-socials a { color: #2a9d8f !important; }
+
+/* Active Glow Effect */
+.agente-activo {
+  border: 1px solid var(--theme-color) !important;
+  animation: pulse-glow-agente 2.5s infinite ease-in-out;
+}
+
+@keyframes pulse-glow-agente {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 0px var(--theme-color);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 8px var(--theme-color);
+  }
+}
+
+/* Active Badge Styling */
+#agentes-container .activo-badge {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  margin: 0 !important;
+  z-index: 10 !important;
+}
+.activo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+  animation: dot-pulse 1.8s infinite ease-in-out;
+}
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Verified Badge Styling */
+.verified-badge-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+.verified-badge {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(114, 176, 77, 0.3);
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(114, 176, 77, 0.2);
 }
-.dash-card-img {
-  width: 90px !important;
-  height: 90px !important;
-  border-radius: 50% !important;
+.verified-logo-img {
+  width: 18px;
+  height: 18px;
   object-fit: cover;
-  border: 3px solid rgba(114, 176, 77, 0.3) !important;
-  box-shadow: 0 0 20px rgba(114, 176, 77, 0.2);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 50%;
 }
-.favoritos-page-body .dash-card:hover .dash-card-img {
-  transform: scale(1.08) !important;
-  border-color: #72b04d !important;
-  box-shadow: 0 0 25px rgba(114, 176, 77, 0.45);
-}
-.dash-card-body {
-  padding: 20px;
-  text-align: center;
-  flex-grow: 1;
-}
-.dash-card-body h3 {
-  color: #ffffff;
-  font-size: 1.1rem;
+.verified-text {
+  font-size: 0.75rem;
   font-weight: 700;
-  margin-bottom: 6px;
+  color: var(--theme-color, #72B04D);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.dash-card-category {
-  color: #72b04d;
+
+/* Explicit Category Badge in Card */
+.agente-category-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+.theme-green .agente-category-pill {
+  background: rgba(114, 176, 77, 0.12) !important;
+  color: #72B04D !important;
+  border: 1px solid rgba(114, 176, 77, 0.2) !important;
+}
+.theme-blue .agente-category-pill {
+  background: rgba(0, 119, 182, 0.12) !important;
+  color: #4db6e8 !important;
+  border: 1px solid rgba(0, 119, 182, 0.2) !important;
+}
+.theme-purple .agente-category-pill {
+  background: rgba(106, 0, 168, 0.12) !important;
+  color: #b862ff !important;
+  border: 1px solid rgba(106, 0, 168, 0.2) !important;
+}
+.theme-default .agente-category-pill {
+  background: rgba(42, 157, 143, 0.12) !important;
+  color: #2a9d8f !important;
+  border: 1px solid rgba(42, 157, 143, 0.2) !important;
+}
+
+/* Desktop/Tablet Horizontal Rectangular Layout */
+@media (min-width: 769px) {
+  #agentes-container {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)) !important;
+    gap: 30px !important;
+  }
+  #agentes-container .agente-card {
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    padding: 24px 24px 24px 36px !important;
+    gap: 24px !important;
+    border-radius: 20px !important;
+    height: 100% !important;
+    position: relative !important;
+  }
+  .agente-img {
+    width: 110px !important;
+    height: 110px !important;
+    border-radius: 16px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  .agente-info {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
+    overflow: hidden !important;
+  }
+  .agente-card h3 {
+    margin: 0 0 4px 0 !important;
+    font-size: 1.25rem !important;
+  }
+  .agente-especialidad {
+    margin-bottom: 4px !important;
+  }
+  .agente-org {
+    margin-bottom: 8px !important;
+  }
+  .agente-mini-desc {
+    margin: 0 0 12px 0 !important;
+    line-height: 1.4 !important;
+  }
+  .agente-socials {
+    margin-top: 0 !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* Responsive Mobile Horizontal Rectangular Layout */
+@media (max-width: 768px) {
+  #agentes-container {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  #agentes-container .agente-card {
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    padding: 16px !important;
+    gap: 16px !important;
+    border-radius: 16px !important;
+    height: auto !important;
+    position: relative !important;
+  }
+  #agentes-container .agente-img {
+    width: 85px !important;
+    height: 85px !important;
+    border-radius: 12px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  #agentes-container .agente-info {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
+    overflow: hidden !important;
+  }
+  #agentes-container .agente-card h3 {
+    font-size: 1.05rem !important;
+    margin: 0 0 2px 0 !important;
+    white-space: normal !important;
+    text-align: left !important;
+    width: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  #agentes-container .agente-category-pill {
+    font-size: 0.65rem !important;
+    padding: 2px 8px !important;
+    margin-bottom: 4px !important;
+  }
+  #agentes-container .agente-especialidad {
+    font-size: 0.75rem !important;
+    text-align: left !important;
+    margin-bottom: 2px !important;
+  }
+  #agentes-container .agente-org {
+    display: block !important;
+    font-size: 0.7rem !important;
+    color: #aaa !important;
+    margin-bottom: 4px !important;
+  }
+  #agentes-container .agente-mini-desc {
+    display: block !important;
+    font-size: 0.75rem !important;
+    color: #ccc !important;
+    margin: 4px 0 8px 0 !important;
+    line-height: 1.4 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    text-overflow: ellipsis !important;
+  }
+  #agentes-container .agente-socials {
+    display: flex !important;
+    margin-top: 4px !important;
+    font-size: 1rem !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  #agentes-container .activo-badge {
+    font-size: 0.65rem !important;
+    padding: 1px 6px !important;
+  }
+  #agentes-container .verified-text {
+    font-size: 0.65rem !important;
+  }
+  #agentes-container .verified-badge {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  #agentes-container .verified-logo-img {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+/* Event Filter Pill Controls styling */
+.event-filter-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+.filter-pill-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  padding: 8px 18px;
+  border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  margin: 5px 0 0 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.filter-pill-btn.active {
+  background: rgba(114, 176, 77, 0.15) !important;
+  border-color: rgba(114, 176, 77, 0.3) !important;
+  color: #72b04d !important;
+  box-shadow: 0 0 10px rgba(114, 176, 77, 0.15);
 }
 </style>
