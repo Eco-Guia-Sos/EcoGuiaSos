@@ -4,9 +4,15 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Interactive step-by-step drawer/modal state
-const selectedTopic = ref<string | null>(null)
-const isModalOpen = ref(false)
+const expandedTopic = ref<string | null>(null)
+
+const toggleTopic = (topicId: string) => {
+  if (expandedTopic.value === topicId) {
+    expandedTopic.value = null
+  } else {
+    expandedTopic.value = topicId
+  }
+}
 
 interface GuideTopic {
   title: string
@@ -17,9 +23,9 @@ interface GuideTopic {
 
 const TOPICS_CONFIG: Record<string, GuideTopic> = {
   navegacion: {
-    title: 'Navegar por el Portal',
+    title: 'Navegar el sitio',
     icon: '🧭',
-    description: 'Aprende a moverte por las diferentes secciones de EcoGuía SOS.',
+    description: 'Descubre el menú superior, el sistema de niveles ecológicos y la arquitectura de contenidos.',
     steps: [
       'Usa la barra de navegación superior sticky para moverte entre Inicio, Nosotros, Cómo Usar y tu Perfil.',
       'En la página de inicio, explora las categorías divididas por los tres niveles de compromiso: Colibrí (Lecturas, Ecotecnias, Agua), Ajolote (Voluntariado y Convocatorias) y Lobo (Normativas y Fondos).',
@@ -27,9 +33,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   registro: {
-    title: 'Registrarse como Voluntario',
+    title: 'Registrarte como Voluntario',
     icon: '🌱',
-    description: 'Crea una cuenta para desbloquear el catálogo interactivo completo.',
+    description: 'Cómo crear tu perfil seguro para desbloquear el guardado de actividades y seguimiento de actores locales.',
     steps: [
       'Haz click en el botón "Súmate" o "Iniciar Sesión" en la barra de navegación superior.',
       'Llena el formulario con tu correo electrónico y define una contraseña segura de al menos 6 caracteres.',
@@ -37,9 +43,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   busqueda: {
-    title: 'Búsqueda en Tiempo Real',
+    title: 'Búsqueda en tiempo real',
     icon: '🔍',
-    description: 'Ubica de forma rápida proyectos y centros cerca de ti.',
+    description: 'Aprende a usar la barra de búsqueda superior para ubicar proyectos, eventos y lugares sustentables.',
     steps: [
       'Localiza la barra de búsqueda en la sección principal de la web.',
       'Escribe palabras clave como "reforestación", "reciclaje" o el nombre de una alcaldía.',
@@ -49,7 +55,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   filtros: {
     title: 'Filtros de Búsqueda Avanzada',
     icon: '⚙️',
-    description: 'Combina filtros lógicos para afinar tus búsquedas de campo.',
+    description: 'Combina categorías (Talleres, Parques, Huertos), fechas precisas y preferencias como acceso con mascotas.',
     steps: [
       'Haz click en el botón "Búsqueda Avanzada" en la cabecera del catálogo.',
       'Selecciona categorías específicas, rangos de fechas o marca chips como "Gratuito", "Pet-Friendly" o "Apto para Niños".',
@@ -59,7 +65,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   radar: {
     title: 'Radar de Distancia',
     icon: '🎯',
-    description: 'Descubre iniciativas activas a tu alrededor inmediato.',
+    description: 'Autoriza tu ubicación geográfica y desliza el control de kilómetros para ver lo que sucede a tu alrededor.',
     steps: [
       'Asegúrate de permitir el acceso de geolocalización en tu navegador móvil o de escritorio.',
       'Usa el control deslizante de distancia (slider de kilómetros) para ajustar tu radio de acción de 1 km hasta 100 km.',
@@ -67,9 +73,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   detalles: {
-    title: 'Visualizar Detalles de Tarjeta',
+    title: 'Detalles y Carrusel',
     icon: '🃏',
-    description: 'Explora galerías, descripciones detalladas y mapas interactivos de eventos.',
+    description: 'Explora la tarjeta interior de los eventos: galerías de fotos, descripción de actividades y mapas.',
     steps: [
       'Haz click en cualquier tarjeta de evento o lugar sustentable en el catálogo.',
       'Lee la descripción detallada, fechas y horarios en la ficha ampliada.',
@@ -79,7 +85,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   mapa: {
     title: 'Visor en Mapa',
     icon: '🗺️',
-    description: 'Analiza geográficamente las iniciativas del país.',
+    description: 'Alterna al lienzo cartográfico para analizar la densidad de proyectos y planificar rutas de voluntariado.',
     steps: [
       'Haz click en "Ver Mapa" o accede directamente a la sección de Atlas Territorial.',
       'Verás marcadores interactivos que se agrupan (clustering) para evitar saturación visual.',
@@ -89,7 +95,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   favoritos: {
     title: 'Guardar en Favoritos',
     icon: '❤️',
-    description: 'Crea tu propia agenda de voluntariado y consultas.',
+    description: 'Marca con un corazón los eventos, lecturas o lugares de interés para consultarlos en tu menú personal.',
     steps: [
       'En la vista de detalles de cualquier evento o lugar, presiona el botón "Guardar en Favoritos".',
       'El sistema enlazará el registro a tu cuenta en tiempo real.',
@@ -97,9 +103,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   agentes: {
-    title: 'Seguimiento de Agentes',
+    title: 'Conectar con Agentes',
     icon: '👥',
-    description: 'Mantente al día con el trabajo de tus organizaciones preferidas.',
+    description: 'Visita perfiles de organizaciones validadas, consulta su historial y síguelos para recibir alertas.',
     steps: [
       'Accede a la sección de "Agentes de Cambio" para ver el listado de colectivos validados.',
       'Haz click en cualquiera para ver su banner, biografía, redes sociales y proyectos publicados.',
@@ -107,218 +113,59 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   }
 }
-
-const openGuide = (topicId: string) => {
-  selectedTopic.value = topicId
-  isModalOpen.value = true
-}
-
-const closeModal = () => {
-  selectedTopic.value = null
-  isModalOpen.value = false
-}
 </script>
 
 <template>
   <main class="guia-main-container" style="padding-top: 100px;">
     <!-- HERO SECTION -->
-    <header class="guia-hero" style="margin-bottom: 2rem;">
+    <header class="guia-hero" style="margin-bottom: 2.5rem;">
       <h1>Guía para Visitantes y Voluntarios</h1>
       <p>Saca el máximo provecho de nuestras herramientas de exploración ciudadana para apoyar la restauración y conservación ambiental.</p>
     </header>
 
-    <!-- VIDEOS & TUTORIALS GRID -->
+    <!-- VIDEOS & TUTORIALS GRID (COLLAPSIBLE ACCORDIONS) -->
     <section class="videos-grid">
-      
-      <!-- Video Card: Navegar sitio -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🧭</span>
-          <div>
-            <h3>Navegar el sitio</h3>
-            <p>Descubre el menú superior, el sistema de niveles ecológicos y la arquitectura de contenidos.</p>
+      <article 
+        v-for="(topic, key) in TOPICS_CONFIG" 
+        :key="key" 
+        class="video-card"
+        style="height: max-content;"
+      >
+        <header class="video-card-header" @click="toggleTopic(key)">
+          <span class="topic-icon">{{ topic.icon }}</span>
+          <div style="flex-grow: 1; padding-right: 10px;">
+            <h3>{{ topic.title }}</h3>
+            <p>{{ topic.description }}</p>
           </div>
+          <i 
+            class="fa-solid fa-chevron-down dropdown-arrow" 
+            :class="{ 'dropdown-open': expandedTopic === key }"
+          ></i>
         </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('navegacion')">Leer guía</button>
-        </footer>
-      </article>
 
-      <!-- Video Card: Registro -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🌱</span>
-          <div>
-            <h3>Registrarte como Voluntario</h3>
-            <p>Cómo crear tu perfil seguro para desbloquear el guardado de actividades y seguimiento de actores locales.</p>
+        <transition name="fade">
+          <div v-show="expandedTopic === key" class="video-card-body">
+            <div class="written-guide-section">
+              <h4><i class="fa-solid fa-book-open"></i> Guía Escrita Paso a Paso</h4>
+              <ul class="steps-list">
+                <li v-for="(step, idx) in topic.steps" :key="idx">
+                  <span class="step-num">{{ idx + 1 }}</span>
+                  <span class="step-text">{{ step }}</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="video-preview-section">
+              <div class="video-player-container">
+                <div class="video-placeholder">
+                  <i class="fa-solid fa-video-slash"></i>
+                  <span>Video tutorial en producción (Próximamente)</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('registro')">Leer guía</button>
-        </footer>
+        </transition>
       </article>
-
-      <!-- Video Card: Búsqueda -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🔍</span>
-          <div>
-            <h3>Búsqueda en tiempo real</h3>
-            <p>Aprende a usar la barra de búsqueda superior para ubicar proyectos, eventos y lugares sustentables.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('busqueda')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Filtros -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">⚙️</span>
-          <div>
-            <h3>Filtros de Búsqueda Avanzada</h3>
-            <p>Combina categorías (Talleres, Parques, Huertos), fechas precisas y preferencias como acceso con mascotas.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('filtros')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Radar -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🎯</span>
-          <div>
-            <h3>Radar de Distancia</h3>
-            <p>Autoriza tu ubicación geográfica y desliza el control de kilómetros para ver lo que sucede a tu alrededor.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('radar')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Detalles -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🃏</span>
-          <div>
-            <h3>Detalles y Carrusel</h3>
-            <p>Explora la tarjeta interior de los eventos: galerías de fotos, descripción de actividades y mapas.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('detalles')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Mapa -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🗺️</span>
-          <div>
-            <h3>Visor en Mapa</h3>
-            <p>Alterna al lienzo cartográfico para analizar la densidad de proyectos y planificar rutas de voluntariado.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('mapa')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Favoritos -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">❤️</span>
-          <div>
-            <h3>Guardar en Favoritos</h3>
-            <p>Marca con un corazón los eventos, lecturas o lugares de interés para consultarlos en tu menú personal.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('favoritos')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Agentes -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">👥</span>
-          <div>
-            <h3>Conectar con Agentes</h3>
-            <p>Visita perfiles de organizaciones validadas, consulta su historial y síguelos para recibir alertas.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('agentes')">Leer guía</button>
-        </footer>
-      </article>
-
     </section>
 
     <!-- BOTTOM CTA -->
@@ -328,36 +175,18 @@ const closeModal = () => {
         Consultar los tutoriales para Organizaciones y Actores Oficiales <i class="fa-solid fa-circle-arrow-right"></i>
       </RouterLink>
     </footer>
-
-    <!-- INTERACTIVE STEP-BY-STEP MODAL -->
-    <div v-if="isModalOpen && selectedTopic && TOPICS_CONFIG[selectedTopic]" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-content glass-effect" style="max-width: 550px; padding: 30px; border-radius: 20px; text-align: left;">
-        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
-          <h3 style="color:white; margin:0; display:flex; align-items:center; gap:10px;">
-            <span>{{ TOPICS_CONFIG[selectedTopic]?.icon }}</span>
-            {{ TOPICS_CONFIG[selectedTopic]?.title }}
-          </h3>
-          <button @click="closeModal" style="background:none; border:none; color:#94a3b8; font-size:1.8rem; cursor:pointer;">&times;</button>
-        </div>
-        
-        <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.5; margin-bottom: 20px;">
-          {{ TOPICS_CONFIG[selectedTopic]?.description }}
-        </p>
-
-        <ol style="color:#f8fafc; font-size:0.95rem; line-height:1.6; padding-left:20px; display:flex; flex-direction:column; gap:12px;">
-          <li v-for="(step, idx) in TOPICS_CONFIG[selectedTopic]?.steps" :key="idx">
-            {{ step }}
-          </li>
-        </ol>
-
-        <button class="btn btn-primary" @click="closeModal" style="margin-top: 25px; width:100%; border-radius:12px; font-weight:700; padding:10px;">
-          Entendido
-        </button>
-      </div>
-    </div>
   </main>
 </template>
 
 <style>
 @import '../assets/css/guia.css';
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

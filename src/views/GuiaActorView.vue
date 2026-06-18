@@ -4,9 +4,15 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Interactive step-by-step drawer/modal state
-const selectedTopic = ref<string | null>(null)
-const isModalOpen = ref(false)
+const expandedTopic = ref<string | null>(null)
+
+const toggleTopic = (topicId: string) => {
+  if (expandedTopic.value === topicId) {
+    expandedTopic.value = null
+  } else {
+    expandedTopic.value = topicId
+  }
+}
 
 interface GuideTopic {
   title: string
@@ -19,7 +25,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   acceso: {
     title: 'Solicitar acceso de Actor',
     icon: '📋',
-    description: 'Paso a paso para registrar tu colectivo o institución ambiental.',
+    description: 'Paso a paso para registrar tu colectivo y el proceso de validación administrativa requerida.',
     steps: [
       'Crea una cuenta normal desde la vista "Súmate" con el correo de tu colectivo.',
       'Solicita la validación enviando tus credenciales oficiales de colectivo/parque al correo administrativo de la plataforma.',
@@ -27,9 +33,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   recorrido: {
-    title: 'Recorrido por el Panel Admin',
+    title: 'Conocer el Panel Admin',
     icon: '🎛️',
-    description: 'Visión general del entorno de administración centralizado.',
+    description: 'Visión general de la barra lateral, gestión de sesiones y el estado de tus métricas de impacto.',
     steps: [
       'Inicia sesión y haz click en "Administrar" en tu menú de perfil para acceder a `/admin`.',
       'Usa la barra lateral izquierda para navegar entre el Dashboard, tus Eventos y los Hubs Ecológicos.',
@@ -37,9 +43,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   publicar: {
-    title: 'Publicar un Evento Ecológico',
+    title: 'Publicar un Evento',
     icon: '📝',
-    description: 'Aprende a formular y clasificar propuestas ecológicas atractivas.',
+    description: 'Cómo estructurar títulos atractivos, describir actividades y clasificar la categoría correctamente.',
     steps: [
       'Haz click en "Eventos" en la barra lateral del Panel y presiona "Agregar Nuevo".',
       'Llena el formulario con título, descripción y clasifica en categorías como Talleres, Reforestación o Pláticas.',
@@ -47,9 +53,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   imagenes: {
-    title: 'Subir Imágenes al Storage',
+    title: 'Subir imágenes al Storage',
     icon: '🖼️',
-    description: 'Añade impacto visual a tus publicaciones con imágenes optimizadas.',
+    description: 'Aprende a adjuntar y previsualizar imágenes optimizadas locales con compresión automática.',
     steps: [
       'En el formulario de creación, haz click en "Sube una imagen" o pega una URL directa.',
       'El cargador de archivos comprimirá la imagen localmente en formato `.webp` de forma automática.',
@@ -57,9 +63,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   coordenadas: {
-    title: 'Captura Precisa de Ubicación',
+    title: 'Captura de Ubicación',
     icon: '📍',
-    description: 'Georreferencia tu evento para mostrarlo en el mapa y radar.',
+    description: 'Métodos para ingresar direcciones físicas y coordenadas de latitud/longitud precisas para el mapa.',
     steps: [
       'Ingresa la dirección en formato de texto legible (ej: Bosque de Chapultepec, CDMX).',
       'Ingresa las coordenadas de Latitud y Longitud del sitio de encuentro.',
@@ -67,9 +73,9 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
     ]
   },
   revision: {
-    title: 'Ciclo de Revisión y Moderación',
+    title: 'Publicación y Revisión',
     icon: '🚀',
-    description: 'Conoce cómo se aprueban las propuestas en la plataforma.',
+    description: 'Conoce el ciclo de vida de los eventos: desde el estado \'Pendiente\' hasta su aprobación pública.',
     steps: [
       'Al guardar un nuevo evento, este quedará en estado "Pendiente" y no será visible al público inmediatamente.',
       'Los administradores del sitio recibirán una alerta para verificar los datos y la coherencia ambiental de tu propuesta.',
@@ -79,7 +85,7 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   perfil: {
     title: 'Editar Perfil Público',
     icon: '🌐',
-    description: 'Configura la carta de presentación de tu colectivo.',
+    description: 'Cómo actualizar tu logotipo, biografía de tu colectivo y enlazar tus redes sociales oficiales.',
     steps: [
       'Accede a la pestaña "Mi Perfil" en el Panel de Administración.',
       'Sube tu logotipo y escribe tu biografía y misión principal.',
@@ -89,23 +95,13 @@ const TOPICS_CONFIG: Record<string, GuideTopic> = {
   gestion: {
     title: 'Gestionar Publicaciones',
     icon: '🗂️',
-    description: 'Edita, duplica o remueve tus eventos creados.',
+    description: 'Accede a tu historial de eventos creados para aplicar correcciones rápidas de texto o remover registros.',
     steps: [
       'Ve a la pestaña "Mis Eventos" o "Mis Lugares" en tu panel.',
       'Usa el botón de lápiz (editar) para corregir ortografías o actualizar fechas sobre registros existentes.',
       'Si un evento se canceló o deseas quitarlo, presiona el botón de basura (eliminar) para retirarlo al instante.'
     ]
   }
-}
-
-const openGuide = (topicId: string) => {
-  selectedTopic.value = topicId
-  isModalOpen.value = true
-}
-
-const closeModal = () => {
-  selectedTopic.value = null
-  isModalOpen.value = false
 }
 </script>
 
@@ -128,177 +124,49 @@ const closeModal = () => {
       </RouterLink>
     </div>
 
-    <!-- VIDEOS & TUTORIALS GRID -->
+    <!-- VIDEOS & TUTORIALS GRID (COLLAPSIBLE ACCORDIONS) -->
     <section class="videos-grid">
-      
-      <!-- Video Card: Solicitar Acceso -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">📋</span>
-          <div>
-            <h3>Solicitar acceso de Actor</h3>
-            <p>Paso a paso para registrar tu colectivo y el proceso de validación administrativa requerida.</p>
+      <article 
+        v-for="(topic, key) in TOPICS_CONFIG" 
+        :key="key" 
+        class="video-card"
+        style="height: max-content;"
+      >
+        <header class="video-card-header" @click="toggleTopic(key)">
+          <span class="topic-icon">{{ topic.icon }}</span>
+          <div style="flex-grow: 1; padding-right: 10px;">
+            <h3>{{ topic.title }}</h3>
+            <p>{{ topic.description }}</p>
           </div>
+          <i 
+            class="fa-solid fa-chevron-down dropdown-arrow" 
+            :class="{ 'dropdown-open': expandedTopic === key }"
+          ></i>
         </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('acceso')">Leer guía</button>
-        </footer>
-      </article>
 
-      <!-- Video Card: Recorrido por el Panel -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🎛️</span>
-          <div>
-            <h3>Conocer el Panel Admin</h3>
-            <p>Visión general de la barra lateral, gestión de sesiones y el estado de tus métricas de impacto.</p>
+        <transition name="fade">
+          <div v-show="expandedTopic === key" class="video-card-body">
+            <div class="written-guide-section">
+              <h4><i class="fa-solid fa-book-open"></i> Guía Escrita Paso a Paso</h4>
+              <ul class="steps-list">
+                <li v-for="(step, idx) in topic.steps" :key="idx">
+                  <span class="step-num">{{ idx + 1 }}</span>
+                  <span class="step-text">{{ step }}</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="video-preview-section">
+              <div class="video-player-container">
+                <div class="video-placeholder">
+                  <i class="fa-solid fa-video-slash"></i>
+                  <span>Video tutorial en producción (Próximamente)</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('recorrido')">Leer guía</button>
-        </footer>
+        </transition>
       </article>
-
-      <!-- Video Card: Publicar Evento -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">📝</span>
-          <div>
-            <h3>Publicar un Evento</h3>
-            <p>Cómo estructurar títulos atractivos, describir actividades y clasificar la categoría correctamente.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('publicar')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Subir Imágenes -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🖼️</span>
-          <div>
-            <h3>Subir imágenes al Storage</h3>
-            <p>Aprende a adjuntar y previsualizar imágenes optimizadas locales con compresión automática.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('imagenes')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Georreferenciación -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">📍</span>
-          <div>
-            <h3>Captura de Ubicación</h3>
-            <p>Métodos para ingresar direcciones físicas y coordenadas de latitud/longitud precisas para el mapa.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('coordenadas')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Proceso de publicación -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🚀</span>
-          <div>
-            <h3>Publicación y Revisión</h3>
-            <p>Conoce el ciclo de vida de los eventos: desde el estado 'Pendiente' hasta su aprobación pública.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('revision')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Editar Perfil -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🌐</span>
-          <div>
-            <h3>Editar Perfil Público</h3>
-            <p>Cómo actualizar tu logotipo, biografía de tu colectivo y enlazar tus redes sociales oficiales.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('perfil')">Leer guía</button>
-        </footer>
-      </article>
-
-      <!-- Video Card: Gestionar Publicaciones -->
-      <article class="video-card">
-        <header class="video-card-header">
-          <span class="topic-icon">🗂️</span>
-          <div>
-            <h3>Gestionar Publicaciones</h3>
-            <p>Accede a tu historial de eventos creados para aplicar correcciones rápidas de texto o remover registros.</p>
-          </div>
-        </header>
-        <div class="video-player-container">
-          <div class="video-placeholder">
-            <i class="fa-solid fa-video-slash"></i>
-            <span>Video en producción</span>
-          </div>
-        </div>
-        <footer class="video-card-footer">
-          <span class="video-status pending">Próximamente</span>
-          <button class="btn-read-guide" @click="openGuide('gestion')">Leer guía</button>
-        </footer>
-      </article>
-
     </section>
 
     <!-- BOTTOM CTA -->
@@ -308,38 +176,20 @@ const closeModal = () => {
         Consultar los tutoriales de exploración para Visitantes y Voluntarios <i class="fa-solid fa-circle-arrow-right"></i>
       </RouterLink>
     </footer>
-
-    <!-- INTERACTIVE STEP-BY-STEP MODAL -->
-    <div v-if="isModalOpen && selectedTopic && TOPICS_CONFIG[selectedTopic]" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-content glass-effect" style="max-width: 550px; padding: 30px; border-radius: 20px; text-align: left;">
-        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
-          <h3 style="color:white; margin:0; display:flex; align-items:center; gap:10px;">
-            <span>{{ TOPICS_CONFIG[selectedTopic]?.icon }}</span>
-            {{ TOPICS_CONFIG[selectedTopic]?.title }}
-          </h3>
-          <button @click="closeModal" style="background:none; border:none; color:#94a3b8; font-size:1.8rem; cursor:pointer;">&times;</button>
-        </div>
-        
-        <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.5; margin-bottom: 20px;">
-          {{ TOPICS_CONFIG[selectedTopic]?.description }}
-        </p>
- 
-        <ol style="color:#f8fafc; font-size:0.95rem; line-height:1.6; padding-left:20px; display:flex; flex-direction:column; gap:12px;">
-          <li v-for="(step, idx) in TOPICS_CONFIG[selectedTopic]?.steps" :key="idx">
-            {{ step }}
-          </li>
-        </ol>
-
-        <button class="btn btn-primary" @click="closeModal" style="margin-top: 25px; width:100%; border-radius:12px; font-weight:700; padding:10px;">
-          Entendido
-        </button>
-      </div>
-    </div>
   </main>
 </template>
 
 <style>
 @import '../assets/css/guia.css';
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 
 /* Fix for alert link in custom styles */
 .guia-alert {
