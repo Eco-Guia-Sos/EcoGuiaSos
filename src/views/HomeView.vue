@@ -14,8 +14,58 @@ const homeStore = useHomeStore()
 const todosLosProyectos = computed(() => homeStore.todosLosProyectos)
 const carruselSlides = computed(() => homeStore.carruselSlides)
 const loading = computed(() => homeStore.loading)
-const filtroActual = ref<'evento' | 'en_linea' | 'lugar'>('evento')
+const filtroActual = ref<'evento' | 'en_linea'>('evento')
 const buscadorInput = ref('')
+
+const CATEGORY_LABELS: Record<string, string> = {
+  // Eventos
+  taller: 'Taller',
+  voluntariado: 'Voluntariado',
+  conferencia: 'Conferencia / Charla',
+  limpieza: 'Limpieza de Playas / Áreas',
+  reforestacion: 'Reforestación',
+  otro: 'Otro',
+  
+  // Lugares
+  sede: 'Sede de Eventos',
+  reciclaje: 'Centro de Reciclaje / Residuos',
+  asociacion: 'Asociación / ONG Ambiental',
+  granel: 'Tienda a Granel / Residuo Cero',
+  restaurante: 'Restaurante Vegano / Eco-Gastronomía',
+  huerto: 'Huerto / Espacio de Cultivo',
+  ecoturismo: 'Ecoturismo / Área Natural'
+}
+
+const formatCategory = (cat: string) => {
+  if (!cat) return 'General'
+  const key = cat.toLowerCase()
+  return CATEGORY_LABELS[key] || cat
+}
+
+const getCategoryIcon = (cat: string) => {
+  if (!cat) return '💡'
+  const key = cat.toLowerCase()
+  const icons: Record<string, string> = {
+    // Eventos
+    taller: '🎨',
+    voluntariado: '🤝',
+    conferencia: '🗣️',
+    limpieza: '♻️',
+    reforestacion: '🌲',
+    otro: '💡',
+    
+    // Lugares
+    sede: '📍',
+    reciclaje: '♻️',
+    asociacion: '🤝',
+    granel: '🫙',
+    restaurante: '🥦',
+    huerto: '🌱',
+    ecoturismo: '🌲'
+  }
+  return icons[key] || '💡'
+}
+
 
 // Navigation/View toggles
 const isMapVisible = ref(false)
@@ -47,12 +97,22 @@ const isAdvancedSearchOpen = ref(false)
 const filtrosAvanzados = ref({
   categoria: 'all',
   ubicacion: 'all',
-  distancia: 100,
+  distancia: 20,
   fechas: 'all',
   fechaExacta: '',
   soloGratis: false,
   ninos: false,
-  mascotas: false
+  mascotas: false,
+  ordenarPor: 'fecha'
+})
+
+const hasActiveFilters = computed(() => {
+  return !!buscadorInput.value || 
+         filtrosAvanzados.value.categoria !== 'all' || 
+         proximidadActiva.value || 
+         filtrosAvanzados.value.soloGratis || 
+         filtrosAvanzados.value.mascotas || 
+         filtrosAvanzados.value.ninos
 })
 
 // Map and Calendar selections
@@ -63,7 +123,6 @@ const activeDateEvents = ref<any[]>([])
 // Calendar state
 const currentMonth = ref(new Date().getMonth())
 const currentYear = ref(new Date().getFullYear())
-const calFiltro = ref<'todos' | 'presencial' | 'en_linea'>('todos')
 
 // Tooltip state
 const activeTooltip = ref<string | null>(null)
@@ -92,6 +151,19 @@ watch(() => authStore.user, (newUser) => {
     setTimeout(() => obtenerUbicacionSilenciosa(), 1000)
   }
 }, { immediate: true })
+
+// Watch proximity filters to query database dynamically
+watch([userCoords, () => filtrosAvanzados.value.distancia, proximidadActiva], ([newCoords, newDist, isProxActive]) => {
+  if (isProxActive && newCoords) {
+    homeStore.cargarDatos(newCoords.lat, newCoords.lng, newDist, true)
+  }
+})
+
+watch(proximidadActiva, (newVal) => {
+  if (!newVal) {
+    homeStore.cargarDatos(undefined, undefined, undefined, true)
+  }
+})
 
 // Watch slides to initialize/reinitialize Swiper when they load or change
 watch(carruselSlides, (newSlides) => {
@@ -124,7 +196,7 @@ onMounted(async () => {
     authStore.init()
   }
   
-  await homeStore.cargarDatos()
+  await homeStore.cargarDatos(undefined, undefined, undefined, true)
   
   nextTick(() => {
     iniciarCarrusel()
@@ -177,10 +249,8 @@ const filteredProyectos = computed(() => {
   let list = todosLosProyectos.value.filter(p => {
     if (filtroActual.value === 'evento') {
       return p.tipo === 'evento' && p.modalidad === 'presencial'
-    } else if (filtroActual.value === 'en_linea') {
-      return p.tipo === 'evento' && (p.modalidad === 'en_linea' || p.tiene_sesion_online === true)
     } else {
-      return p.tipo === 'lugar'
+      return p.tipo === 'evento' && (p.modalidad === 'en_linea' || p.tiene_sesion_online === true)
     }
   })
 
@@ -196,12 +266,17 @@ const filteredProyectos = computed(() => {
 
   // Category
   if (filtrosAvanzados.value.categoria !== 'all') {
-    list = list.filter(p => p.categoria === filtrosAvanzados.value.categoria)
+    list = list.filter(p => p.categoria?.toLowerCase() === filtrosAvanzados.value.categoria.toLowerCase())
   }
 
   // GPS Proximity
   if (proximidadActiva.value && userCoords.value) {
     list = list.filter(p => {
+      // Las actividades virtuales o con sesión online ignoran la distancia del GPS
+      if (p.modalidad === 'en_linea' || p.tiene_sesion_online === true) {
+        p.distancia_calculada = Infinity
+        return true
+      }
       if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) {
         p.distancia_calculada = Infinity
         return true
@@ -210,7 +285,6 @@ const filteredProyectos = computed(() => {
       p.distancia_calculada = dist
       return dist <= filtrosAvanzados.value.distancia
     })
-    list.sort((a, b) => (a.distancia_calculada || 0) - (b.distancia_calculada || 0))
   } else {
     list.forEach(p => p.distancia_calculada = undefined)
   }
@@ -251,6 +325,22 @@ const filteredProyectos = computed(() => {
   }
   if (filtrosAvanzados.value.ninos) {
     list = list.filter(p => p.apto_ninos === true)
+  }
+
+  // ORDENACIÓN DINÁMICA
+  if (filtrosAvanzados.value.ordenarPor === 'distancia' && proximidadActiva.value && userCoords.value) {
+    list.sort((a, b) => (a.distancia_calculada || Infinity) - (b.distancia_calculada || Infinity))
+  } else if (filtrosAvanzados.value.ordenarPor === 'alfabetico') {
+    list.sort((a, b) => a.nombre.localeCompare(b.nombre))
+  } else {
+    list.sort((a, b) => {
+      if (a.tipo === 'lugar' && b.tipo === 'lugar') {
+        return a.nombre.localeCompare(b.nombre)
+      }
+      const dateA = a.fecha_inicio ? new Date(a.fecha_inicio).getTime() : Infinity
+      const dateB = b.fecha_inicio ? new Date(b.fecha_inicio).getTime() : Infinity
+      return dateA - dateB
+    })
   }
 
   return list
@@ -295,6 +385,10 @@ watch([filtroActual, buscadorInput, filtrosAvanzados, proximidadActiva], () => {
     actualizarMiniMapa()
   })
 }, { deep: true })
+
+watch(filtroActual, () => {
+  filtrosAvanzados.value.categoria = 'all'
+})
 
 const cambiarPagina = (num: number) => {
   currentPage.value = num
@@ -525,7 +619,7 @@ const obtenerUbicacionSilenciosa = () => {
       userCoords.value = { lat: position.coords.latitude, lng: position.coords.longitude }
       localStorage.setItem('eco_user_coords', JSON.stringify(userCoords.value))
       proximidadActiva.value = true
-      filtrosAvanzados.value.distancia = 100
+      filtrosAvanzados.value.distancia = 20
       filtrosAvanzados.value.ubicacion = 'nearby'
     },
     (error) => {
@@ -536,13 +630,104 @@ const obtenerUbicacionSilenciosa = () => {
 }
 
 // Calendar Logic
-const allEvents = computed(() => {
-  let list = todosLosProyectos.value.filter(p => p.tipo === 'evento')
-  if (calFiltro.value === 'presencial') {
-    return list.filter(p => p.modalidad === 'presencial')
-  } else if (calFiltro.value === 'en_linea') {
-    return list.filter(p => p.modalidad === 'en_linea' || p.tiene_sesion_online === true)
+const calendarEvents = ref<any[]>([])
+
+const fetchCalendarEvents = async () => {
+  try {
+    const startOfMonth = new Date(currentYear.value, currentMonth.value, 1, 0, 0, 0).toISOString()
+    const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0, 23, 59, 59).toISOString()
+    
+    const { data, error } = await supabase
+      .from('eventos')
+      .select('id, nombre, categoria, ubicacion, imagen_url, fecha_inicio, fecha_fin, modalidad, lat, lng, tiene_sesion_online, imagenes, es_gratuito, pet_friendly, apto_ninos')
+      .eq('estado', 'approved')
+      .gte('fecha_inicio', startOfMonth)
+      .lte('fecha_inicio', endOfMonth)
+      
+    if (error) throw error
+    
+    calendarEvents.value = (data || []).map((row: any) => {
+      let firstImg = row.imagen_url
+      if (row.imagenes && Array.isArray(row.imagenes) && row.imagenes.length > 0) {
+        firstImg = row.imagenes[0]
+      }
+      return {
+        id: row.id,
+        nombre: row.nombre,
+        categoria: row.categoria || 'General',
+        ubicacion: row.ubicacion || 'CDMX',
+        imagen: firstImg || '/assets/img/kpop.webp',
+        tipo: 'evento',
+        fecha: row.fecha_inicio || row.created_at,
+        fecha_inicio: row.fecha_inicio,
+        fecha_fin: row.fecha_fin,
+        modalidad: row.modalidad || 'presencial',
+        tiene_sesion_online: row.tiene_sesion_online || false,
+        coordenadas: (row.lat && row.lng) ? { lat: row.lat, lng: row.lng } : null,
+        es_gratuito: row.es_gratuito,
+        pet_friendly: row.pet_friendly,
+        apto_ninos: row.apto_ninos
+      }
+    })
+  } catch (err) {
+    console.error('[Calendar] Error al cargar eventos del mes:', err)
   }
+}
+
+watch([currentMonth, currentYear, isCalendarVisible], () => {
+  if (isCalendarVisible.value) {
+    fetchCalendarEvents()
+  }
+}, { immediate: true })
+
+const allEvents = computed(() => {
+  let list = calendarEvents.value
+
+  // 1. Sincronización con el selector principal del Home (filtroActual)
+  if (filtroActual.value === 'evento') {
+    list = list.filter(p => p.modalidad === 'presencial')
+  } else if (filtroActual.value === 'en_linea') {
+    list = list.filter(p => p.modalidad === 'en_linea' || p.tiene_sesion_online === true)
+  }
+
+  // 2. Filtro de Texto (Buscador superior)
+  if (buscadorInput.value) {
+    const text = buscadorInput.value.toLowerCase()
+    list = list.filter(p => 
+      p.nombre.toLowerCase().includes(text) ||
+      p.categoria.toLowerCase().includes(text) ||
+      p.ubicacion.toLowerCase().includes(text)
+    )
+  }
+
+  // 3. Filtro de Categoría (Búsqueda avanzada)
+  if (filtrosAvanzados.value.categoria !== 'all') {
+    list = list.filter(p => p.categoria?.toLowerCase() === filtrosAvanzados.value.categoria.toLowerCase())
+  }
+
+  // 4. Filtro de Proximidad GPS (si está activa)
+  if (proximidadActiva.value && userCoords.value) {
+    list = list.filter(p => {
+      // Las actividades virtuales o con sesión online ignoran la distancia del GPS
+      if (p.modalidad === 'en_linea' || p.tiene_sesion_online === true) return true
+      if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) return false
+      
+      const dist = calcularDistancia(userCoords.value!.lat, userCoords.value!.lng, p.coordenadas.lat, p.coordenadas.lng)
+      return dist <= filtrosAvanzados.value.distancia
+    })
+  }
+
+  // 5. Filtros de Preferencias (Gratis, Mascotas, Niños)
+  if (filtrosAvanzados.value.soloGratis) {
+    list = list.filter(p => p.es_gratuito === true || p.es_gratuito === undefined)
+  }
+  if (filtrosAvanzados.value.mascotas) {
+    list = list.filter(p => p.pet_friendly === true)
+  }
+  if (filtrosAvanzados.value.ninos) {
+    list = list.filter(p => p.apto_ninos === true)
+  }
+
   return list
 })
 
@@ -674,12 +859,13 @@ const resetFiltros = () => {
   filtrosAvanzados.value = {
     categoria: 'all',
     ubicacion: 'all',
-    distancia: 100,
+    distancia: 20, // matching default initial value of 20
     fechas: 'all',
     fechaExacta: '',
     soloGratis: false,
     ninos: false,
-    mascotas: false
+    mascotas: false,
+    ordenarPor: 'fecha'
   }
   proximidadActiva.value = false
   userCoords.value = null
@@ -819,6 +1005,7 @@ const scrollToSection = (id: string) => {
                 <li><RouterLink to="/agentes">👥 Agentes</RouterLink></li>
                 <li><RouterLink to="/convocatoria">📣 Convocatorias</RouterLink></li>
                 <li><RouterLink to="/voluntariados">🤝 Ayuda</RouterLink></li>
+                <li><RouterLink to="/lugares">🌿 Lugares</RouterLink></li>
               </ul>
             </div>
           </div>
@@ -883,8 +1070,7 @@ const scrollToSection = (id: string) => {
           <button 
             type="button"
             class="tab-btn" 
-            :class="{ 'active': filtroActual === 'lugar' }"
-            @click="filtroActual = 'lugar'"
+            @click="router.push('/lugares')"
           >
             🌿 Lugares
           </button>
@@ -930,49 +1116,50 @@ const scrollToSection = (id: string) => {
                 class="cat-pill" 
                 :class="{ 'active': filtrosAvanzados.categoria === 'all' }"
                 @click="filtrosAvanzados.categoria = 'all'"
-                data-cat="all"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="globe" aria-hidden="true" class="lucide lucide-globe"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Todo
+                🌍 Todo
               </button>
               <button 
                 class="cat-pill" 
-                :class="{ 'active': filtrosAvanzados.categoria === 'Taller' }"
-                @click="filtrosAvanzados.categoria = 'Taller'"
-                data-cat="Taller"
+                :class="{ 'active': filtrosAvanzados.categoria === 'taller' }"
+                @click="filtrosAvanzados.categoria = 'taller'"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="palette" aria-hidden="true" class="lucide lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg> Talleres
+                🎨 Talleres
               </button>
               <button 
                 class="cat-pill" 
-                :class="{ 'active': filtrosAvanzados.categoria === 'Voluntariado' }"
-                @click="filtrosAvanzados.categoria = 'Voluntariado'"
-                data-cat="Voluntariado"
+                :class="{ 'active': filtrosAvanzados.categoria === 'voluntariado' }"
+                @click="filtrosAvanzados.categoria = 'voluntariado'"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="sprout" aria-hidden="true" class="lucide lucide-sprout"><path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"></path><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"></path><path d="M5 21h14"></path></svg> Voluntarios
+                🤝 Voluntariados
               </button>
               <button 
                 class="cat-pill" 
-                :class="{ 'active': filtrosAvanzados.categoria === 'Parque' }"
-                @click="filtrosAvanzados.categoria = 'Parque'"
-                data-cat="Parque"
+                :class="{ 'active': filtrosAvanzados.categoria === 'conferencia' }"
+                @click="filtrosAvanzados.categoria = 'conferencia'"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="trees" aria-hidden="true" class="lucide lucide-trees"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"></path><path d="M7 16v6"></path><path d="M13 19v3"></path><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"></path></svg> Parques
+                🗣️ Charlas
               </button>
               <button 
                 class="cat-pill" 
-                :class="{ 'active': filtrosAvanzados.categoria === 'Huerto' }"
-                @click="filtrosAvanzados.categoria = 'Huerto'"
-                data-cat="Huerto"
+                :class="{ 'active': filtrosAvanzados.categoria === 'limpieza' }"
+                @click="filtrosAvanzados.categoria = 'limpieza'"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="leaf" aria-hidden="true" class="lucide lucide-leaf"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg> Huertos
+                ♻️ Limpieza
               </button>
               <button 
                 class="cat-pill" 
-                :class="{ 'active': filtrosAvanzados.categoria === 'General' }"
-                @click="filtrosAvanzados.categoria = 'General'"
-                data-cat="General"
+                :class="{ 'active': filtrosAvanzados.categoria === 'reforestacion' }"
+                @click="filtrosAvanzados.categoria = 'reforestacion'"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg> General
+                🌲 Reforestación
+              </button>
+              <button 
+                class="cat-pill" 
+                :class="{ 'active': filtrosAvanzados.categoria === 'otro' }"
+                @click="filtrosAvanzados.categoria = 'otro'"
+              >
+                💡 Otros
               </button>
             </div>
           </div>
@@ -1084,6 +1271,24 @@ const scrollToSection = (id: string) => {
               </label>
             </div>
           </div>
+
+          <!-- Col 5: Ordenar por -->
+          <div class="search-col">
+            <h3>Ordenar por</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label class="filter-chip">
+                <input type="radio" v-model="filtrosAvanzados.ordenarPor" value="fecha" name="sort-type">
+                <span class="chip-content">📅 Próximos (Fecha)</span>
+              </label>
+              <label class="filter-chip" :style="!proximidadActiva ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+                <input type="radio" v-model="filtrosAvanzados.ordenarPor" value="distancia" name="sort-type" :disabled="!proximidadActiva">
+                <span class="chip-content">📍 Cercanos (Distancia)</span>
+              </label>
+              <span v-if="!proximidadActiva" style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 2px;">
+                (Activa "Cerca de mí" para ordenar)
+              </span>
+            </div>
+          </div>
         </div>
 
         <div class="search-panel-footer">
@@ -1097,13 +1302,14 @@ const scrollToSection = (id: string) => {
       </div>
 
       <!-- GRID DE TARJETAS -->
+      <p v-if="!isCalendarVisible && loading" class="txt-loading">Cargando proyectos...</p>
+      <p v-else-if="!isCalendarVisible && paginatedProyectos.length === 0" class="txt-loading">No se encontraron resultados.</p>
+      
       <div 
-        v-if="!isCalendarVisible" 
+        v-else-if="!isCalendarVisible" 
         class="card-grid-container" 
         id="contenedor-tarjetas"
       >
-        <p v-if="loading" class="txt-loading">Cargando proyectos...</p>
-        <p v-else-if="paginatedProyectos.length === 0" class="txt-loading">No se encontraron resultados.</p>
         
         <article 
           v-for="(p, index) in paginatedProyectos" 
@@ -1116,6 +1322,9 @@ const scrollToSection = (id: string) => {
         >
           <div class="card-image">
             <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/kpop.webp'">
+            <!-- Category Icon Badge (Bottom-Left, on the same line as distance badge) -->
+            <span class="card-category" :title="formatCategory(p.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(p.categoria) }}</span>
+            
             <span v-if="p.distancia_calculada && p.distancia_calculada !== Infinity" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
               <i class="fa-solid fa-route"></i> a {{ p.distancia_calculada.toFixed(1) }} km
             </span>
@@ -1137,8 +1346,7 @@ const scrollToSection = (id: string) => {
             </div>
           </div>
           <div class="card-content">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="card-category">{{ p.categoria }}</span>
+            <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
               <span v-if="p.tipo === 'evento' && p.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                 🖥️ En Línea
               </span>
@@ -1146,8 +1354,8 @@ const scrollToSection = (id: string) => {
                 🔄 Híbrido
               </span>
             </div>
-            <h3 class="card-title" style="margin-bottom:2px;">{{ p.nombre }}</h3>
-            <span v-if="formatearFechaSubtext(p.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.8rem; display:block; margin-top:4px; font-weight:600;">
+            <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25;">{{ p.nombre }}</h3>
+            <span v-if="formatearFechaSubtext(p.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
               <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(p.fecha) }}
             </span>
           </div>
@@ -1198,38 +1406,22 @@ const scrollToSection = (id: string) => {
       >
         <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
           <h2 style="margin: 0;">{{ currentMonthLabel }}</h2>
-          <div class="calendar-filters" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 0 auto 0 0;">
-            <button 
-              type="button"
-              class="tab-btn" 
-              :class="{ 'active': calFiltro === 'todos' }" 
-              @click="calFiltro = 'todos'"
-              style="padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border: none; border-radius: 20px; transition: all 0.3s; cursor: pointer;"
-            >
-              Todos
-            </button>
-            <button 
-              type="button"
-              class="tab-btn" 
-              :class="{ 'active': calFiltro === 'presencial' }" 
-              @click="calFiltro = 'presencial'"
-              style="padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border: none; border-radius: 20px; transition: all 0.3s; cursor: pointer;"
-            >
-              📍 Presencial
-            </button>
-            <button 
-              type="button"
-              class="tab-btn" 
-              :class="{ 'active': calFiltro === 'en_linea' }" 
-              @click="calFiltro = 'en_linea'"
-              style="padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border: none; border-radius: 20px; transition: all 0.3s; cursor: pointer;"
-            >
-              🖥️ En Línea
-            </button>
-          </div>
           <div class="calendar-nav" style="display: flex; gap: 10px;">
             <button class="calendar-nav-btn" @click="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
             <button class="calendar-nav-btn" @click="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Alertas e información de filtros del calendario -->
+        <div class="calendar-info-alerts" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+          <div v-if="hasActiveFilters" class="calendar-alert-banner" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.3); color: #38bdf8; padding: 10px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-sliders"></i>
+              <span>🔍 Filtros de búsqueda activos</span>
+            </div>
+            <button @click="resetFiltros" style="background: rgba(14, 165, 233, 0.2); border: 1px solid rgba(14, 165, 233, 0.4); color: #38bdf8; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.3s; border: none;">
+              Limpiar filtros
+            </button>
           </div>
         </div>
         <div class="calendar-grid-header calendar-grid">
@@ -1367,7 +1559,7 @@ const scrollToSection = (id: string) => {
           <div class="sheet-event-content">
             <h4>{{ ev.nombre }}</h4>
             <p><i class="fa-solid fa-location-dot"></i> {{ ev.ubicacion }}</p>
-            <span class="event-category-badge">{{ ev.categoria }}</span>
+             <span class="event-category-badge">{{ formatCategory(ev.categoria) }}</span>
           </div>
         </div>
       </div>

@@ -8,6 +8,32 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
+const CATEGORY_LABELS: Record<string, string> = {
+  // Eventos
+  taller: 'Taller',
+  voluntariado: 'Voluntariado',
+  conferencia: 'Conferencia / Charla',
+  limpieza: 'Limpieza de Playas / Áreas',
+  reforestacion: 'Reforestación',
+  otro: 'Otro',
+  
+  // Lugares
+  sede: 'Sede de Eventos',
+  reciclaje: 'Centro de Reciclaje / Residuos',
+  asociacion: 'Asociación / ONG Ambiental',
+  granel: 'Tienda a Granel / Residuo Cero',
+  restaurante: 'Restaurante Vegano / Eco-Gastronomía',
+  huerto: 'Huerto / Espacio de Cultivo',
+  ecoturismo: 'Ecoturismo / Área Natural'
+}
+
+const formatCategory = (cat: string) => {
+  if (!cat) return 'General'
+  const key = cat.toLowerCase()
+  return CATEGORY_LABELS[key] || cat
+}
+
+
 // State
 const item = ref<any | null>(null)
 const loading = ref(true)
@@ -209,7 +235,7 @@ const loadSubEvents = async () => {
   try {
     const { data, error } = await supabase
       .from('eventos')
-      .select('id, nombre, imagen, fecha_inicio, imagen_url')
+      .select('id, nombre, fecha_inicio, imagen_url')
       .eq('lugar_id', itemId.value)
       .order('fecha_inicio', { ascending: true })
 
@@ -524,7 +550,7 @@ watch(() => route.path, () => {
             <div class="hero-meta">
               <div class="meta-item">
                 <i class="fa-solid fa-tag"></i>
-                <span id="detail-category">{{ item.categoria || 'General' }}</span>
+                <span id="detail-category">{{ formatCategory(item.categoria) }}</span>
               </div>
               <div class="meta-item highlight">
                 <i class="fa-solid fa-clock"></i>

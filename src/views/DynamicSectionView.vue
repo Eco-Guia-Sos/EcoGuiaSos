@@ -49,12 +49,14 @@ const hubsConfig = {
     links: [
       { name: 'Agentes', path: '/agentes', icon: 'fa-solid fa-users', id: 'agentes' },
       { name: 'Voluntariados', path: '/voluntariados', icon: 'fa-solid fa-hands-helping', id: 'voluntariados' },
-      { name: 'Convocatoria', path: '/convocatoria', icon: 'fa-solid fa-bullhorn', id: 'convocatoria' }
+      { name: 'Convocatoria', path: '/convocatoria', icon: 'fa-solid fa-bullhorn', id: 'convocatoria' },
+      { name: 'Lugares', path: '/lugares', icon: 'fa-solid fa-map-pin', id: 'lugares' }
     ],
     labels: {
       agentes: 'Agente',
       voluntariados: 'Voluntariado',
-      convocatoria: 'Convocatoria'
+      convocatoria: 'Convocatoria',
+      lugares: 'Lugar'
     } as Record<string, string>
   },
   lobo: {

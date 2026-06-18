@@ -8,6 +8,32 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
+const CATEGORY_LABELS: Record<string, string> = {
+  // Eventos
+  taller: 'Taller',
+  voluntariado: 'Voluntariado',
+  conferencia: 'Conferencia / Charla',
+  limpieza: 'Limpieza de Playas / Áreas',
+  reforestacion: 'Reforestación',
+  otro: 'Otro',
+  
+  // Lugares
+  sede: 'Sede de Eventos',
+  reciclaje: 'Centro de Reciclaje / Residuos',
+  asociacion: 'Asociación / ONG Ambiental',
+  granel: 'Tienda a Granel / Residuo Cero',
+  restaurante: 'Restaurante Vegano / Eco-Gastronomía',
+  huerto: 'Huerto / Espacio de Cultivo',
+  ecoturismo: 'Ecoturismo / Área Natural'
+}
+
+const formatCategory = (cat: string) => {
+  if (!cat) return 'General'
+  const key = cat.toLowerCase()
+  return CATEGORY_LABELS[key] || cat
+}
+
+
 const loading = ref(true)
 const errorMsg = ref('')
 const agente = ref<any | null>(null)
@@ -517,7 +543,7 @@ watch(() => authStore.user, (newUser) => {
                     <div class="dash-card-body" style="padding: 15px; display: flex; flex-direction: column; gap: 8px;">
                       <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; font-size: 1.05rem;" :title="ev.nombre">{{ ev.nombre }}</h3>
                       <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="color: var(--primary-color); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">{{ ev.categoria || 'Evento' }}</span>
+                        <span style="color: var(--primary-color); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">{{ formatCategory(ev.categoria || 'Evento') }}</span>
                         
                         <!-- Badges de Modalidad -->
                         <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">

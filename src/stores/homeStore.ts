@@ -8,6 +8,7 @@ export const useHomeStore = defineStore('home', () => {
   const todosLosProyectos = ref<any[]>([])
   const carruselSlides = ref<any[]>([])
   const loading = ref(false)
+  const initialFetchDone = ref(false)
   const error = ref<string | null>(null)
   const lastFetched = ref<number | null>(null)
 
@@ -15,9 +16,13 @@ export const useHomeStore = defineStore('home', () => {
     return lastFetched.value !== null && Date.now() - lastFetched.value < CACHE_TTL_MS
   }
 
-  const cargarDatos = async (force = false) => {
-    // Skip fetch if cache is still fresh
-    if (!force && isCacheValid()) return
+  const cargarDatos = async (lat?: number, lng?: number, radiusKm?: number, force = false) => {
+    console.log('[homeStore] cargarDatos started. lat:', lat, 'lng:', lng, 'radiusKm:', radiusKm, 'force:', force)
+    // Skip fetch if cache is still fresh and no specific coordinate parameters are specified
+    if (!force && isCacheValid() && lat === undefined) {
+      console.log('[homeStore] cargarDatos skipped: cache valid')
+      return
+    }
 
     loading.value = true
     error.value = null
@@ -32,21 +37,36 @@ export const useHomeStore = defineStore('home', () => {
 
       if (slides) carruselSlides.value = slides
 
-      // Fetch events
-      const { data: eventosData } = await supabase
+      // Fetch events (upcoming and active events, lightweight payload)
+      const today = new Date()
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+      
+      let queryEventos = supabase
         .from('eventos')
-        .select('*')
+        .select('id, nombre, categoria, ubicacion, lat, lng, imagen_url, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, owner_id, modalidad, tiene_sesion_online, imagenes')
+        .eq('estado', 'approved')
+        .gte('fecha_fin', startOfMonth)
 
-      // Fetch places
-      const { data: lugaresData } = await supabase
-        .from('lugares')
-        .select('*, eventos(count)')
+      // Apply geographic bounding box filter if coordinates are provided
+      if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+        const latitudeDelta = radiusKm / 111.0
+        const longitudeDelta = radiusKm / (111.0 * Math.cos(lat * Math.PI / 180))
+
+        const minLat = lat - latitudeDelta
+        const maxLat = lat + latitudeDelta
+        const minLng = lng - longitudeDelta
+        const maxLng = lng + longitudeDelta
+
+        queryEventos = queryEventos.or(`modalidad.eq.en_linea,tiene_sesion_online.eq.true,and(lat.gte.${minLat},lat.lte.${maxLat},lng.gte.${minLng},lng.lte.${maxLng})`)
+      } else {
+        // Fallback: order by date and limit to 30 events if no coordinates are supplied
+        queryEventos = queryEventos.order('fecha_inicio', { ascending: true }).limit(30)
+      }
+
+      const { data: eventosData } = await queryEventos
 
       // Fetch owner profiles
-      const ownerIds = [
-        ...(eventosData || []).map((r: any) => r.owner_id),
-        ...(lugaresData || []).map((r: any) => r.owner_id)
-      ].filter((v, i, a) => v && a.indexOf(v) === i)
+      const ownerIds = (eventosData || []).map((r: any) => r.owner_id).filter((v, i, a) => v && a.indexOf(v) === i)
 
       const profilesMap: Record<string, string> = {}
       if (ownerIds.length > 0) {
@@ -109,15 +129,15 @@ export const useHomeStore = defineStore('home', () => {
       }
 
       const parseadosEventos = (eventosData || []).map((r: any) => parseRow(r, 'evento'))
-      const parseadosLugares = (lugaresData || []).map((r: any) => parseRow(r, 'lugar'))
 
-      todosLosProyectos.value = [...parseadosEventos, ...parseadosLugares]
+      todosLosProyectos.value = parseadosEventos
       lastFetched.value = Date.now()
     } catch (err) {
       console.error('[homeStore] Error cargando datos:', err)
       error.value = 'Error al cargar los datos. Verifica tu conexión.'
     } finally {
       loading.value = false
+      initialFetchDone.value = true
     }
   }
 
@@ -129,6 +149,7 @@ export const useHomeStore = defineStore('home', () => {
     todosLosProyectos,
     carruselSlides,
     loading,
+    initialFetchDone,
     error,
     lastFetched,
     isCacheValid,

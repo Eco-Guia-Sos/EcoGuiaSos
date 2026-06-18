@@ -8,6 +8,32 @@ import { TerritoryService, type Territory } from '../services/territory.service'
 
 const router = useRouter()
 
+const CATEGORY_LABELS: Record<string, string> = {
+  // Eventos
+  taller: 'Taller',
+  voluntariado: 'Voluntariado',
+  conferencia: 'Conferencia / Charla',
+  limpieza: 'Limpieza de Playas / Áreas',
+  reforestacion: 'Reforestación',
+  otro: 'Otro',
+  
+  // Lugares
+  sede: 'Sede de Eventos',
+  reciclaje: 'Centro de Reciclaje / Residuos',
+  asociacion: 'Asociación / ONG Ambiental',
+  granel: 'Tienda a Granel / Residuo Cero',
+  restaurante: 'Restaurante Vegano / Eco-Gastronomía',
+  huerto: 'Huerto / Espacio de Cultivo',
+  ecoturismo: 'Ecoturismo / Área Natural'
+}
+
+const formatCategory = (cat: string) => {
+  if (!cat) return 'General'
+  const key = cat.toLowerCase()
+  return CATEGORY_LABELS[key] || cat
+}
+
+
 // Map references
 let map: maplibregl.Map | null = null
 let currentMarkers: maplibregl.Marker[] = []
@@ -176,23 +202,37 @@ const highlightTerritory = async (territoryId: string | null, territoryName: str
   }
 }
 
-// Fetch events and places data
-const fetchData = async () => {
+// Fetch markers within visible bounding box
+const fetchMarkersInBounds = async (minLng: number, minLat: number, maxLng: number, maxLat: number) => {
   try {
+    const today = new Date()
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+
     const [lugaresRes, eventosRes] = await Promise.all([
-      supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion').eq('estado', 'approved'),
-      supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio').eq('estado', 'approved')
+      supabase.from('lugares')
+        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion')
+        .eq('estado', 'approved')
+        .gte('lat', minLat)
+        .lte('lat', maxLat)
+        .gte('lng', minLng)
+        .lte('lng', maxLng),
+      supabase.from('eventos')
+        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin')
+        .eq('estado', 'approved')
+        .gte('fecha_fin', startOfMonth)
+        .gte('lat', minLat)
+        .lte('lat', maxLat)
+        .gte('lng', minLng)
+        .lte('lng', maxLng)
     ])
 
     const places = (lugaresRes.data || []).map(l => ({ ...l, tipo: 'lugar', lat: Number(l.lat), lng: Number(l.lng) }))
     const events = (eventosRes.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
 
     allItems.value = [...places, ...events]
-    filteredItems.value = [...allItems.value]
-    
-    refreshMarkers()
+    applyFilters()
   } catch (err) {
-    console.error('Error al cargar marcadores:', err)
+    console.error('Error al cargar marcadores en coordenadas:', err)
   }
 }
 
@@ -509,7 +549,14 @@ onMounted(async () => {
       }
     })
 
-    fetchData()
+    const triggerBBoxLoad = () => {
+      if (!map) return
+      const bounds = map.getBounds()
+      fetchMarkersInBounds(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth())
+    }
+
+    map.on('moveend', triggerBBoxLoad)
+    triggerBBoxLoad()
   })
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right')
@@ -678,7 +725,7 @@ onUnmounted(() => {
           />
           <div class="map-event-info">
             <h4>{{ item.nombre }}</h4>
-            <p><i class="fa-solid fa-layer-group"></i> {{ item.categoria || 'General' }}</p>
+            <p><i class="fa-solid fa-layer-group"></i> {{ formatCategory(item.categoria) }}</p>
             <p v-if="userCoords" class="map-event-dist">
               <i class="fa-solid fa-person-walking"></i> {{ getDistanceText(item) }}
             </p>
@@ -705,7 +752,7 @@ onUnmounted(() => {
           <span class="badge" :class="activeItem.tipo">{{ activeItem.tipo?.toUpperCase() }}</span>
           <h3 style="color:white; font-size:1.3rem; margin:10px 0 5px 0; font-weight:800;">{{ activeItem.nombre }}</h3>
           <p class="panel-meta">
-            <i class="fa-solid fa-layer-group"></i> {{ activeItem.categoria || 'Sin categoría' }}
+            <i class="fa-solid fa-layer-group"></i> {{ formatCategory(activeItem.categoria) }}
           </p>
           <p class="panel-meta">
             <i class="fa-solid fa-location-dot"></i> {{ activeItem.ubicacion || 'Ubicación registrada' }}

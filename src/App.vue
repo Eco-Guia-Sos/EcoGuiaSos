@@ -15,7 +15,8 @@ const routerLoading = ref(false)
 const showGlobalLoader = computed(() => {
   const requiresAuth = route.meta.requiresAuth === true
   const isHomeRoute = route.path === '/'
-  return (requiresAuth && authStore.loading) || (isHomeRoute && homeStore.loading) || routerLoading.value
+  const isHomeInitialLoading = isHomeRoute && homeStore.loading && !homeStore.initialFetchDone
+  return (requiresAuth && authStore.loading) || isHomeInitialLoading || routerLoading.value
 })
 
 // Menu toggles
@@ -191,7 +192,7 @@ const darkRoutes = [
   '/cursos', '/ecotecnias', '/agua', '/lecturas', '/documentales', '/firmas',
   '/agentes', '/voluntariados', '/convocatoria', '/normativa', '/fondos',
   '/nosotros', '/auth', '/como-usar', '/favoritos', '/admin',
-  '/eventos/', '/lugares/', '/guia-usuario', '/guia-actor',
+  '/eventos/', '/lugares', '/guia-usuario', '/guia-actor',
   '/reset-password', '/admin-login'
 ]
 
@@ -203,6 +204,14 @@ watch(() => route.path, (newPath) => {
     document.body.classList.remove('dark-theme')
   }
 }, { immediate: true })
+
+watch(isMenuOpen, (newVal) => {
+  if (newVal) {
+    document.body.classList.add('mobile-menu-open')
+  } else {
+    document.body.classList.remove('mobile-menu-open')
+  }
+})
 
 // PWA Installation state
 const deferredPrompt = ref<any>(null)
@@ -278,6 +287,11 @@ onMounted(() => {
     setTimeout(() => {
       routerLoading.value = false
     }, 300)
+  })
+
+  router.onError((err) => {
+    console.error('Router navigation error:', err)
+    routerLoading.value = false
   })
 
   // Close dropdowns on window click

@@ -89,6 +89,55 @@ const fetchFavoritesData = async () => {
   }
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  // Eventos
+  taller: 'Taller',
+  voluntariado: 'Voluntariado',
+  conferencia: 'Conferencia / Charla',
+  limpieza: 'Limpieza de Playas / Áreas',
+  reforestacion: 'Reforestación',
+  otro: 'Otro',
+  
+  // Lugares
+  sede: 'Sede de Eventos',
+  reciclaje: 'Centro de Reciclaje / Residuos',
+  asociacion: 'Asociación / ONG Ambiental',
+  granel: 'Tienda a Granel / Residuo Cero',
+  restaurante: 'Restaurante Vegano / Eco-Gastronomía',
+  huerto: 'Huerto / Espacio de Cultivo',
+  ecoturismo: 'Ecoturismo / Área Natural'
+}
+
+const formatCategory = (cat: string) => {
+  if (!cat) return 'General'
+  const key = cat.toLowerCase()
+  return CATEGORY_LABELS[key] || cat
+}
+
+const getCategoryIcon = (cat: string) => {
+  if (!cat) return '💡'
+  const key = cat.toLowerCase()
+  const icons: Record<string, string> = {
+    // Eventos
+    taller: '🎨',
+    voluntariado: '🤝',
+    conferencia: '🗣️',
+    limpieza: '♻️',
+    reforestacion: '🌲',
+    otro: '💡',
+    
+    // Lugares
+    sede: '📍',
+    reciclaje: '♻️',
+    asociacion: '🤝',
+    granel: '🫙',
+    restaurante: '🥦',
+    huerto: '🌱',
+    ecoturismo: '🌲'
+  }
+  return icons[key] || '💡'
+}
+
 const getImgSrc = (item: any) => {
   let imgSrc = item.imagen_url || item.imagen
   if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
@@ -224,6 +273,9 @@ onMounted(async () => {
                   :alt="ev.nombre" 
                   @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
                 />
+                <!-- Category Icon Badge (Bottom-Left) -->
+                <span class="card-category" :title="formatCategory(ev.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(ev.categoria) }}</span>
+                
                 <span v-if="userCoords && ev.lat && ev.lng" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
                   <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
                 </span>
@@ -233,8 +285,7 @@ onMounted(async () => {
                 </div>
               </div>
               <div class="card-content">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span class="card-category">{{ ev.categoria }}</span>
+                <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
                   <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                     🖥️ En Línea
                   </span>
@@ -242,8 +293,8 @@ onMounted(async () => {
                     🔄 Híbrido
                   </span>
                 </div>
-                <h3 class="card-title" style="margin-bottom:2px; font-weight: 800; font-size: 1.2rem; color: white;">{{ ev.nombre }}</h3>
-                <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.8rem; display:block; margin-top:4px; font-weight:600;">
+                <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ ev.nombre }}</h3>
+                <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
                   <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(ev.fecha_inicio || ev.fecha) }}
                 </span>
               </div>
@@ -272,6 +323,9 @@ onMounted(async () => {
                   :alt="lg.nombre" 
                   @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
                 />
+                <!-- Category Icon Badge (Bottom-Left) -->
+                <span class="card-category" :title="formatCategory(lg.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(lg.categoria) }}</span>
+                
                 <span v-if="userCoords && lg.lat && lg.lng" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
                   <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, lg.lat, lg.lng).toFixed(1) }} km
                 </span>
@@ -280,11 +334,11 @@ onMounted(async () => {
                   <span>{{ lg.publicador.nombre_completo }}</span>
                 </div>
               </div>
-              <div class="card-content">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span class="card-category">{{ lg.categoria || 'Lugar Sustentable' }}</span>
-                </div>
-                <h3 class="card-title" style="margin-bottom:2px; font-weight: 800; font-size: 1.2rem; color: white;">{{ lg.nombre }}</h3>
+              <div class="card-content" style="padding-top: 12px;">
+                <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ lg.nombre }}</h3>
+                <span v-if="lg.ubicacion" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
+                  <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>{{ lg.ubicacion }}
+                </span>
               </div>
             </article>
           </div>

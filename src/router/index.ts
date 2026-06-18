@@ -122,6 +122,11 @@ const router = createRouter({
       name: 'lugar-detalle',
       component: DetailView
     },
+    {
+      path: '/lugares',
+      name: 'lugares',
+      component: () => import('../views/LugaresView.vue')
+    },
     // Special Pages & Configurations
     {
       path: '/mapa',

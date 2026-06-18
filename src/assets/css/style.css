@@ -642,6 +642,10 @@ html {
     margin-bottom: 2rem;
 }
 
+.search-panel-grid.lugar-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .search-col h3 {
     font-size: 0.85rem;
     text-transform: uppercase;
@@ -852,7 +856,8 @@ html {
 
 /* TABLET */
 @media (min-width: 769px) and (max-width: 1024px) {
-    .search-panel-grid {
+    .search-panel-grid,
+    .search-panel-grid.lugar-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 2.5rem;
     }
@@ -869,7 +874,8 @@ html {
         display: none;
     }
 
-    .search-panel-grid {
+    .search-panel-grid,
+    .search-panel-grid.lugar-grid {
         grid-template-columns: 1fr;
         gap: 1.2rem;
     }
@@ -1735,9 +1741,10 @@ html {
 
 @media (max-width: 600px) {
     .card-grid-container:not(#contenedor-tarjetas) {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 12px;
-        justify-content: center;
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        max-width: 400px !important;
+        margin: 0 auto !important;
     }
 }
 
@@ -1826,8 +1833,8 @@ html {
 
 .card-image {
     width: 100%;
-    aspect-ratio: 4 / 5;
-    /* Formato vertical (historias) para mÃ³vil */
+    aspect-ratio: 5 / 3;
+    /* Formato horizontal para móvil y tablet */
     position: relative;
     overflow: hidden;
 }

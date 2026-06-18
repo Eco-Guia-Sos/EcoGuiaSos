@@ -146,6 +146,32 @@ const editingItem = ref<any>({
   imagenes: []
 })
 
+const CATEGORY_LABELS: Record<string, string> = {
+  // Eventos
+  taller: 'Taller',
+  voluntariado: 'Voluntariado',
+  conferencia: 'Conferencia / Charla',
+  limpieza: 'Limpieza de Playas / Áreas',
+  reforestacion: 'Reforestación',
+  otro: 'Otro',
+  
+  // Lugares
+  sede: 'Sede de Eventos',
+  reciclaje: 'Centro de Reciclaje / Residuos',
+  asociacion: 'Asociación / ONG Ambiental',
+  granel: 'Tienda a Granel / Residuo Cero',
+  restaurante: 'Restaurante Vegano / Eco-Gastronomía',
+  huerto: 'Huerto / Espacio de Cultivo',
+  ecoturismo: 'Ecoturismo / Área Natural'
+}
+
+const formatCategory = (cat: string) => {
+  if (!cat) return 'General'
+  const key = cat.toLowerCase()
+  return CATEGORY_LABELS[key] || cat
+}
+
+
 // Permissions states for modals
 const actorPermissions = ref<Record<string, boolean>>({
   puede_editar_cursos: false,
@@ -627,7 +653,10 @@ const fetchActorPermissions = async () => {
     .maybeSingle()
   
   if (funcPerms) {
-    actorFunctions.value = funcPerms
+    actorFunctions.value = {
+      ...funcPerms,
+      puede_gestionar_slider: false
+    }
   }
 }
 
@@ -1327,7 +1356,7 @@ const saveItem = async () => {
 
       dbPayload = {
         ...placeData,
-        imagen: editingItem.value.imagen,
+        imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
         estado: isEditing ? editingItem.value.estado : (isUserAdmin.value ? 'approved' : 'pending')
       }
     } else {
@@ -1548,7 +1577,7 @@ const openPermissionsModal = async (actor: any) => {
       puede_crear_lugares: funcData.puede_crear_lugares,
       puede_enviar_notificaciones: funcData.puede_enviar_notificaciones,
       visible_en_directorio: funcData.visible_en_directorio,
-      puede_gestionar_slider: funcData.puede_gestionar_slider
+      puede_gestionar_slider: false
     }
   }
 
@@ -1596,8 +1625,7 @@ const savePermissions = async () => {
       puede_crear_eventos: actorFuncPermissions.value.puede_crear_eventos,
       puede_crear_lugares: actorFuncPermissions.value.puede_crear_lugares,
       puede_enviar_notificaciones: actorFuncPermissions.value.puede_enviar_notificaciones,
-      visible_en_directorio: actorFuncPermissions.value.visible_en_directorio,
-      puede_gestionar_slider: actorFuncPermissions.value.puede_gestionar_slider
+      visible_en_directorio: actorFuncPermissions.value.visible_en_directorio
     }
 
     let fError: any
@@ -2257,12 +2285,18 @@ const checkQueryParams = () => {
   const hub = route.query.hub as 'colibri' | 'ajolote' | 'lobo'
   const tab = route.query.tab as string
 
-  if (action === 'new' && section && hub) {
+  if (action === 'new' && section === 'lugares') {
+    selectSection('lugares')
+    setTimeout(() => openAddModal(), 300)
+  } else if (action === 'new' && section && hub) {
     showHubMenu(hub)
     selectSection(section)
     setTimeout(() => openAddModal(), 300)
   } else if (tab) {
     activeTab.value = tab
+    if (tab === 'tabla-seccion' && section) {
+      selectSection(section)
+    }
   }
 }
 
@@ -2762,7 +2796,7 @@ const formatRelativeDate = (dateStr: string) => {
                       </div>
                     </td>
                     <td style="padding: 15px 20px; color: #94a3b8; font-weight:600;">
-                      {{ (item.categoria || (item.fecha_inicio ? 'EVENTO' : 'LUGAR')).toUpperCase() }}
+                      {{ formatCategory(item.categoria || (item.fecha_inicio ? 'EVENTO' : 'LUGAR')).toUpperCase() }}
                     </td>
                     <td v-if="selectedSection === 'eventos'" style="padding: 15px 20px;">
                       <span v-if="item.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;">
@@ -3785,7 +3819,19 @@ const formatRelativeDate = (dateStr: string) => {
           </div>
           <div class="form-group">
             <label>Categoría</label>
-            <input type="text" v-model="editingItem.categoria" placeholder="Ej: Centro de Reciclaje, Eco-Tienda" required />
+            <div class="input-wrapper">
+              <select v-model="editingItem.categoria" required>
+                <option value="">Selecciona...</option>
+                <option value="sede">Sede de Eventos</option>
+                <option value="reciclaje">Centro de Reciclaje / Residuos</option>
+                <option value="asociacion">Asociación / ONG Ambiental</option>
+                <option value="granel">Tienda a Granel / Residuo Cero</option>
+                <option value="restaurante">Restaurante Vegano / Eco-Gastronomía</option>
+                <option value="huerto">Huerto / Espacio de Cultivo</option>
+                <option value="ecoturismo">Ecoturismo / Área Natural</option>
+                <option value="otro">Otros Lugares Sustentables</option>
+              </select>
+            </div>
             <span v-if="placeErrors.categoria" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ placeErrors.categoria }}</span>
           </div>
           <div class="form-group">

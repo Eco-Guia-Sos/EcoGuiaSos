@@ -377,52 +377,45 @@ body.dark-theme .content-section {
         padding: 30px 15px;
     }
 
-    /* --- RESTAURACIÓN EXACTA DEL RESPALDO PARA MINI-TARJETAS --- */
+    /* --- DISEÑO DE TARJETAS EN MÓVIL (2 COLUMNAS, FOTO CON PROTAGONISMO) --- */
     .card-grid-container {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px !important;
-    }
-    
-    .interior-hero h2 {
-        font-size: 2rem;
+        max-width: 100% !important;
+        margin: 0 auto !important;
     }
 
-    .dash-card-img {
-        height: 80px !important;
-    }
-    .dash-card-body {
-        padding: 8px !important;
-    }
-    .dash-card-body h3 {
-        font-size: 0.75rem !important;
-        margin-bottom: 5px !important;
-    }
-    .dash-card-body p, .dash-card-body span {
-        font-size: 0.65rem !important;
+    .card-grid-container .card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        min-height: auto !important;
+        border-radius: 12px !important;
     }
 
-    .badge-pill {
-        font-size: 0.5rem !important;
-        padding: 2px 6px !important;
-        top: 5px !important;
-        right: 5px !important;
+    .card-grid-container .card-image {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 4 / 3 !important; /* Ratio 4:3 para dar protagonismo a la fotografía */
+        border-radius: 12px 12px 0 0 !important;
     }
 
-    .card-content {
-        padding: 10px;
+    .card-grid-container .card-content {
+        padding: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
-    .card-title {
-        font-size: 0.8rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+
+    .card-grid-container .card-title {
+        font-size: 0.85rem !important;
+        line-height: 1.25 !important;
+        margin-bottom: 4px !important;
     }
-    .card-location {
-        font-size: 0.65rem;
-    }
-    .card-category {
-        font-size: 0.6rem;
-        padding: 2px 6px;
+
+    .card-grid-container .card-date-sub {
+        font-size: 0.7rem !important;
+        margin-top: 2px !important;
     }
 
     .agente-card {

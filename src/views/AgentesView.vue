@@ -8,11 +8,35 @@ const perfiles = ref<any[]>([])
 const loading = ref(true)
 const errorMsg = ref('')
 const searchQuery = ref('')
+const selectedCategory = ref<string | null>(null)
+const statusFilter = ref<'todos' | 'activos' | 'inactivos'>('todos')
+
+const toggleCategoryFilter = (categoryTheme: string) => {
+  if (selectedCategory.value === categoryTheme) {
+    selectedCategory.value = null
+  } else {
+    selectedCategory.value = categoryTheme
+  }
+}
 
 const filteredAgentes = computed(() => {
-  if (!searchQuery.value) return perfiles.value
+  let list = perfiles.value
+  
+  // Filter by category
+  if (selectedCategory.value) {
+    list = list.filter(p => getAgenteThemeClass(p.especialidad) === selectedCategory.value)
+  }
+
+  // Filter by status (active vs inactive)
+  if (statusFilter.value === 'activos') {
+    list = list.filter(p => agentesActivosIds.value.has(p.id))
+  } else if (statusFilter.value === 'inactivos') {
+    list = list.filter(p => !agentesActivosIds.value.has(p.id))
+  }
+
+  if (!searchQuery.value) return list
   const query = searchQuery.value.toLowerCase()
-  return perfiles.value.filter(p => 
+  return list.filter(p => 
     (p.nombre_completo || '').toLowerCase().includes(query) ||
     (p.especialidad || '').toLowerCase().includes(query) ||
     (p.organizacion || '').toLowerCase().includes(query)
@@ -149,6 +173,7 @@ onMounted(async () => {
           <RouterLink to="/agentes" class="subnav-link active"><i class="fa-solid fa-users"></i> Agentes</RouterLink>
           <RouterLink to="/voluntariados" class="subnav-link"><i class="fa-solid fa-hands-helping"></i> Voluntariados</RouterLink>
           <RouterLink to="/convocatoria" class="subnav-link"><i class="fa-solid fa-bullhorn"></i> Convocatoria</RouterLink>
+          <RouterLink to="/lugares" class="subnav-link"><i class="fa-solid fa-map-pin"></i> Lugares</RouterLink>
         </nav>
       </div>
     </header>
@@ -169,12 +194,56 @@ onMounted(async () => {
 
       <!-- LEYENDA DE CATEGORÍAS -->
       <div v-if="!loading && !errorMsg" class="agentes-legend" v-reveal>
-        <span class="legend-title">Categorías de Impacto:</span>
-        <div class="legend-items">
-          <span class="legend-item theme-green">🌿 Tierra y Permacultura</span>
-          <span class="legend-item theme-blue">💧 Agua y Ecotecnias</span>
-          <span class="legend-item theme-purple">👥 Educación y Comunidad</span>
-          <span class="legend-item theme-default">🌐 Otras Áreas</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap; width: 100%;">
+          <span class="legend-title">Categorías de Impacto:</span>
+          <div class="legend-items">
+            <span 
+              class="legend-item theme-default"
+              :class="{ 'active': !selectedCategory, 'dimmed': selectedCategory }"
+              @click="selectedCategory = null"
+            >📁 Todos</span>
+            <span 
+              class="legend-item theme-green"
+              :class="{ 'active': selectedCategory === 'theme-green', 'dimmed': selectedCategory && selectedCategory !== 'theme-green' }"
+              @click="toggleCategoryFilter('theme-green')"
+            >🌿 Tierra</span>
+            <span 
+              class="legend-item theme-blue"
+              :class="{ 'active': selectedCategory === 'theme-blue', 'dimmed': selectedCategory && selectedCategory !== 'theme-blue' }"
+              @click="toggleCategoryFilter('theme-blue')"
+            >💧 Agua</span>
+            <span 
+              class="legend-item theme-purple"
+              :class="{ 'active': selectedCategory === 'theme-purple', 'dimmed': selectedCategory && selectedCategory !== 'theme-purple' }"
+              @click="toggleCategoryFilter('theme-purple')"
+            >👥 Comunidad</span>
+            <span 
+              class="legend-item theme-default"
+              :class="{ 'active': selectedCategory === 'theme-default', 'dimmed': selectedCategory && selectedCategory !== 'theme-default' }"
+              @click="toggleCategoryFilter('theme-default')"
+            >🌐 Otras Áreas</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+          <span class="legend-title">Filtrar por Actividad:</span>
+          <div class="legend-items">
+            <span 
+              class="legend-item theme-default"
+              :class="{ 'active': statusFilter === 'todos', 'dimmed': statusFilter !== 'todos' }"
+              @click="statusFilter = 'todos'"
+            >🔄 Todos</span>
+            <span 
+              class="legend-item theme-green"
+              :class="{ 'active': statusFilter === 'activos', 'dimmed': statusFilter !== 'activos' }"
+              @click="statusFilter = 'activos'"
+            >🟢 Activos</span>
+            <span 
+              class="legend-item theme-default"
+              :class="{ 'active': statusFilter === 'inactivos', 'dimmed': statusFilter !== 'inactivos' }"
+              @click="statusFilter = 'inactivos'"
+            >⚫ Inactivos</span>
+          </div>
         </div>
       </div>
 
@@ -335,7 +404,7 @@ onMounted(async () => {
 #agentes-container .activo-badge {
   position: absolute !important;
   top: 12px !important;
-  left: 12px !important;
+  right: 12px !important;
   margin: 0 !important;
   z-index: 10 !important;
 }
@@ -433,11 +502,29 @@ onMounted(async () => {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid transparent;
   color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.legend-item:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+.legend-item.dimmed {
+  opacity: 0.35;
+  filter: grayscale(0.2);
 }
 .legend-item.theme-green { border-color: #72B04D !important; }
+.legend-item.theme-green.active { background: rgba(114, 176, 77, 0.25) !important; color: #fff !important; font-weight: 700; box-shadow: 0 0 10px rgba(114, 176, 77, 0.25); }
+
 .legend-item.theme-blue { border-color: #0077b6 !important; }
+.legend-item.theme-blue.active { background: rgba(0, 119, 182, 0.25) !important; color: #fff !important; font-weight: 700; box-shadow: 0 0 10px rgba(0, 119, 182, 0.25); }
+
 .legend-item.theme-purple { border-color: #6a00a8 !important; }
+.legend-item.theme-purple.active { background: rgba(106, 0, 168, 0.25) !important; color: #fff !important; font-weight: 700; box-shadow: 0 0 10px rgba(106, 0, 168, 0.25); }
+
 .legend-item.theme-default { border-color: #2a9d8f !important; }
+.legend-item.theme-default.active { background: rgba(42, 157, 143, 0.25) !important; color: #fff !important; font-weight: 700; box-shadow: 0 0 10px rgba(42, 157, 143, 0.25); }
 
 /* Explicit Category Badge in Card */
 .agente-category-pill {
