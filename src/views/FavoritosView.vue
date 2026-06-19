@@ -426,50 +426,54 @@ onMounted(async () => {
 
             <!-- Event Cards Grid -->
             <div v-else class="card-grid-container" id="contenedor-tarjetas">
-              <article 
+              <div 
                 v-for="ev in filteredEventos" 
                 :key="ev.id" 
-                class="card fade-in" 
-                :class="getNivelClass(ev.categoria)"
-                @click="router.push(`/eventos/${ev.id}`)" 
-                style="cursor: pointer;"
+                class="card-wrapper"
               >
-                <div class="card-image">
-                  <img 
-                    :src="getImgSrc(ev)" 
-                    :alt="ev.nombre" 
-                    @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
-                  />
-                  <div v-if="ev.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${ev.publicador.nombre_completo}`">
-                    <i class="fa-solid fa-user-pen"></i>
-                    <span>{{ ev.publicador.nombre_completo }}</span>
-                  </div>
+                <div v-if="ev.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${ev.publicador.nombre_completo}`">
+                  <i class="fa-solid fa-user-pen"></i>
+                  <span>{{ ev.publicador.nombre_completo }}</span>
                 </div>
-                <div class="card-content">
-                  <!-- Metadata row below image -->
-                  <div class="card-meta-row">
-                    <span class="card-meta-category">
-                      {{ getCategoryIcon(ev.categoria) }} {{ formatCategory(ev.categoria) }}
-                    </span>
-                    <span v-if="userCoords && ev.lat && ev.lng" class="card-meta-dist">
-                      <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
-                    </span>
+                <article 
+                  class="card fade-in" 
+                  :class="getNivelClass(ev.categoria)"
+                  @click="router.push(`/eventos/${ev.id}`)" 
+                  style="cursor: pointer;"
+                >
+                  <div class="card-image">
+                    <img 
+                      :src="getImgSrc(ev)" 
+                      :alt="ev.nombre" 
+                      @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                    />
                   </div>
+                  <div class="card-content">
+                    <!-- Metadata row below image -->
+                    <div class="card-meta-row">
+                      <span class="card-meta-category">
+                        {{ getCategoryIcon(ev.categoria) }} {{ formatCategory(ev.categoria) }}
+                      </span>
+                      <span v-if="userCoords && ev.lat && ev.lng" class="card-meta-dist">
+                        <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
+                      </span>
+                    </div>
 
-                  <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
-                    <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                      🖥️ En Línea
-                    </span>
-                    <span v-else-if="ev.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                      🔄 Híbrido
+                    <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
+                      <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                        🖥️ En Línea
+                      </span>
+                      <span v-else-if="ev.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                        🔄 Híbrido
+                      </span>
+                    </div>
+                    <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ ev.nombre }}</h3>
+                    <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
+                      <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(ev.fecha_inicio || ev.fecha) }}
                     </span>
                   </div>
-                  <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ ev.nombre }}</h3>
-                  <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
-                    <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(ev.fecha_inicio || ev.fecha) }}
-                  </span>
-                </div>
-              </article>
+                </article>
+              </div>
             </div>
           </div>
         </div>
@@ -481,42 +485,46 @@ onMounted(async () => {
             <p>Aún no has guardado ningún lugar sustentable.</p>
           </div>
           <div class="card-grid-container" id="contenedor-tarjetas">
-            <article 
+            <div 
               v-for="lg in lugares" 
               :key="lg.id" 
-              class="card fade-in" 
-              :class="getNivelClass(lg.categoria)"
-              @click="router.push(`/lugares/${lg.id}`)" 
-              style="cursor: pointer;"
+              class="card-wrapper"
             >
-              <div class="card-image">
-                <img 
-                  :src="getImgSrc(lg)" 
-                  :alt="lg.nombre" 
-                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
-                />
-                <div v-if="lg.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${lg.publicador.nombre_completo}`">
-                  <i class="fa-solid fa-user-pen"></i>
-                  <span>{{ lg.publicador.nombre_completo }}</span>
-                </div>
+              <div v-if="lg.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${lg.publicador.nombre_completo}`">
+                <i class="fa-solid fa-user-pen"></i>
+                <span>{{ lg.publicador.nombre_completo }}</span>
               </div>
-              <div class="card-content" style="padding-top: 12px;">
-                <!-- Metadata row below image -->
-                <div class="card-meta-row">
-                  <span class="card-meta-category">
-                    {{ getCategoryIcon(lg.categoria) }} {{ formatCategory(lg.categoria) }}
-                  </span>
-                  <span v-if="userCoords && lg.lat && lg.lng" class="card-meta-dist">
-                    <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, lg.lat, lg.lng).toFixed(1) }} km
+              <article 
+                class="card fade-in" 
+                :class="getNivelClass(lg.categoria)"
+                @click="router.push(`/lugares/${lg.id}`)" 
+                style="cursor: pointer;"
+              >
+                <div class="card-image">
+                  <img 
+                    :src="getImgSrc(lg)" 
+                    :alt="lg.nombre" 
+                    @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                  />
+                </div>
+                <div class="card-content" style="padding-top: 12px;">
+                  <!-- Metadata row below image -->
+                  <div class="card-meta-row">
+                    <span class="card-meta-category">
+                      {{ getCategoryIcon(lg.categoria) }} {{ formatCategory(lg.categoria) }}
+                    </span>
+                    <span v-if="userCoords && lg.lat && lg.lng" class="card-meta-dist">
+                      <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, lg.lat, lg.lng).toFixed(1) }} km
+                    </span>
+                  </div>
+                  
+                  <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ lg.nombre }}</h3>
+                  <span v-if="lg.ubicacion" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
+                    <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>{{ lg.ubicacion }}
                   </span>
                 </div>
-                
-                <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ lg.nombre }}</h3>
-                <span v-if="lg.ubicacion" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
-                  <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>{{ lg.ubicacion }}
-                </span>
-              </div>
-            </article>
+              </article>
+            </div>
           </div>
         </div>
 
@@ -716,12 +724,19 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-/* Events & Places Cards overrides */
-.favoritos-page-body .card-grid-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 25px;
-  padding: 20px 0;
+.favoritos-page-body .card-wrapper {
+  position: relative;
+  padding-top: 15px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.favoritos-page-body .actor-badge {
+  position: absolute !important;
+  top: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 10 !important;
 }
 .favoritos-page-body .card {
   background: rgba(15, 23, 42, 0.65) !important;
@@ -1186,6 +1201,9 @@ onMounted(async () => {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 8px !important;
   }
+  .favoritos-page-body .card-wrapper {
+    padding-top: 12px !important;
+  }
   .favoritos-page-body .card {
     min-height: 290px !important;
     border-radius: 12px !important;
@@ -1205,7 +1223,7 @@ onMounted(async () => {
   }
   /* Compact actor badge at the top-center edge */
   .favoritos-page-body .actor-badge {
-    top: -14px !important;
+    top: 0px !important;
     padding: 2px 6px !important;
     font-size: 0.58rem !important;
     border-width: 1.5px !important;
