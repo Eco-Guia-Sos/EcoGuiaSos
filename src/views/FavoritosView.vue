@@ -1136,14 +1136,73 @@ onMounted(async () => {
   }
 }
 
-/* Extremely narrow viewport adjustments (like 216px width) */
+/* Extremely narrow viewport adjustments (like 216px width) - Keep 2 columns but stack/scale elements */
 @media (max-width: 350px) {
-  .card-grid-container {
-    grid-template-columns: 1fr !important; /* Fallback to 1 column on extremely small screens */
-    gap: 16px !important;
+  .favoritos-page-body #contenedor-tarjetas {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
   }
+  .favoritos-page-body .card-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .favoritos-page-body .card {
+    min-height: 220px !important;
+    border-radius: 12px !important;
+  }
+  .favoritos-page-body .card-image {
+    aspect-ratio: 1 / 1 !important; /* Square image for vertical space */
+    height: 95px !important;
+  }
+  /* Category Badge position top-left */
+  .favoritos-page-body .card-category {
+    top: 6px !important;
+    left: 6px !important;
+    bottom: auto !important;
+    right: auto !important;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 0.85rem !important;
+  }
+  /* Distance Badge positioned as centered bar at the bottom of image */
+  .favoritos-page-body .dist-badge {
+    bottom: 6px !important;
+    left: 6px !important;
+    right: 6px !important;
+    width: auto !important;
+    padding: 2px 4px !important;
+    font-size: 0.62rem !important;
+    justify-content: center !important;
+    display: inline-flex !important;
+  }
+  /* Compact actor badge at the top-center edge */
+  .favoritos-page-body .actor-badge {
+    top: -8px !important;
+    padding: 2px 6px !important;
+    font-size: 0.62rem !important;
+  }
+  .favoritos-page-body .actor-badge i {
+    font-size: 0.6rem !important;
+  }
+  /* Text container compacting */
+  .favoritos-page-body .card-content {
+    padding: 8px !important;
+  }
+  .favoritos-page-body .status-badge {
+    font-size: 0.58rem !important;
+    padding: 1px 4px !important;
+  }
+  .favoritos-page-body .card-title {
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 4px !important;
+  }
+  .favoritos-page-body .card-date-sub {
+    font-size: 0.65rem !important;
+  }
+  /* Segmented control tabs compacting */
   .segment-btn span {
-    display: none !important; /* Hide button text to only show icons on tiny viewports */
+    display: none !important;
   }
   .segment-btn {
     flex: 1 !important;
@@ -1151,14 +1210,13 @@ onMounted(async () => {
     font-size: 1.15rem !important;
   }
   .event-filter-controls {
-    flex-direction: column !important;
-    align-items: stretch !important;
     gap: 8px !important;
   }
   .filter-pill-btn {
+    font-size: 0.75rem !important;
+    padding: 6px 10px !important;
+    flex: 1 !important;
     justify-content: center !important;
-    font-size: 0.8rem !important;
-    padding: 6px 12px !important;
   }
 }
 </style>
