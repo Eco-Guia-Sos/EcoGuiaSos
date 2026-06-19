@@ -440,18 +440,22 @@ onMounted(async () => {
                     :alt="ev.nombre" 
                     @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
                   />
-                  <!-- Category Icon Badge (Bottom-Left) -->
-                  <span class="card-category" :title="formatCategory(ev.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(ev.categoria) }}</span>
-                  
-                  <span v-if="userCoords && ev.lat && ev.lng" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
-                    <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
-                  </span>
                   <div v-if="ev.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${ev.publicador.nombre_completo}`">
                     <i class="fa-solid fa-user-pen"></i>
                     <span>{{ ev.publicador.nombre_completo }}</span>
                   </div>
                 </div>
                 <div class="card-content">
+                  <!-- Metadata row below image -->
+                  <div class="card-meta-row">
+                    <span class="card-meta-category">
+                      {{ getCategoryIcon(ev.categoria) }} {{ formatCategory(ev.categoria) }}
+                    </span>
+                    <span v-if="userCoords && ev.lat && ev.lng" class="card-meta-dist">
+                      <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
+                    </span>
+                  </div>
+
                   <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
                     <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                       🖥️ En Línea
@@ -491,18 +495,22 @@ onMounted(async () => {
                   :alt="lg.nombre" 
                   @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
                 />
-                <!-- Category Icon Badge (Bottom-Left) -->
-                <span class="card-category" :title="formatCategory(lg.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(lg.categoria) }}</span>
-                
-                <span v-if="userCoords && lg.lat && lg.lng" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
-                  <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, lg.lat, lg.lng).toFixed(1) }} km
-                </span>
                 <div v-if="lg.publicador?.nombre_completo" class="actor-badge" :title="`Publicado por: ${lg.publicador.nombre_completo}`">
                   <i class="fa-solid fa-user-pen"></i>
                   <span>{{ lg.publicador.nombre_completo }}</span>
                 </div>
               </div>
               <div class="card-content" style="padding-top: 12px;">
+                <!-- Metadata row below image -->
+                <div class="card-meta-row">
+                  <span class="card-meta-category">
+                    {{ getCategoryIcon(lg.categoria) }} {{ formatCategory(lg.categoria) }}
+                  </span>
+                  <span v-if="userCoords && lg.lat && lg.lng" class="card-meta-dist">
+                    <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, lg.lat, lg.lng).toFixed(1) }} km
+                  </span>
+                </div>
+                
                 <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ lg.nombre }}</h3>
                 <span v-if="lg.ubicacion" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
                   <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>{{ lg.ubicacion }}
@@ -753,6 +761,8 @@ onMounted(async () => {
 .favoritos-page-body .card-content {
   padding: 16px 20px 20px 20px !important;
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 .favoritos-page-body .card-title {
   font-family: 'Outfit', sans-serif !important;
@@ -760,6 +770,32 @@ onMounted(async () => {
   font-size: 1.05rem !important;
   color: #ffffff !important;
   margin-bottom: 6px !important;
+}
+
+/* Card Metadata Row styles */
+.favoritos-page-body .card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.favoritos-page-body .card-meta-category {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #72b04d;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.favoritos-page-body .card-meta-dist {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fde047;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Followed Actors Cards overrides matching AgentesView.vue */
@@ -1147,33 +1183,18 @@ onMounted(async () => {
     gap: 8px !important;
   }
   .favoritos-page-body .card {
-    min-height: 220px !important;
+    min-height: 290px !important;
     border-radius: 12px !important;
   }
   .favoritos-page-body .card-image {
-    aspect-ratio: 1 / 1 !important; /* Square image for vertical space */
-    height: 95px !important;
+    height: 85px !important;
   }
-  /* Category Badge position top-left */
+  /* Remove old absolute positioning overrides */
   .favoritos-page-body .card-category {
-    top: 6px !important;
-    left: 6px !important;
-    bottom: auto !important;
-    right: auto !important;
-    width: 24px !important;
-    height: 24px !important;
-    font-size: 0.85rem !important;
+    display: none !important;
   }
-  /* Distance Badge positioned as centered bar at the bottom of image */
   .favoritos-page-body .dist-badge {
-    bottom: 6px !important;
-    left: 6px !important;
-    right: 6px !important;
-    width: auto !important;
-    padding: 2px 4px !important;
-    font-size: 0.62rem !important;
-    justify-content: center !important;
-    display: inline-flex !important;
+    display: none !important;
   }
   /* Compact actor badge at the top-center edge */
   .favoritos-page-body .actor-badge {
@@ -1184,9 +1205,26 @@ onMounted(async () => {
   .favoritos-page-body .actor-badge i {
     font-size: 0.6rem !important;
   }
-  /* Text container compacting */
+  /* Text container compacting and vertical stretching */
   .favoritos-page-body .card-content {
-    padding: 8px !important;
+    padding: 8px 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+  }
+  /* Stack the meta row items vertically to fit narrow width */
+  .favoritos-page-body .card-meta-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    margin-bottom: 4px !important;
+  }
+  .favoritos-page-body .card-meta-category {
+    font-size: 0.65rem !important;
+  }
+  .favoritos-page-body .card-meta-dist {
+    font-size: 0.65rem !important;
   }
   .favoritos-page-body .status-badge {
     font-size: 0.58rem !important;
@@ -1196,9 +1234,15 @@ onMounted(async () => {
     font-size: 0.78rem !important;
     line-height: 1.2 !important;
     margin-bottom: 4px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
   .favoritos-page-body .card-date-sub {
     font-size: 0.65rem !important;
+    margin-top: 2px !important;
   }
   /* Segmented control tabs compacting */
   .segment-btn span {
