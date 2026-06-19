@@ -728,12 +728,16 @@ onMounted(async () => {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible !important;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
   display: flex;
   flex-direction: column;
+}
+.favoritos-page-body .card-image {
+  border-top-left-radius: 19px !important;
+  border-top-right-radius: 19px !important;
 }
 .favoritos-page-body .card:hover {
   transform: translateY(-8px) scale(1.02) !important;
@@ -1185,9 +1189,12 @@ onMounted(async () => {
   .favoritos-page-body .card {
     min-height: 290px !important;
     border-radius: 12px !important;
+    overflow: visible !important;
   }
   .favoritos-page-body .card-image {
     height: 85px !important;
+    border-top-left-radius: 11px !important;
+    border-top-right-radius: 11px !important;
   }
   /* Remove old absolute positioning overrides */
   .favoritos-page-body .card-category {
