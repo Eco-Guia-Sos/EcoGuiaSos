@@ -726,16 +726,16 @@ onMounted(async () => {
 
 .favoritos-page-body .card-wrapper {
   position: relative;
-  padding-top: 15px;
+  padding-top: 25px;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 .favoritos-page-body .actor-badge {
   position: absolute !important;
-  top: 0 !important;
+  top: 25px !important;
   left: 50% !important;
-  transform: translateX(-50%) !important;
+  transform: translate(-50%, -90%) !important;
   z-index: 10 !important;
 }
 .favoritos-page-body .card {
@@ -1202,7 +1202,7 @@ onMounted(async () => {
     gap: 8px !important;
   }
   .favoritos-page-body .card-wrapper {
-    padding-top: 12px !important;
+    padding-top: 18px !important;
   }
   .favoritos-page-body .card {
     min-height: 290px !important;
@@ -1223,7 +1223,7 @@ onMounted(async () => {
   }
   /* Compact actor badge at the top-center edge */
   .favoritos-page-body .actor-badge {
-    top: 0px !important;
+    top: 18px !important;
     padding: 2px 6px !important;
     font-size: 0.58rem !important;
     border-width: 1.5px !important;
