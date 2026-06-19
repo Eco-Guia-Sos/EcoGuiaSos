@@ -651,6 +651,7 @@ onMounted(async () => {
   font-size: 2.2rem;
   color: white;
   box-shadow: 0 0 25px rgba(114, 176, 77, 0.3);
+  flex-shrink: 0; /* Prevents avatar from squeezing in flex container */
 }
 .dash-info h1 {
   margin: 0 0 6px 0;
@@ -1104,5 +1105,60 @@ onMounted(async () => {
   border-color: rgba(114, 176, 77, 0.3) !important;
   color: #72b04d !important;
   box-shadow: 0 0 10px rgba(114, 176, 77, 0.15);
+}
+
+/* Mobile responsive styles for narrow viewports */
+@media (max-width: 480px) {
+  .dash-header {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 20px !important;
+    gap: 15px !important;
+  }
+  .dash-info h1 {
+    font-size: 1.5rem !important;
+  }
+  .dash-info p {
+    font-size: 0.85rem !important;
+  }
+  .segmented-control {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    border-radius: 14px !important;
+    justify-content: center !important;
+  }
+  .segment-btn {
+    flex: 1 1 40% !important;
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    justify-content: center !important;
+  }
+}
+
+/* Extremely narrow viewport adjustments (like 216px width) */
+@media (max-width: 350px) {
+  .card-grid-container {
+    grid-template-columns: 1fr !important; /* Fallback to 1 column on extremely small screens */
+    gap: 16px !important;
+  }
+  .segment-btn span {
+    display: none !important; /* Hide button text to only show icons on tiny viewports */
+  }
+  .segment-btn {
+    flex: 1 !important;
+    padding: 10px 8px !important;
+    font-size: 1.15rem !important;
+  }
+  .event-filter-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .filter-pill-btn {
+    justify-content: center !important;
+    font-size: 0.8rem !important;
+    padding: 6px 12px !important;
+  }
 }
 </style>
