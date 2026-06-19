@@ -730,6 +730,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  margin-top: 12px;
 }
 .favoritos-page-body .actor-badge {
   position: absolute !important;
@@ -1203,6 +1204,7 @@ onMounted(async () => {
   }
   .favoritos-page-body .card-wrapper {
     padding-top: 18px !important;
+    margin-top: 10px !important;
   }
   .favoritos-page-body .card {
     min-height: 290px !important;
