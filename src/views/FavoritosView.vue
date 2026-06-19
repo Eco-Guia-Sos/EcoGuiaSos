@@ -1198,12 +1198,13 @@ onMounted(async () => {
   }
   /* Compact actor badge at the top-center edge */
   .favoritos-page-body .actor-badge {
-    top: -8px !important;
+    top: -14px !important;
     padding: 2px 6px !important;
-    font-size: 0.62rem !important;
+    font-size: 0.58rem !important;
+    border-width: 1.5px !important;
   }
   .favoritos-page-body .actor-badge i {
-    font-size: 0.6rem !important;
+    font-size: 0.55rem !important;
   }
   /* Text container compacting and vertical stretching */
   .favoritos-page-body .card-content {
