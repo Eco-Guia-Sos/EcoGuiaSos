@@ -659,21 +659,24 @@ watch(() => route.path, () => {
 
         <!-- Col 2: Flyer / Imagen Central -->
         <div class="flyer-content">
-          <div class="flyer-wrapper" id="slider-container" style="position: relative; overflow: hidden; border-radius: 20px; background: rgba(0,0,0,0.2);">
-            <!-- Slider Track -->
-            <div 
-              id="slider-track" 
-              style="display: flex; height: 100%; transition: transform 0.3s ease;"
-              :style="`transform: translateX(-${currentSlide * 100}%);`"
-            >
-              <img 
-                v-for="(imgUrl, i) in images" 
-                :key="i"
-                :src="imgUrl" 
-                :alt="item.nombre" 
-                style="width: 100%; height: 100%; object-fit: cover; flex-shrink: 0;"
-                @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+          <div class="flyer-wrapper" id="slider-container" style="position: relative; overflow: visible; border-radius: 20px; background: rgba(0,0,0,0.2);">
+            <!-- Inner container to handle image slideshow clipping -->
+            <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 12px;">
+              <!-- Slider Track -->
+              <div 
+                id="slider-track" 
+                style="display: flex; height: 100%; transition: transform 0.3s ease;"
+                :style="`transform: translateX(-${currentSlide * 100}%);`"
               >
+                <img 
+                  v-for="(imgUrl, i) in images" 
+                  :key="i"
+                  :src="imgUrl" 
+                  :alt="item.nombre" 
+                  style="width: 100%; height: 100%; object-fit: cover; flex-shrink: 0;"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                >
+              </div>
             </div>
 
             <!-- Badge Type -->

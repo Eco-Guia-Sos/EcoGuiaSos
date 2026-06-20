@@ -357,3 +357,87 @@
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Mobile responsive styles for calendar */
+@media (max-width: 480px) {
+    .calendar-section {
+        padding: 12px !important;
+        border-radius: 24px !important;
+        margin: 20px auto !important;
+        width: 95% !important;
+        min-height: auto !important;
+    }
+    .calendar-header {
+        margin-bottom: 15px !important;
+        gap: 8px !important;
+    }
+    .calendar-header h2 {
+        font-size: 1.15rem !important;
+    }
+    .calendar-nav {
+        gap: 6px !important;
+    }
+    .calendar-nav-btn {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 8px !important;
+    }
+    .calendar-grid {
+        gap: 4px !important;
+    }
+    .calendar-weekday {
+        font-size: 0.62rem !important;
+        padding-bottom: 8px !important;
+        letter-spacing: 0.5px !important;
+    }
+    .calendar-day {
+        padding: 4px !important;
+        border-radius: 50% !important;
+        align-items: center !important;
+        justify-content: center !important;
+        aspect-ratio: 1 / 1 !important;
+        position: relative !important;
+    }
+    .calendar-day-number {
+        font-size: 0.72rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        position: static !important;
+    }
+    /* Hide heavy elements in compact view */
+    .calendar-day.has-single-event .event-image-bg {
+        display: none !important;
+    }
+    .calendar-day.has-single-event::after {
+        display: none !important;
+    }
+    .event-count-badge {
+        display: none !important;
+    }
+    /* Event dot indicators (similar to premium native calendar systems) */
+    .calendar-day.has-single-event::before,
+    .calendar-day.has-multiple-events::before {
+        content: '' !important;
+        position: absolute !important;
+        top: auto !important;
+        bottom: 4px !important;
+        right: 50% !important;
+        left: auto !important;
+        transform: translateX(50%) !important;
+        width: 4px !important;
+        height: 4px !important;
+        background: #10b981 !important;
+        border-radius: 50% !important;
+        box-shadow: 0 0 4px #10b981 !important;
+        z-index: 3 !important;
+    }
+    /* Highlight multiple events with an alternative color dot */
+    .calendar-day.has-multiple-events::before {
+        background: #38bdf8 !important;
+        box-shadow: 0 0 4px #38bdf8 !important;
+    }
+}

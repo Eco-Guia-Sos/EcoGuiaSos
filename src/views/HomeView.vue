@@ -1338,55 +1338,63 @@ const scrollToSection = (id: string) => {
         id="contenedor-tarjetas"
       >
         
-        <article 
+        <div 
           v-for="(p, index) in paginatedProyectos" 
           :key="p.id" 
-          class="card" 
-          :class="[getNivelClass(p.categoria), 'delay-' + ((index % 4) * 100)]"
-          v-reveal="'scale'"
-          @click="router.push(`/${p.tipo}s/${p.id}`)"
-          style="cursor: pointer;"
+          class="card-wrapper"
         >
-          <div class="card-image">
-            <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/kpop.webp'">
-            <!-- Category Icon Badge (Bottom-Left, on the same line as distance badge) -->
-            <span class="card-category" :title="formatCategory(p.categoria)" style="position: absolute; bottom: 10px; left: 10px; top: auto !important; right: auto !important; font-size: 1.15rem; cursor: help; background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; z-index: 2;">{{ getCategoryIcon(p.categoria) }}</span>
-            
-            <span v-if="p.distancia_calculada && p.distancia_calculada !== Infinity" class="dist-badge" style="background:rgba(15,20,25,0.9); color:#fde047; border:1px solid rgba(253,224,71,0.4); font-weight:700;">
-              <i class="fa-solid fa-route"></i> a {{ p.distancia_calculada.toFixed(1) }} km
-            </span>
-            <span v-if="p.tipo === 'lugar'" class="place-event-badge">
-              <i class="fa-solid fa-calendar-star"></i> {{ p.conteo_eventos || 0 }}
-            </span>
-            <div v-if="p.actor_nombre" class="actor-badge" :title="`Publicado por: ${p.actor_nombre}`">
-              <i class="fa-solid fa-user-pen"></i>
-              <span>{{ p.actor_nombre }}</span>
-            </div>
-            <div class="card-actions-overlay">
-              <button 
-                v-if="authStore.profile?.rol === 'admin' || (authStore.profile?.rol === 'actor' && p.owner_id === authStore.user?.id)" 
-                class="btn-icon-glass"
-                @click.stop="router.push(`/admin/editar/${p.tipo}/${p.id}`)"
-              >
-                <i class="fa-solid fa-pen"></i>
-              </button>
-            </div>
+          <div v-if="p.actor_nombre" class="actor-badge" :title="`Publicado por: ${p.actor_nombre}`">
+            <i class="fa-solid fa-user-pen"></i>
+            <span>{{ p.actor_nombre }}</span>
           </div>
-          <div class="card-content">
-            <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
-              <span v-if="p.tipo === 'evento' && p.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                🖥️ En Línea
+          <article 
+            class="card" 
+            :class="[getNivelClass(p.categoria), 'delay-' + ((index % 4) * 100)]"
+            v-reveal="'scale'"
+            @click="router.push(`/${p.tipo}s/${p.id}`)"
+            style="cursor: pointer;"
+          >
+            <div class="card-image">
+              <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/kpop.webp'">
+              <span v-if="p.tipo === 'lugar'" class="place-event-badge">
+                <i class="fa-solid fa-calendar-star"></i> {{ p.conteo_eventos || 0 }}
               </span>
-              <span v-else-if="p.tipo === 'evento' && p.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
-                🔄 Híbrido
+              <div class="card-actions-overlay">
+                <button 
+                  v-if="authStore.profile?.rol === 'admin' || (authStore.profile?.rol === 'actor' && p.owner_id === authStore.user?.id)" 
+                  class="btn-icon-glass"
+                  @click.stop="router.push(`/admin/editar/${p.tipo}/${p.id}`)"
+                >
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-content">
+              <!-- Metadata row below image -->
+              <div class="card-meta-row">
+                <span class="card-meta-category">
+                  {{ getCategoryIcon(p.categoria) }} {{ formatCategory(p.categoria) }}
+                </span>
+                <span v-if="p.distancia_calculada && p.distancia_calculada !== Infinity" class="card-meta-dist">
+                  <i class="fa-solid fa-route"></i> a {{ p.distancia_calculada.toFixed(1) }} km
+                </span>
+              </div>
+
+              <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
+                <span v-if="p.tipo === 'evento' && p.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                  🖥️ En Línea
+                </span>
+                <span v-else-if="p.tipo === 'evento' && p.tiene_sesion_online" class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.65rem; border: 1px solid rgba(139, 92, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                  🔄 Híbrido
+                </span>
+              </div>
+              <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25;">{{ p.nombre }}</h3>
+              <span v-if="formatearFechaSubtext(p.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
+                <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(p.fecha) }}
               </span>
             </div>
-            <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25;">{{ p.nombre }}</h3>
-            <span v-if="formatearFechaSubtext(p.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
-              <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(p.fecha) }}
-            </span>
-          </div>
-        </article>
+          </article>
+        </div>
       </div>
 
       <!-- PAGINACIÓN -->
@@ -1586,7 +1594,12 @@ const scrollToSection = (id: string) => {
           <div class="sheet-event-content">
             <h4>{{ ev.nombre }}</h4>
             <p><i class="fa-solid fa-location-dot"></i> {{ ev.ubicacion }}</p>
-             <span class="event-category-badge">{{ formatCategory(ev.categoria) }}</span>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
+              <span class="event-category-badge" style="margin-top: 0;">{{ formatCategory(ev.categoria) }}</span>
+              <span v-if="userCoords && ((ev.coordenadas && ev.coordenadas.lat && ev.coordenadas.lng) || (ev.lat && ev.lng))" class="event-dist-badge" style="color: #fde047; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, (ev.coordenadas?.lat || ev.lat), (ev.coordenadas?.lng || ev.lng)).toFixed(1) }} km
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -1737,5 +1750,123 @@ const scrollToSection = (id: string) => {
 
 :global(body.dark-theme) .tab-btn.active {
   box-shadow: 0 4px 15px rgba(114, 176, 77, 0.4);
+}
+
+.card-wrapper {
+  position: relative;
+  padding-top: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin-top: 12px;
+}
+.actor-badge {
+  position: absolute !important;
+  top: 25px !important;
+  left: 50% !important;
+  transform: translate(-50%, -90%) !important;
+  z-index: 10 !important;
+}
+.card {
+  overflow: visible !important;
+}
+.card-image {
+  border-top-left-radius: 19px !important;
+  border-top-right-radius: 19px !important;
+  overflow: hidden !important;
+}
+.card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.card-meta-category {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #72b04d;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.card-meta-dist {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fde047;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 480px) {
+  #contenedor-tarjetas {
+    row-gap: 36px !important;
+    column-gap: 12px !important;
+  }
+}
+
+@media (max-width: 350px) {
+  #contenedor-tarjetas {
+    row-gap: 36px !important;
+    column-gap: 10px !important;
+  }
+  .card-wrapper {
+    padding-top: 18px !important;
+    margin-top: 10px !important;
+  }
+  .card {
+    min-height: 290px !important;
+    border-radius: 12px !important;
+    overflow: visible !important;
+  }
+  .card-image {
+    height: 85px !important;
+    border-top-left-radius: 11px !important;
+    border-top-right-radius: 11px !important;
+  }
+  .actor-badge {
+    top: 18px !important;
+    padding: 2px 6px !important;
+    font-size: 0.58rem !important;
+    border-width: 1.5px !important;
+  }
+  .actor-badge i {
+    font-size: 0.55rem !important;
+  }
+  .card-content {
+    padding: 8px 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+  }
+  .card-meta-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    margin-bottom: 4px !important;
+  }
+  .card-meta-category {
+    font-size: 0.65rem !important;
+  }
+  .card-meta-dist {
+    font-size: 0.65rem !important;
+  }
+  .card-title {
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 4px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .card-date-sub {
+    font-size: 0.65rem !important;
+    margin-top: 2px !important;
+  }
 }
 </style>

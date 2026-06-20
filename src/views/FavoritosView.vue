@@ -1165,6 +1165,11 @@ onMounted(async () => {
 
 /* Mobile responsive styles for narrow viewports */
 @media (max-width: 480px) {
+  .favoritos-page-body #contenedor-tarjetas,
+  .favoritos-page-body .card-grid-container {
+    row-gap: 36px !important;
+    column-gap: 12px !important;
+  }
   .dash-header {
     flex-direction: column !important;
     text-align: center !important;
@@ -1196,11 +1201,13 @@ onMounted(async () => {
 @media (max-width: 350px) {
   .favoritos-page-body #contenedor-tarjetas {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
+    row-gap: 36px !important;
+    column-gap: 10px !important;
   }
   .favoritos-page-body .card-grid-container {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
+    row-gap: 36px !important;
+    column-gap: 10px !important;
   }
   .favoritos-page-body .card-wrapper {
     padding-top: 18px !important;
