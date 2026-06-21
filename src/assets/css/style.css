@@ -1840,6 +1840,10 @@ html {
 }
 
 @media (min-width: 601px) and (max-width: 1024px) {
+    .card-grid-container {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+
     .card {
         max-width: 200px;
         /* ReducciÃ³n adicional para tablet como pediste */

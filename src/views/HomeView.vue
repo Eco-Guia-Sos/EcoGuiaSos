@@ -74,17 +74,31 @@ const isEventSheetVisible = ref(false)
 
 // Pagination
 const currentPage = ref(1)
-const getInitialIsMobile = () => typeof window !== 'undefined' ? window.matchMedia('(max-width: 600px)').matches : false
-const getInitialIsTablet = () => typeof window !== 'undefined' ? window.matchMedia('(min-width: 601px) and (max-width: 1024px)').matches : false
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
 
-const isMobile = ref(getInitialIsMobile())
-const isTablet = ref(getInitialIsTablet())
+const isMobile = ref(false)
+const isTablet = ref(false)
+
+const updateWidth = () => {
+  if (typeof window !== 'undefined') {
+    windowWidth.value = window.innerWidth
+  }
+}
 
 const maxRendered = computed(() => {
-  let val = 10
-  if (isMobile.value) val = 4
-  else if (isTablet.value) val = 8
-  console.log('[Pagination Debug] maxRendered computed recalculated:', val, '(isMobile:', isMobile.value, 'isTablet:', isTablet.value, ', window.innerWidth:', typeof window !== 'undefined' ? window.innerWidth : 'undefined', ')')
+  const width = windowWidth.value
+  let cols = 5
+  if (width <= 768) {
+    cols = 2
+  } else if (width <= 1024) {
+    cols = 4
+  } else if (width <= 1200) {
+    cols = 3
+  } else {
+    cols = 5
+  }
+  const val = cols * 2
+  console.log('[Pagination Debug] maxRendered computed recalculated:', val, 'cols:', cols, 'windowWidth:', width)
   return val
 })
 
@@ -190,7 +204,7 @@ onMounted(async () => {
   mobileQuery = window.matchMedia('(max-width: 600px)')
   tabletQuery = window.matchMedia('(min-width: 601px) and (max-width: 1024px)')
   
-  console.log('[Pagination Debug] Initial matchMedia - isMobile:', mobileQuery.matches, 'isTablet:', tabletQuery.matches, 'window.innerWidth:', window.innerWidth)
+  updateMatch() // Ensure matches are set on initial load
 
   if (mobileQuery.addEventListener) {
     mobileQuery.addEventListener('change', updateMatch)
@@ -201,6 +215,7 @@ onMounted(async () => {
   }
 
   window.addEventListener('click', handleWindowClick)
+  window.addEventListener('resize', updateWidth)
   
   // Init auth store if not already initialized
   if (authStore.loading) {
@@ -230,6 +245,7 @@ onUnmounted(() => {
     }
   }
   window.removeEventListener('click', handleWindowClick)
+  window.removeEventListener('resize', updateWidth)
   if (swiperInstance) {
     try {
       swiperInstance.destroy(true, true)
