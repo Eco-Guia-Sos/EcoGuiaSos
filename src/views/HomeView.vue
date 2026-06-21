@@ -1417,7 +1417,8 @@ const scrollToSection = (id: string) => {
               <!-- Metadata row below image -->
               <div class="card-meta-row">
                 <span class="card-meta-category">
-                  {{ getCategoryIcon(p.categoria) }} {{ formatCategory(p.categoria) }}
+                  <span class="category-icon-bg">{{ getCategoryIcon(p.categoria) }}</span>
+                  {{ formatCategory(p.categoria) }}
                 </span>
                 <span v-if="p.distancia_calculada && p.distancia_calculada !== Infinity" class="card-meta-dist">
                   <i class="fa-solid fa-route"></i> a {{ p.distancia_calculada.toFixed(1) }} km
@@ -1834,6 +1835,18 @@ const scrollToSection = (id: string) => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+.category-icon-bg {
+  background-color: white;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  margin-right: 2px;
 }
 .card-meta-dist {
   font-size: 0.75rem;

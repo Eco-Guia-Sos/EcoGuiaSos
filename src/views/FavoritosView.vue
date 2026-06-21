@@ -452,7 +452,8 @@ onMounted(async () => {
                     <!-- Metadata row below image -->
                     <div class="card-meta-row">
                       <span class="card-meta-category">
-                        {{ getCategoryIcon(ev.categoria) }} {{ formatCategory(ev.categoria) }}
+                        <span class="category-icon-bg">{{ getCategoryIcon(ev.categoria) }}</span>
+                        {{ formatCategory(ev.categoria) }}
                       </span>
                       <span v-if="userCoords && ev.lat && ev.lng" class="card-meta-dist">
                         <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, ev.lat, ev.lng).toFixed(1) }} km
@@ -511,7 +512,8 @@ onMounted(async () => {
                   <!-- Metadata row below image -->
                   <div class="card-meta-row">
                     <span class="card-meta-category">
-                      {{ getCategoryIcon(lg.categoria) }} {{ formatCategory(lg.categoria) }}
+                      <span class="category-icon-bg">{{ getCategoryIcon(lg.categoria) }}</span>
+                      {{ formatCategory(lg.categoria) }}
                     </span>
                     <span v-if="userCoords && lg.lat && lg.lng" class="card-meta-dist">
                       <i class="fa-solid fa-route"></i> a {{ calcularDistancia(userCoords.lat, userCoords.lng, lg.lat, lg.lng).toFixed(1) }} km
@@ -808,6 +810,18 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+.category-icon-bg {
+  background-color: white;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  margin-right: 2px;
 }
 .favoritos-page-body .card-meta-dist {
   font-size: 0.75rem;
