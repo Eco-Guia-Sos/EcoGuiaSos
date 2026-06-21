@@ -75,31 +75,53 @@ const isEventSheetVisible = ref(false)
 // Pagination
 const currentPage = ref(1)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
+const gridColumns = ref(5)
 
 const isMobile = ref(false)
 const isTablet = ref(false)
 
+const updateGridColumns = () => {
+  nextTick(() => {
+    const el = document.getElementById('contenedor-tarjetas')
+    if (el) {
+      const computedStyle = window.getComputedStyle(el)
+      const gridTemplateColumns = computedStyle.gridTemplateColumns
+      if (gridTemplateColumns) {
+        const columns = gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length
+        if (columns > 0) {
+          gridColumns.value = columns
+          console.log('[Pagination Debug] Detected grid columns:', columns, 'maxRendered will be:', columns * 2)
+        }
+      }
+    } else {
+      // Fallback calculation based on width if element is not in DOM yet
+      const width = windowWidth.value
+      let cols = 5
+      if (width <= 768) {
+        cols = 2
+      } else if (width <= 1024) {
+        cols = 4
+      } else if (width <= 1200) {
+        cols = 3
+      } else {
+        cols = Math.floor((width - 40) / 320) || 1
+        if (cols > 5) cols = 5
+        if (cols < 1) cols = 1
+      }
+      gridColumns.value = cols
+    }
+  })
+}
+
 const updateWidth = () => {
   if (typeof window !== 'undefined') {
     windowWidth.value = window.innerWidth
+    updateGridColumns()
   }
 }
 
 const maxRendered = computed(() => {
-  const width = windowWidth.value
-  let cols = 5
-  if (width <= 768) {
-    cols = 2
-  } else if (width <= 1024) {
-    cols = 4
-  } else if (width <= 1200) {
-    cols = 3
-  } else {
-    cols = 5
-  }
-  const val = cols * 2
-  console.log('[Pagination Debug] maxRendered computed recalculated:', val, 'cols:', cols, 'windowWidth:', width)
-  return val
+  return gridColumns.value * 2
 })
 
 // Geolocation
@@ -231,6 +253,7 @@ onMounted(async () => {
   nextTick(() => {
     iniciarCarrusel()
     iniciarParticulas()
+    updateGridColumns()
   })
 })
 
@@ -414,8 +437,13 @@ watch([filtroActual, buscadorInput, filtrosAvanzados, proximidadActiva], () => {
   currentPage.value = 1
   nextTick(() => {
     actualizarMiniMapa()
+    updateGridColumns()
   })
 }, { deep: true })
+
+watch(todosLosProyectos, () => {
+  updateGridColumns()
+})
 
 watch(filtroActual, () => {
   filtrosAvanzados.value.categoria = 'all'
