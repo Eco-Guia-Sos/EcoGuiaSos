@@ -8,12 +8,14 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // State
-const activeTab = ref<'eventos' | 'lugares' | 'actores'>('eventos')
+const activeTab = ref<'eventos' | 'lugares' | 'causas' | 'actores'>('eventos')
 const loading = ref(true)
 const eventFilter = ref<'actuales' | 'historial'>('actuales')
+const causaFilter = ref<'activas' | 'historial'>('activas')
 
 const eventos = ref<any[]>([])
 const lugares = ref<any[]>([])
+const causas = ref<any[]>([])
 const actores = ref<any[]>([])
 const userCoords = ref<{ lat: number; lng: number } | null>(null)
 
@@ -55,6 +57,21 @@ const filteredEventos = computed(() => {
   })
 })
 
+const filteredCausas = computed(() => {
+  const now = new Date()
+  return causas.value.filter(cs => {
+    const fechaStr = cs.fecha_evento || cs.meta?.fecha_sorteo
+    if (!fechaStr) return causaFilter.value === 'activas'
+    try {
+      const fecha = new Date(fechaStr)
+      const isActive = fecha >= now
+      return causaFilter.value === 'activas' ? isActive : !isActive
+    } catch {
+      return causaFilter.value === 'activas'
+    }
+  })
+})
+
 const fetchFavoritesData = async () => {
   if (!authStore.user) {
     router.push('/auth?tab=login')
@@ -63,7 +80,7 @@ const fetchFavoritesData = async () => {
 
   loading.value = true
   try {
-    // 1. Fetch event and place favorites
+    // 1. Fetch event, place and causes favorites
     const { data: favs } = await supabase
       .from('favoritos')
       .select('item_id, item_tipo')
@@ -72,6 +89,7 @@ const fetchFavoritesData = async () => {
     if (favs && favs.length > 0) {
       const eventIds = favs.filter(f => f.item_tipo === 'evento').map(f => f.item_id)
       const placeIds = favs.filter(f => f.item_tipo === 'lugar').map(f => f.item_id)
+      const causaIds = favs.filter(f => f.item_tipo === 'causa').map(f => f.item_id)
 
       if (eventIds.length > 0) {
         const { data: evs } = await supabase
@@ -92,9 +110,40 @@ const fetchFavoritesData = async () => {
       } else {
         lugares.value = []
       }
+
+      if (causaIds.length > 0) {
+        const { data: css, error: cssErr } = await supabase
+          .from('contenido_secciones')
+          .select('*')
+          .in('id', causaIds)
+        
+        if (cssErr) console.error('[Favoritos] Error al cargar causas:', cssErr)
+        
+        causas.value = (css || []).map(item => {
+          let textoDescripcion = item.descripcion || ''
+          let meta: any = {}
+          try {
+            if (textoDescripcion.trim().startsWith('{')) {
+              meta = JSON.parse(textoDescripcion)
+              textoDescripcion = meta.descripcion_texto || ''
+            }
+          } catch (e) {
+            // ignore
+          }
+          return {
+            ...item,
+            nombre: item.titulo,
+            meta,
+            descripcion_texto: textoDescripcion
+          }
+        })
+      } else {
+        causas.value = []
+      }
     } else {
       eventos.value = []
       lugares.value = []
+      causas.value = []
     }
 
     // 2. Fetch followed actors
@@ -375,6 +424,14 @@ onMounted(async () => {
           </button>
           <button 
             class="segment-btn" 
+            :class="{ 'active': activeTab === 'causas' }" 
+            @click="activeTab = 'causas'"
+          >
+            <i class="fa-solid fa-hand-holding-heart"></i>
+            <span>Mis Causas</span>
+          </button>
+          <button 
+            class="segment-btn" 
             :class="{ 'active': activeTab === 'actores' }" 
             @click="activeTab = 'actores'"
           >
@@ -471,6 +528,93 @@ onMounted(async () => {
                     <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ ev.nombre }}</h3>
                     <span v-if="formatearFechaSubtext(ev.fecha_inicio || ev.fecha)" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
                       <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ formatearFechaSubtext(ev.fecha_inicio || ev.fecha) }}
+                    </span>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Causas -->
+        <div v-if="activeTab === 'causas'" class="tab-content active">
+          <div v-if="causas.length === 0" class="empty-favorites-state">
+            <i class="fa-solid fa-hand-holding-heart" style="font-size:3rem; margin-bottom:15px; color:#475569;"></i>
+            <p>Aún no has guardado ninguna causa o rifa solidaria.</p>
+          </div>
+          <div v-else>
+            <!-- Causa filter pills -->
+            <div class="event-filter-controls">
+              <button 
+                class="filter-pill-btn" 
+                :class="{ 'active': causaFilter === 'activas' }"
+                @click="causaFilter = 'activas'"
+              >
+                <i class="fa-solid fa-fire"></i> Activas
+              </button>
+              <button 
+                class="filter-pill-btn" 
+                :class="{ 'active': causaFilter === 'historial' }"
+                @click="causaFilter = 'historial'"
+              >
+                <i class="fa-solid fa-clock-rotate-left"></i> Historial
+              </button>
+            </div>
+
+            <!-- Empty state for filter -->
+            <div v-if="filteredCausas.length === 0" class="empty-favorites-state" style="border-style: dotted; background: transparent;">
+              <i class="fa-solid fa-hand-holding-heart" style="font-size:2.5rem; margin-bottom:12px; color:#475569;"></i>
+              <p v-if="causaFilter === 'activas'">No tienes causas activas guardadas.</p>
+              <p v-else>No tienes causas pasadas en tu historial.</p>
+            </div>
+
+            <!-- Causas Grid -->
+            <div v-else class="card-grid-container" id="contenedor-tarjetas">
+              <div 
+                v-for="cs in filteredCausas" 
+                :key="cs.id" 
+                class="card-wrapper"
+              >
+                <article 
+                  class="card fade-in card-ajolote" 
+                  @click="router.push(`/causas/${cs.id}`)" 
+                  style="cursor: pointer;"
+                >
+                  <div class="card-image">
+                    <img 
+                      :src="cs.imagen_url || '/assets/img/kpop.webp'" 
+                      :alt="cs.nombre" 
+                      @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                    />
+                    <!-- Status badge overlay -->
+                    <div style="position:absolute; top:10px; right:10px;">
+                      <span 
+                        v-if="cs.fecha_evento && new Date(cs.fecha_evento) >= new Date()"
+                        style="background: rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.4); color:#86efac; font-size:0.65rem; padding:3px 8px; border-radius:20px; font-weight:700; backdrop-filter:blur(6px);"
+                      >🟢 ACTIVA</span>
+                      <span 
+                        v-else-if="cs.fecha_evento"
+                        style="background: rgba(100,116,139,0.2); border:1px solid rgba(100,116,139,0.3); color:#94a3b8; font-size:0.65rem; padding:3px 8px; border-radius:20px; font-weight:700; backdrop-filter:blur(6px);"
+                      >⏹ FINALIZADA</span>
+                    </div>
+                  </div>
+                  <div class="card-content" style="padding-top: 12px;">
+                    <div class="card-meta-row">
+                      <span class="card-meta-category">
+                        <span class="category-icon-bg">💝</span>
+                        Causa / Rifa
+                      </span>
+                      <span v-if="cs.meta?.costo_boleto" style="font-size:0.72rem; color:#fbbf24; font-weight:700;">
+                        🎟️ {{ cs.meta.costo_boleto }}
+                      </span>
+                    </div>
+                    <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ cs.nombre }}</h3>
+                    <span v-if="cs.meta?.organizador" class="card-date-sub" style="color:#5bc2f7; font-size:0.75rem; display:block; margin-top:4px; font-weight:600;">
+                      <i class="fa-solid fa-house-chimney-user" style="margin-right:4px;"></i>{{ cs.meta.organizador }}
+                    </span>
+                    <span v-if="cs.meta?.fecha_sorteo || cs.fecha_evento" class="card-date-sub" style="color:#a78bfa; font-size:0.72rem; display:block; margin-top:3px; font-weight:600;">
+                      <i class="fa-solid fa-calendar-check" style="margin-right:4px;"></i>
+                      Sorteo: {{ new Date(cs.meta?.fecha_sorteo || cs.fecha_evento).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' }) }}
                     </span>
                   </div>
                 </article>

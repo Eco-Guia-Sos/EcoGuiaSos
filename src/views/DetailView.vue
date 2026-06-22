@@ -50,13 +50,28 @@ const followActorLoading = ref(false)
 // Favorites state
 const isFavorite = ref(false)
 const favoriteLoading = ref(false)
+const favoriteError = ref('')
+
+// Expand description states
+const isDescriptionExpanded = ref(false)
+const isCausaExpanded = ref(false)
 
 declare const maplibregl: any
 let mapInstance: any = null
 
 const itemId = computed(() => route.params.id as string)
+const isCausaType = computed(() => route.path.includes('causas'))
 const isEventType = computed(() => route.path.includes('eventos'))
-const typeLabel = computed(() => isEventType.value ? 'evento' : 'lugar')
+const typeLabel = computed(() => {
+  if (isCausaType.value) return 'causa'
+  if (isEventType.value) return 'evento'
+  return 'lugar'
+})
+const tableName = computed(() => {
+  if (isCausaType.value) return 'contenido_secciones'
+  if (isEventType.value) return 'eventos'
+  return 'lugares'
+})
 
 // Slide images helper
 const images = computed(() => {
@@ -130,6 +145,30 @@ const getMetaTitle = (net: any) => {
 
 const socialNetworks = computed(() => {
   if (!item.value) return []
+  
+  if (isCausaType.value) {
+    const nets = []
+    if (item.value.meta?.instagram) {
+      nets.push({
+        key: 'instagram',
+        url: item.value.meta.instagram,
+        icon: 'fa-brands fa-instagram',
+        title: 'Instagram',
+        className: 'instagram'
+      })
+    }
+    if (item.value.meta?.facebook) {
+      nets.push({
+        key: 'facebook',
+        url: item.value.meta.facebook,
+        icon: 'fa-brands fa-facebook',
+        title: 'Facebook',
+        className: 'facebook'
+      })
+    }
+    return nets
+  }
+
   const keys = ['social_web', 'social_fb', 'social_ig', 'social_wa', 'social_x', 'social_yt']
   const classes: Record<string, string> = {
     social_web: 'web',
@@ -149,6 +188,96 @@ const socialNetworks = computed(() => {
       className: classes[key] || 'web'
     }))
   return nets
+})
+
+const parsedCausa = computed(() => {
+  if (!isCausaType.value || !item.value) return null
+  
+  const text = item.value.descripcion || ''
+  
+  let antecedentes = ''
+  let rifaInfo = ''
+  const premios: Array<{ emoji: string, text: string }> = []
+  let premiosNota = ''
+  let apoyoInfo = ''
+  let agradecimiento = ''
+  
+  const rifaIndex = text.indexOf('🎟️ Rifa con Causa')
+  if (rifaIndex !== -1) {
+    antecedentes = text.substring(0, rifaIndex).trim()
+    
+    let nextIndex = text.indexOf('🏆 Premios:')
+    if (nextIndex === -1) nextIndex = text.indexOf('Premios:')
+    
+    if (nextIndex !== -1) {
+      rifaInfo = text.substring(rifaIndex, nextIndex).trim()
+      rifaInfo = rifaInfo.replace('🎟️ Rifa con Causa', '').trim()
+      
+      let endPrizesIndex = text.indexOf('🌊')
+      if (endPrizesIndex === -1) endPrizesIndex = text.indexOf('También hemos creado')
+      
+      if (endPrizesIndex !== -1) {
+        const prizesBlock = text.substring(nextIndex, endPrizesIndex).trim()
+        const lines = prizesBlock.split('\n')
+        lines.forEach((line: string) => {
+          const trimmed = line.trim()
+          if (!trimmed) return
+          if (trimmed.startsWith('🏆') || trimmed.toLowerCase().includes('premios')) {
+            return
+          }
+          if (trimmed.startsWith('✨')) {
+            premiosNota = trimmed.substring(1).trim()
+            return
+          }
+          
+          const emojiRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}🥇🥈🥉🏆🪂🤿🐢👕✨💵💳📲💚🌊📣🎟️📅➡️🏎️🏖️🏕️🌋🧗🚢🛥️])\s*(.*)$/u
+          const match = trimmed.match(emojiRegex)
+          if (match) {
+            premios.push({
+              emoji: match[1] || '',
+              text: match[2] || ''
+            })
+          } else {
+            premios.push({
+              emoji: '🎁',
+              text: trimmed
+            })
+          }
+        })
+        
+        const supportBlock = text.substring(endPrizesIndex).trim()
+        let socialIndex = supportBlock.indexOf('📲')
+        if (socialIndex === -1) socialIndex = supportBlock.indexOf('Síguenos')
+        
+        let supportText = socialIndex !== -1 ? supportBlock.substring(0, socialIndex).trim() : supportBlock
+        
+        let splitIcon = supportText.indexOf('💚')
+        if (splitIcon === -1) splitIcon = supportText.indexOf('Gracias por')
+        
+        if (splitIcon !== -1) {
+          apoyoInfo = supportText.substring(0, splitIcon).trim()
+          agradecimiento = supportText.substring(splitIcon).trim()
+        } else {
+          apoyoInfo = supportText
+        }
+      } else {
+        rifaInfo = text.substring(rifaIndex).trim()
+      }
+    } else {
+      rifaInfo = text.substring(rifaIndex).trim()
+    }
+  } else {
+    antecedentes = text
+  }
+  
+  return {
+    antecedentes,
+    rifaInfo,
+    premios,
+    premiosNota,
+    apoyoInfo,
+    agradecimiento
+  }
 })
 
 const formattedDate = computed(() => {
@@ -182,7 +311,7 @@ const loadDetailData = async () => {
   actor.value = null
   subEventos.value = []
   
-  const tableName = isEventType.value ? 'eventos' : 'lugares'
+  const table = tableName.value
   
   try {
     if (!itemId.value) {
@@ -190,7 +319,7 @@ const loadDetailData = async () => {
     }
 
     const { data, error } = await supabase
-      .from(tableName)
+      .from(table)
       .select('*')
       .eq('id', itemId.value)
       .single()
@@ -199,8 +328,25 @@ const loadDetailData = async () => {
       throw new Error('No encontramos el proyecto solicitado.')
     }
 
-    item.value = data
-    document.title = `${data.nombre} - EcoGuía SOS`
+    let parsedData = { ...data }
+    let meta: any = {}
+    let textoDescripcion = parsedData.descripcion || ''
+
+    try {
+      if (textoDescripcion.trim().startsWith('{')) {
+        meta = JSON.parse(textoDescripcion)
+        textoDescripcion = meta.descripcion_texto || ''
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    parsedData.nombre = data.titulo || data.nombre || ''
+    parsedData.meta = meta
+    parsedData.descripcion = textoDescripcion
+
+    item.value = parsedData
+    document.title = `${parsedData.nombre} - EcoGuía SOS`
 
     // Sub-events if it's a place
     if (!isEventType.value) {
@@ -346,6 +492,7 @@ const handleFavoriteToggle = async () => {
   }
 
   favoriteLoading.value = true
+  favoriteError.value = ''
   try {
     const userId = authStore.user.id
     const id = itemId.value
@@ -367,7 +514,12 @@ const handleFavoriteToggle = async () => {
           .from('favoritos')
           .delete()
           .eq('id', data.id)
-        if (!error) isFavorite.value = false
+        if (!error) {
+          isFavorite.value = false
+        } else {
+          console.error('[Favoritos] Error al eliminar:', error)
+          favoriteError.value = 'No se pudo quitar de favoritos. Intenta de nuevo.'
+        }
       }
     } else {
       const { error } = await supabase
@@ -377,12 +529,21 @@ const handleFavoriteToggle = async () => {
           item_id: id,
           item_tipo: type
         })
-      if (!error) isFavorite.value = true
+      if (!error) {
+        isFavorite.value = true
+      } else {
+        console.error('[Favoritos] Error al insertar:', error)
+        favoriteError.value = 'No se pudo guardar en favoritos. Verifica tu sesión.'
+      }
     }
   } catch (e) {
     console.error('Error toggling favorite:', e)
+    favoriteError.value = 'Error inesperado. Intenta de nuevo.'
   } finally {
     favoriteLoading.value = false
+    if (favoriteError.value) {
+      setTimeout(() => { favoriteError.value = '' }, 4000)
+    }
   }
 }
 
@@ -524,7 +685,7 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <div>
+  <div :class="isCausaType ? 'theme-ajolote' : (isEventType ? 'theme-gaia' : 'theme-eco')">
     <!-- LOADING SHIMMER -->
     <div v-if="loading" id="detail-loader" class="full-screen-loader">
       <div class="spinner"></div>
@@ -565,10 +726,47 @@ watch(() => route.path, () => {
       <div class="content-wrapper container">
         <article class="main-content">
           <!-- Description -->
-          <section class="info-section">
+          <template v-if="isCausaType && parsedCausa">
+            <!-- Section 1: La Causa (Antecedentes) -->
+            <section v-if="parsedCausa.antecedentes" class="info-section causa-detail-card">
+              <h2 class="section-title"><i class="fa-solid fa-circle-info"></i> La Causa</h2>
+              <div class="description-text" style="white-space: pre-line;">
+                <span v-if="!isCausaExpanded && parsedCausa.antecedentes.length > 300">
+                  {{ parsedCausa.antecedentes.substring(0, 300) }}...
+                </span>
+                <span v-else>
+                  {{ parsedCausa.antecedentes }}
+                </span>
+                <button 
+                  v-if="parsedCausa.antecedentes.length > 300" 
+                  @click="isCausaExpanded = !isCausaExpanded" 
+                  class="btn-ver-mas-link"
+                  style="background: transparent; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; padding: 0; margin-left: 6px; font-size: inherit; text-decoration: underline;"
+                >
+                  {{ isCausaExpanded ? 'Ver menos' : 'Ver más' }}
+                </button>
+              </div>
+            </section>
+
+            <!-- Rifa & Campaña moved below content-wrapper -->
+          </template>
+          <section v-else class="info-section">
             <h2 class="section-title"><i class="fa-solid fa-circle-info"></i> Acerca de</h2>
             <div id="detail-description" class="description-text" style="white-space: pre-line;">
-              {{ item.descripcion || 'Sin descripción detallada por el momento.' }}
+              <span v-if="!isDescriptionExpanded && item.descripcion && item.descripcion.length > 300">
+                {{ item.descripcion.substring(0, 300) }}...
+              </span>
+              <span v-else>
+                {{ item.descripcion || 'Sin descripción detallada por el momento.' }}
+              </span>
+              <button 
+                v-if="item.descripcion && item.descripcion.length > 300" 
+                @click="isDescriptionExpanded = !isDescriptionExpanded" 
+                class="btn-ver-mas-link"
+                style="background: transparent; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; padding: 0; margin-left: 6px; font-size: inherit; text-decoration: underline;"
+              >
+                {{ isDescriptionExpanded ? 'Ver menos' : 'Ver más' }}
+              </button>
             </div>
           </section>
 
@@ -604,57 +802,59 @@ watch(() => route.path, () => {
             </div>
           </section>
 
-          <!-- Schedules -->
-          <section class="info-section">
-            <h2 class="section-title"><i class="fa-solid fa-calendar-days"></i> Horarios y Disponibilidad</h2>
-            <div class="schedule-grid" id="detail-schedule">
-              <div class="schedule-card">
-                <p class="label">{{ isEventType ? 'Fecha y Hora' : 'Horario' }}</p>
-                <p class="value" id="detail-hours" v-html="formattedDate"></p>
+          <!-- Schedules (Non-causes) -->
+          <template v-if="!isCausaType">
+            <section class="info-section">
+              <h2 class="section-title"><i class="fa-solid fa-calendar-days"></i> Horarios y Disponibilidad</h2>
+              <div class="schedule-grid" id="detail-schedule">
+                <div class="schedule-card">
+                  <p class="label">{{ isEventType ? 'Fecha y Hora' : 'Horario' }}</p>
+                  <p class="value" id="detail-hours" v-html="formattedDate"></p>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <!-- Publisher Actor Card Section -->
-          <section 
-            v-if="actor" 
-            class="info-section actor-card-lite"
-            style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);"
-          >
-            <h3 style="font-size: 1.1rem; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Publicado por:</h3>
-            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-              <img 
-                :src="actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'" 
-                style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
-                @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
-              >
-              <div style="flex-grow: 1;">
-                <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>
-                <p style="margin: 3px 0 0 0; color: var(--primary-color); font-size: 0.9rem;">{{ actor.especialidad || 'Líder Ambiental' }}</p>
-              </div>
-              <div style="display: flex; gap: 10px; margin-left: auto;">
-                <RouterLink 
-                  :to="`/agentes/${actor.id}`" 
-                  class="btn-ver-perfil-actor" 
-                  style="padding: 10px 18px; font-size: 0.85rem; color: #72B04D; border: 1px solid #72B04D; border-radius: 30px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
+            <!-- Publisher Actor Card Section -->
+            <section 
+              v-if="actor" 
+              class="info-section actor-card-lite"
+              style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);"
+            >
+              <h3 style="font-size: 1.1rem; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Publicado por:</h3>
+              <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <img 
+                  :src="actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'" 
+                  style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
                 >
-                  Ver perfil
-                </RouterLink>
-                 <button 
-                  v-if="authStore.user && authStore.user.id !== actor.id"
-                  id="btn-follow-actor" 
-                  class="btn btn-primary" 
-                  :class="{ 'btn-follow-glow': !isFollowingActor }"
-                  style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px;"
-                  :style="isFollowingActor ? 'background: #333; border-color: #72B04D; color: #72B04D;' : ''"
-                  :disabled="followActorLoading"
-                  @click="handleFollowActorToggle"
-                >
-                  {{ isFollowingActor ? '✓ Siguiendo' : '+ Seguir' }}
-                </button>
+                <div style="flex-grow: 1;">
+                  <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>
+                  <p style="margin: 3px 0 0 0; color: var(--primary-color); font-size: 0.9rem;">{{ actor.especialidad || 'Líder Ambiental' }}</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-left: auto;">
+                  <RouterLink 
+                    :to="`/agentes/${actor.id}`" 
+                    class="btn-ver-perfil-actor" 
+                    style="padding: 10px 18px; font-size: 0.85rem; color: #72B04D; border: 1px solid #72B04D; border-radius: 30px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
+                  >
+                    Ver perfil
+                  </RouterLink>
+                   <button 
+                    v-if="authStore.user && authStore.user.id !== actor.id"
+                    id="btn-follow-actor" 
+                    class="btn btn-primary" 
+                    :class="{ 'btn-follow-glow': !isFollowingActor }"
+                    style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px;"
+                    :style="isFollowingActor ? 'background: #333; border-color: #72B04D; color: #72B04D;' : ''"
+                    :disabled="followActorLoading"
+                    @click="handleFollowActorToggle"
+                  >
+                    {{ isFollowingActor ? '✓ Siguiendo' : '+ Seguir' }}
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </template>
         </article>
 
         <!-- Col 2: Flyer / Imagen Central -->
@@ -683,9 +883,9 @@ watch(() => route.path, () => {
             <span 
               id="detail-type-badge" 
               class="badge-pill type-badge"
-              :style="`background: ${isEventType ? 'var(--color-gaia)' : 'var(--color-eco)'};`"
+              :style="`background: ${isCausaType ? 'var(--color-eco)' : (isEventType ? 'var(--color-gaia)' : 'var(--color-eco)')};`"
             >
-              {{ isEventType ? 'EVENTO ECOLÓGICO' : 'LUGAR SUSTENTABLE' }}
+              {{ isCausaType ? 'CAUSA SOLIDARIA' : (isEventType ? 'EVENTO ECOLÓGICO' : 'LUGAR SUSTENTABLE') }}
             </span>
 
             <!-- Controls (if more than 1 image) -->
@@ -721,7 +921,23 @@ watch(() => route.path, () => {
             
             <div class="sidebar-info">
               <!-- Location block -->
-              <div class="location-box" style="margin-bottom: 20px;">
+              <div v-if="isCausaType" class="location-box" style="margin-bottom: 20px;">
+                <p class="location-label">ORGANIZADOR</p>
+                <h4 style="color: var(--color-eco); margin: 4px 0 12px 0; font-weight: 700; font-size: 1.15rem;">
+                  🐢 {{ item.meta?.organizador || 'Campamento Tortuguero Palmarito' }}
+                </h4>
+                
+                <p v-if="item.meta?.costo_boleto" class="location-label">COSTO BOLETO (RIFA)</p>
+                <h4 v-if="item.meta?.costo_boleto" style="color: white; margin: 4px 0 12px 0; font-weight: 700; font-size: 1.1rem;">
+                  🎟️ {{ item.meta.costo_boleto }}
+                </h4>
+                
+                <p v-if="item.meta?.fecha_sorteo" class="location-label">FECHA DEL SORTEO</p>
+                <h4 v-if="item.meta?.fecha_sorteo" style="color: #5bc2f7; margin: 4px 0 0 0; font-weight: 700; font-size: 1.1rem;">
+                  📅 {{ item.meta.fecha_sorteo }}
+                </h4>
+              </div>
+              <div v-else class="location-box" style="margin-bottom: 20px;">
                 <p class="location-label">MODALIDAD</p>
                 <h4 style="color: var(--color-eco); margin: 4px 0 8px 0; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
                   <span v-if="item.modalidad === 'en_linea'">🖥️ Virtual / En Línea</span>
@@ -763,9 +979,20 @@ watch(() => route.path, () => {
               </div>
 
               <div class="action-buttons">
+                <!-- Redirection button for GoFundMe (Causes only) -->
+                <a 
+                  v-if="isCausaType && item.enlace_externo"
+                  :href="item.enlace_externo" 
+                  target="_blank" 
+                  class="btn btn-primary full-width shimmer-extra"
+                  style="margin-bottom: 8px; justify-content: center;"
+                >
+                  <i class="fa-solid fa-hand-holding-dollar"></i> Apoyar en GoFundMe
+                </a>
+
                 <!-- Google Maps redirection (Presencial / Hybrid only) -->
                 <a 
-                  v-if="item.modalidad !== 'en_linea' && item.lat && item.lng"
+                  v-if="!isCausaType && item.modalidad !== 'en_linea' && item.lat && item.lng"
                   :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
                   target="_blank" 
                   class="btn btn-secondary full-width"
@@ -785,69 +1012,175 @@ watch(() => route.path, () => {
                   <i class="fa-bookmark" :class="isFavorite ? 'fa-solid' : 'fa-regular'"></i> 
                   {{ isFavorite ? 'Guardado' : 'Guardar en Favoritos' }}
                 </button>
+                <!-- Favoritos error toast -->
+                <div 
+                  v-if="favoriteError" 
+                  style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: #fca5a5; display: flex; align-items: center; gap: 8px; margin-top: 4px;"
+                >
+                  <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; flex-shrink:0;"></i>
+                  {{ favoriteError }}
+                </div>
                 
                 <!-- Smart Sumate Buttons -->
-                <!-- Case 1: Pure Online -->
-                <template v-if="item.modalidad === 'en_linea'">
-                  <!-- Session link (Required) -->
-                  <a 
-                    v-if="item.sesion_online_link"
-                    :href="item.sesion_online_link" 
-                    target="_blank" 
-                    class="btn btn-primary full-width shimmer-extra"
-                    style="margin-bottom: 8px;"
-                  >
-                    <i class="fa-solid fa-desktop"></i> Unirse a la sesión
-                  </a>
-                  <!-- Registration form link (Optional) -->
-                  <a 
-                    v-if="item.reg_link"
-                    :href="item.reg_link" 
-                    target="_blank" 
-                    class="btn btn-secondary full-width"
-                  >
-                    <i class="fa-solid fa-clipboard-list"></i> Registrarse al evento
-                  </a>
-                </template>
-                
-                <!-- Case 2: Hybrid -->
-                <template v-else-if="item.tiene_sesion_online">
-                  <!-- Registration / Presencial link (Optional) -->
-                  <a 
-                    v-if="item.reg_link"
-                    :href="item.reg_link" 
-                    target="_blank" 
-                    class="btn btn-primary full-width shimmer-extra"
-                    style="margin-bottom: 8px;"
-                  >
-                    <i class="fa-solid fa-hand-holding-heart"></i> Súmate presencialmente
-                  </a>
-                  <!-- Session link (Required) -->
-                  <a 
-                    v-if="item.sesion_online_link"
-                    :href="item.sesion_online_link" 
-                    target="_blank" 
-                    class="btn btn-secondary full-width"
-                  >
-                    <i class="fa-solid fa-desktop"></i> Ver sesión en línea
-                  </a>
-                </template>
+                <template v-if="!isCausaType">
+                  <!-- Case 1: Pure Online -->
+                  <template v-if="item.modalidad === 'en_linea'">
+                    <!-- Session link (Required) -->
+                    <a 
+                      v-if="item.sesion_online_link"
+                      :href="item.sesion_online_link" 
+                      target="_blank" 
+                      class="btn btn-primary full-width shimmer-extra"
+                      style="margin-bottom: 8px;"
+                    >
+                      <i class="fa-solid fa-desktop"></i> Unirse a la sesión
+                    </a>
+                    <!-- Registration form link (Optional) -->
+                    <a 
+                      v-if="item.reg_link"
+                      :href="item.reg_link" 
+                      target="_blank" 
+                      class="btn btn-secondary full-width"
+                    >
+                      <i class="fa-solid fa-clipboard-list"></i> Registrarse al evento
+                    </a>
+                  </template>
+                  
+                  <!-- Case 2: Hybrid -->
+                  <template v-else-if="item.tiene_sesion_online">
+                    <!-- Registration / Presencial link (Optional) -->
+                    <a 
+                      v-if="item.reg_link"
+                      :href="item.reg_link" 
+                      target="_blank" 
+                      class="btn btn-primary full-width shimmer-extra"
+                      style="margin-bottom: 8px;"
+                    >
+                      <i class="fa-solid fa-hand-holding-heart"></i> Súmate presencialmente
+                    </a>
+                    <!-- Session link (Required) -->
+                    <a 
+                      v-if="item.sesion_online_link"
+                      :href="item.sesion_online_link" 
+                      target="_blank" 
+                      class="btn btn-secondary full-width"
+                    >
+                      <i class="fa-solid fa-desktop"></i> Ver sesión en línea
+                    </a>
+                  </template>
 
-                <!-- Case 3: Pure Presencial -->
-                <template v-else>
-                  <a 
-                    v-if="item.reg_link"
-                    :href="item.reg_link" 
-                    target="_blank" 
-                    class="btn btn-primary full-width shimmer-extra"
-                  >
-                    <i class="fa-solid fa-hand-holding-heart"></i> Súmate ahora
-                  </a>
+                  <!-- Case 3: Pure Presencial -->
+                  <template v-else>
+                    <a 
+                      v-if="item.reg_link"
+                      :href="item.reg_link" 
+                      target="_blank" 
+                      class="btn btn-primary full-width shimmer-extra"
+                    >
+                      <i class="fa-solid fa-hand-holding-heart"></i> Súmate ahora
+                    </a>
+                  </template>
                 </template>
               </div>
             </div>
           </div>
         </aside>
+      </div>
+
+      <!-- 2.5 CAUSAS SPLIT ROW BELOW THE GRID FOR DESKTOP/TABLET, OR STACKED -->
+      <div v-if="isCausaType && parsedCausa" class="causa-bottom-container container" style="margin-top: 40px; margin-bottom: 80px;">
+        <div class="causa-split-row causa-rifa-campana-row">
+          <!-- Section 2: Rifa con Causa & Premios -->
+          <section v-if="parsedCausa.rifaInfo || parsedCausa.premios.length > 0" class="info-section causa-detail-card" style="background: #1a232e; border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+            <h2 class="section-title"><i class="fa-solid fa-ticket"></i> Rifa con Causa</h2>
+            <div v-if="parsedCausa.rifaInfo" class="description-text" style="white-space: pre-line; margin-bottom: 25px; color: rgba(255, 255, 255, 0.85);">
+              {{ parsedCausa.rifaInfo }}
+            </div>
+            
+            <div v-if="parsedCausa.premios.length > 0" class="prizes-container">
+              <h3 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 15px; font-weight: 700;">🏆 Lista de Premios:</h3>
+              <div class="prizes-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <div v-for="(p, index) in parsedCausa.premios" :key="index" class="prize-item-row" style="display: flex; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 18px; border-radius: 14px; gap: 15px; transition: 0.3s;">
+                  <span class="prize-emoji-circle" style="background: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex-shrink: 0;">
+                    {{ p.emoji }}
+                  </span>
+                  <span class="prize-text" style="color: white; font-size: 0.95rem; font-weight: 600; line-height: 1.4;">
+                    {{ p.text }}
+                  </span>
+                </div>
+              </div>
+              <p v-if="parsedCausa.premiosNota" class="premios-nota" style="margin-top: 18px; font-size: 0.88rem; color: #94a3b8; font-style: italic; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-info" style="color: #38bdf8; flex-shrink: 0;"></i> {{ parsedCausa.premiosNota }}
+              </p>
+            </div>
+          </section>
+
+          <!-- Section 3: Campaña de Apoyo & Donaciones -->
+          <section v-if="parsedCausa.apoyoInfo || parsedCausa.agradecimiento" class="info-section causa-detail-card" style="background: #1a232e; border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+            <h2 class="section-title"><i class="fa-solid fa-hand-holding-heart"></i> Campaña de Apoyo</h2>
+            <div v-if="parsedCausa.apoyoInfo" class="description-text" style="white-space: pre-line; margin-bottom: 20px; color: rgba(255, 255, 255, 0.85);">
+              {{ parsedCausa.apoyoInfo }}
+            </div>
+            <div v-if="parsedCausa.agradecimiento" class="description-text agradecimiento-box" style="white-space: pre-line; background: rgba(14, 165, 233, 0.05); border: 1px dashed rgba(14, 165, 233, 0.2); padding: 20px; border-radius: 16px; border-left: 4px solid #0284c7; color: #cbd5e1; font-style: italic;">
+              {{ parsedCausa.agradecimiento }}
+            </div>
+          </section>
+        </div>
+
+        <!-- 2.6 Schedules & Publisher Section below Rifa & support split row -->
+        <div class="causa-split-row" style="margin-top: 10px;">
+          <!-- Schedules (Causes) -->
+          <section class="info-section causa-detail-card" style="background: #1a232e; border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+            <h2 class="section-title"><i class="fa-solid fa-calendar-days"></i> Horarios y Disponibilidad</h2>
+            <div class="schedule-grid" id="detail-schedule">
+              <div class="schedule-card" style="margin-bottom: 0; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                <p class="label">Horario</p>
+                <p class="value" id="detail-hours" v-html="formattedDate"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Publisher Actor Card Section (Causes) -->
+          <section 
+            v-if="actor" 
+            class="info-section actor-card-lite"
+            style="background: #1a232e; border: 1px solid rgba(255,255,255,0.05); padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; justify-content: center;"
+          >
+            <h3 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Publicado por:</h3>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+              <img 
+                :src="actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'" 
+                style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
+                @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+              >
+              <div style="flex-grow: 1;">
+                <h4 style="margin: 0; color: white; font-size: 1.2rem; font-weight: 700;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>
+                <p style="margin: 3px 0 0 0; color: #38bdf8; font-size: 0.9rem;">{{ actor.especialidad || 'Líder Ambiental' }}</p>
+              </div>
+              <div style="display: flex; gap: 10px; margin-left: auto;">
+                <RouterLink 
+                  :to="`/agentes/${actor.id}`" 
+                  class="btn-ver-perfil-actor" 
+                  style="padding: 10px 18px; font-size: 0.85rem; color: #38bdf8; border: 1px solid #0284c7; border-radius: 30px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
+                >
+                  Ver perfil
+                </RouterLink>
+                 <button 
+                  v-if="authStore.user && authStore.user.id !== actor.id"
+                  id="btn-follow-actor" 
+                  class="btn btn-primary" 
+                  :class="{ 'btn-follow-glow': !isFollowingActor }"
+                  style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px;"
+                  :style="isFollowingActor ? 'background: #333; border-color: #0284c7; color: #38bdf8;' : ''"
+                  :disabled="followActorLoading"
+                  @click="handleFollowActorToggle"
+                >
+                  {{ isFollowingActor ? '✓ Siguiendo' : '+ Seguir' }}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
 
       <!-- UI MOBILE: Bottom Action Bar -->
@@ -1122,5 +1455,120 @@ watch(() => route.path, () => {
     box-shadow: 0 0 14px rgba(56, 151, 240, 0.5);
     border-color: rgba(56, 151, 240, 0.85);
   }
+}
+
+/* AJOLOTE THEME OVERRIDES FOR DETAIL VIEW & CAUSAS STYLING */
+.theme-ajolote {
+  --primary-color: #0284c7;
+}
+.theme-ajolote .btn-primary {
+  background: #0284c7 !important;
+  color: white !important;
+  border: none !important;
+}
+.theme-ajolote .btn-primary:hover {
+  background: #0369a1 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.4) !important;
+}
+.theme-ajolote .btn-outline {
+  border-color: rgba(2, 132, 199, 0.5) !important;
+  color: #38bdf8 !important;
+}
+.theme-ajolote .btn-outline:hover {
+  background: rgba(2, 132, 199, 0.1) !important;
+  border-color: #0284c7 !important;
+  color: white !important;
+}
+.theme-ajolote .section-title i {
+  color: #38bdf8 !important;
+}
+.theme-ajolote .prize-item-row:hover {
+  background: rgba(2, 132, 199, 0.08) !important;
+  border-color: rgba(2, 132, 199, 0.25) !important;
+  transform: translateX(4px);
+}
+.theme-ajolote .location-box h4 {
+  color: #38bdf8 !important;
+}
+.theme-ajolote .btn-favorite-effect {
+  border-color: rgba(2, 132, 199, 0.45) !important;
+  color: #38bdf8 !important;
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.25) !important;
+  animation: favorite-idle-glow-ajolote 3.0s infinite ease-in-out !important;
+}
+.theme-ajolote .btn-favorite-effect:hover {
+  box-shadow: 0 0 16px rgba(2, 132, 199, 0.55) !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  background: rgba(2, 132, 199, 0.08) !important;
+}
+.theme-ajolote .btn-favorite-active {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: white !important;
+  box-shadow: 0 0 16px rgba(2, 132, 199, 0.6) !important;
+  animation: favorite-glow-pulse-ajolote 2.5s infinite ease-in-out !important;
+}
+.theme-ajolote .btn-favorite-active:hover {
+  background: #0369a1 !important;
+  border-color: #0369a1 !important;
+}
+.theme-ajolote .btn-ver-perfil-actor {
+  color: #38bdf8 !important;
+  border-color: #0284c7 !important;
+}
+.theme-ajolote .btn-ver-perfil-actor:hover {
+  background: #0284c7 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
+}
+
+@keyframes favorite-idle-glow-ajolote {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(2, 132, 199, 0.2);
+    border-color: rgba(2, 132, 199, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(2, 132, 199, 0.5);
+    border-color: rgba(2, 132, 199, 0.85);
+  }
+}
+@keyframes favorite-glow-pulse-ajolote {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(2, 132, 199, 0.75);
+  }
+}
+
+.causa-split-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  width: 100%;
+}
+
+/* Primera fila: Rifa (mismo ancho que La Causa) + Campaña (resto del espacio) */
+.causa-rifa-campana-row {
+  grid-template-columns: 1fr calc(var(--flyer-width) + var(--sidebar-width) + 40px);
+}
+
+@media (max-width: 900px) {
+  .causa-split-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .causa-rifa-campana-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.causa-bottom-container {
+  max-width: var(--content-max-width, 1350px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box;
 }
 </style>

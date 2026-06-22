@@ -60,21 +60,26 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const initialized = ref(false)
+  const initPromise = ref<Promise<void> | null>(null)
 
   const init = async () => {
-    if (initialized.value) return
-    initialized.value = true
+    if (initPromise.value) return initPromise.value
     
-    loading.value = true
-    
-    // Initial session check
-    const { data } = await supabase.auth.getSession()
-    await handleSession(data.session)
+    initPromise.value = (async () => {
+      initialized.value = true
+      loading.value = true
+      
+      // Initial session check
+      const { data } = await supabase.auth.getSession()
+      await handleSession(data.session)
 
-    // Listen to auth changes
-    supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      await handleSession(newSession)
-    })
+      // Listen to auth changes
+      supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        await handleSession(newSession)
+      })
+    })()
+
+    return initPromise.value
   }
 
   const logout = async () => {

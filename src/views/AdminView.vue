@@ -182,8 +182,10 @@ const actorPermissions = ref<Record<string, boolean>>({
   puede_editar_firmas: false,
   puede_editar_voluntariados: false,
   puede_editar_convocatoria: false,
+  puede_editar_causas: false,
   puede_editar_normativa: false,
-  puede_editar_fondos: false
+  puede_editar_fondos: false,
+  puede_editar_lugares: false
 })
 
 const actorFuncPermissions = ref<Record<string, boolean>>({
@@ -587,6 +589,16 @@ const SECTION_CONFIGS: Record<string, { label: string; fields: Array<{ id: strin
       { id: 'plataforma_firmas', label: 'Plataforma', type: 'text', placeholder: 'Ej: Change.org, Avaaz' },
       { id: 'meta_firmas', label: 'Meta de Firmas', type: 'text', placeholder: 'Ej: 10,000' }
     ]
+  },
+  causas: {
+    label: 'Causa / Rifa',
+    fields: [
+      { id: 'organizador', label: 'Organizador / Beneficiario', type: 'text', placeholder: 'Ej: Campamento Palmarito' },
+      { id: 'costo_boleto', label: 'Costo del Boleto', type: 'text', placeholder: 'Ej: $150 MXN' },
+      { id: 'fecha_sorteo', label: 'Fecha del Sorteo', type: 'date' },
+      { id: 'instagram', label: 'Instagram (URL)', type: 'text', placeholder: 'https://instagram.com/...' },
+      { id: 'facebook', label: 'Facebook (URL)', type: 'text', placeholder: 'https://facebook.com/...' }
+    ]
   }
 }
 
@@ -606,7 +618,8 @@ const hubsConfig = {
     label: 'Hub Ajolote',
     sections: [
       { id: 'voluntariados', label: 'Voluntariados', icon: 'fa-solid fa-hands-helping' },
-      { id: 'convocatoria', label: 'Convocatorias', icon: 'fa-solid fa-bullhorn' }
+      { id: 'convocatoria', label: 'Convocatorias', icon: 'fa-solid fa-bullhorn' },
+      { id: 'causas', label: 'Causas / Rifas', icon: 'fa-solid fa-hand-holding-heart' }
     ]
   },
   lobo: {
@@ -1368,7 +1381,7 @@ const saveItem = async () => {
       
       let hub = 'colibri'
       if (selectedSection.value) {
-        if (['voluntariados', 'convocatoria'].includes(selectedSection.value)) hub = 'ajolote'
+        if (['voluntariados', 'convocatoria', 'causas'].includes(selectedSection.value)) hub = 'ajolote'
         else if (['normativa', 'fondos'].includes(selectedSection.value)) hub = 'lobo'
       }
 
@@ -1597,7 +1610,7 @@ const savePermissions = async () => {
         const secId = k.replace('puede_editar_', '')
         // Determine parent hub
         let hub = 'colibri'
-        if (['voluntariados', 'convocatoria'].includes(secId)) hub = 'ajolote'
+        if (['voluntariados', 'convocatoria', 'causas', 'lugares'].includes(secId)) hub = 'ajolote'
         if (['normativa', 'fondos'].includes(secId)) hub = 'lobo'
 
         sectionsToInsert.push({
@@ -2459,7 +2472,7 @@ const formatRelativeDate = (dateStr: string) => {
             </li>
 
             <li 
-              v-if="isUserAdmin || actorFunctions.puede_crear_lugares" 
+              v-if="isUserAdmin || actorFunctions.puede_crear_lugares || actorSections.includes('lugares')" 
               :class="{ 'active': selectedSection === 'lugares' }"
             >
               <a href="#" @click.prevent="selectSection('lugares')">
@@ -3932,10 +3945,11 @@ const formatRelativeDate = (dateStr: string) => {
           <button class="close-modal-btn" @click="closeAllModals">&times;</button>
         </div>
         <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
-          
           <div>
-            <h4 style="color: var(--color-eco); font-weight: 700; margin-bottom: 10px; font-size:1.05rem;">Acceso a Secciones (Hubs)</h4>
+            <h4 style="color: var(--color-eco); font-weight: 700; margin-bottom: 10px; font-size: 1.05rem;">Acceso a Secciones (Hubs)</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <!-- Colibri (educación y acción) -->
+              <h5 style="grid-column: 1 / -1; color: var(--color-eco); font-weight: 700; margin: 5px 0 2px;">Colibri</h5>
               <label style="display: flex; align-items: center; gap: 8px; color: white; cursor: pointer;">
                 <input type="checkbox" v-model="actorPermissions.puede_editar_cursos" /> 🎓 Cursos
               </label>
@@ -3960,6 +3974,18 @@ const formatRelativeDate = (dateStr: string) => {
               <label style="display: flex; align-items: center; gap: 8px; color: white; cursor: pointer;">
                 <input type="checkbox" v-model="actorPermissions.puede_editar_convocatoria" /> 📣 Convocatorias
               </label>
+
+              <!-- Ajolote (causas y lugares) -->
+              <h5 style="grid-column: 1 / -1; color: var(--color-eco); font-weight: 700; margin: 15px 0 2px;">Ajolote</h5>
+              <label style="display: flex; align-items: center; gap: 8px; color: white; cursor: pointer;">
+                <input type="checkbox" v-model="actorPermissions.puede_editar_causas" /> 💝 Causas / Rifas
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; color: white; cursor: pointer;">
+                <input type="checkbox" v-model="actorPermissions.puede_editar_lugares" /> 📍 Lugares Sustentables
+              </label>
+
+              <!-- Lobo (normativas y fondos) -->
+              <h5 style="grid-column: 1 / -1; color: var(--color-eco); font-weight: 700; margin: 15px 0 2px;">Lobo</h5>
               <label style="display: flex; align-items: center; gap: 8px; color: white; cursor: pointer;">
                 <input type="checkbox" v-model="actorPermissions.puede_editar_normativa" /> ⚖️ Normativas
               </label>
@@ -3969,8 +3995,8 @@ const formatRelativeDate = (dateStr: string) => {
             </div>
           </div>
 
-          <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-            <h4 style="color: var(--color-eco); font-weight: 700; margin-bottom: 10px; font-size:1.05rem;">Capacidades Operativas</h4>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px;">
+            <h4 style="color: var(--color-eco); font-weight: 700; margin-bottom: 10px; font-size: 1.05rem;">Capacidades Operativas</h4>
             <div style="display: flex; flex-direction: column; gap: 10px;">
               <label style="display: flex; align-items: center; gap: 8px; color: white; cursor: pointer;">
                 <input type="checkbox" v-model="actorFuncPermissions.puede_crear_eventos" /> Permitir crear eventos ecológicos
@@ -3997,6 +4023,7 @@ const formatRelativeDate = (dateStr: string) => {
         </div>
       </div>
     </div>
+    
 
     <!-- MODAL DETALLE DE HISTORIAL DE NOTIFICACIONES -->
     <div v-if="isNotifReviewModalOpen && activeNotifDetail" class="modal-overlay">
@@ -4590,7 +4617,7 @@ const formatRelativeDate = (dateStr: string) => {
                 </form>
             </div>
         </div>
-    </div>
+      </div>
   </div>
 </template>
 

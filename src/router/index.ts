@@ -98,6 +98,12 @@ const router = createRouter({
       component: DynamicSectionView,
       props: { sectionId: 'convocatoria', parentHub: 'ajolote' }
     },
+    {
+      path: '/causas',
+      name: 'causas',
+      component: DynamicSectionView,
+      props: { sectionId: 'causas', parentHub: 'ajolote' }
+    },
     // Dynamic sections for Hub Lobo
     {
       path: '/normativa',
@@ -120,6 +126,11 @@ const router = createRouter({
     {
       path: '/lugares/:id',
       name: 'lugar-detalle',
+      component: DetailView
+    },
+    {
+      path: '/causas/:id',
+      name: 'causa-detalle',
       component: DetailView
     },
     {

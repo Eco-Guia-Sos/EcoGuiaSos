@@ -1076,6 +1076,7 @@ const scrollToSection = (id: string) => {
                 <li><RouterLink to="/agentes">👥 Agentes</RouterLink></li>
                 <li><RouterLink to="/convocatoria">📣 Convocatorias</RouterLink></li>
                 <li><RouterLink to="/voluntariados">🤝 Ayuda</RouterLink></li>
+                <li><RouterLink to="/causas">💝 Causas / Rifas</RouterLink></li>
                 <li><RouterLink to="/lugares">🌿 Lugares</RouterLink></li>
               </ul>
             </div>
@@ -1706,6 +1707,10 @@ const scrollToSection = (id: string) => {
           <RouterLink to="/voluntariados" class="nivel-btn-item glass-effect">
             <span class="nivel-btn-title">🤝 Voluntariados</span>
             <p class="nivel-btn-desc">Eventos y jornadas cerca de ti.</p>
+          </RouterLink>
+          <RouterLink to="/causas" class="nivel-btn-item glass-effect">
+            <span class="nivel-btn-title">💝 Causas / Rifas</span>
+            <p class="nivel-btn-desc">Apoya causas locales y solidarias.</p>
           </RouterLink>
         </div>
         <button @click="scrollToTop" class="btn-back-to-top">

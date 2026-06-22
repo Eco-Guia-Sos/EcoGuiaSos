@@ -193,7 +193,7 @@ const darkRoutes = [
   '/agentes', '/voluntariados', '/convocatoria', '/normativa', '/fondos',
   '/nosotros', '/auth', '/como-usar', '/favoritos', '/admin',
   '/eventos/', '/lugares', '/guia-usuario', '/guia-actor',
-  '/reset-password', '/admin-login'
+  '/reset-password', '/admin-login', '/causas'
 ]
 
 watch(() => route.path, (newPath) => {

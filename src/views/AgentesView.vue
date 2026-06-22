@@ -173,6 +173,7 @@ onMounted(async () => {
           <RouterLink to="/agentes" class="subnav-link active"><i class="fa-solid fa-users"></i> Agentes</RouterLink>
           <RouterLink to="/voluntariados" class="subnav-link"><i class="fa-solid fa-hands-helping"></i> Voluntariados</RouterLink>
           <RouterLink to="/convocatoria" class="subnav-link"><i class="fa-solid fa-bullhorn"></i> Convocatoria</RouterLink>
+          <RouterLink to="/causas" class="subnav-link"><i class="fa-solid fa-hand-holding-heart"></i> Causas</RouterLink>
           <RouterLink to="/lugares" class="subnav-link"><i class="fa-solid fa-map-pin"></i> Lugares</RouterLink>
         </nav>
       </div>

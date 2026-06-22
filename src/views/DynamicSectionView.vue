@@ -50,12 +50,14 @@ const hubsConfig = {
       { name: 'Agentes', path: '/agentes', icon: 'fa-solid fa-users', id: 'agentes' },
       { name: 'Voluntariados', path: '/voluntariados', icon: 'fa-solid fa-hands-helping', id: 'voluntariados' },
       { name: 'Convocatoria', path: '/convocatoria', icon: 'fa-solid fa-bullhorn', id: 'convocatoria' },
+      { name: 'Causas', path: '/causas', icon: 'fa-solid fa-hand-holding-heart', id: 'causas' },
       { name: 'Lugares', path: '/lugares', icon: 'fa-solid fa-map-pin', id: 'lugares' }
     ],
     labels: {
       agentes: 'Agente',
       voluntariados: 'Voluntariado',
       convocatoria: 'Convocatoria',
+      causas: 'Causa / Rifa',
       lugares: 'Lugar'
     } as Record<string, string>
   },
@@ -100,6 +102,15 @@ const parseItem = (item: any) => {
 
 const parsedItems = computed(() => items.value.map(parseItem))
 
+const getBriefDescription = (text: string) => {
+  if (!text) return ''
+  const firstParagraph = text.split(/\r?\n\r?\n/)[0] || ''
+  if (firstParagraph.length > 150) {
+    return firstParagraph.substring(0, 150).trim() + '...'
+  }
+  return firstParagraph
+}
+
 const fetchContent = async () => {
   loading.value = true
   errorMsg.value = ''
@@ -137,11 +148,12 @@ const checkPermissions = async () => {
     try {
       const { data, error } = await supabase
         .from('permisos_actores')
-        .select(`puede_editar_${props.sectionId}`)
-        .eq('actor_id', authStore.user.id)
-        .single()
+        .select('seccion_id')
+        .eq('user_id', authStore.user.id)
+        .eq('seccion_id', props.sectionId)
+        .maybeSingle()
 
-      if (!error && data && data[`puede_editar_${props.sectionId}` as keyof typeof data]) {
+      if (!error && data) {
         canAddContent.value = true
       }
     } catch (e) {
@@ -222,6 +234,8 @@ watch(() => authStore.user, () => {
           v-for="item in parsedItems" 
           :key="item.id"
           class="glass-card fade-in"
+          :style="props.sectionId === 'causas' ? 'cursor: pointer;' : ''"
+          @click="props.sectionId === 'causas' ? router.push(`/causas/${item.id}`) : null"
         >
           <div v-if="item.imagen_url" class="card-img-container">
             <img 
@@ -240,7 +254,7 @@ watch(() => authStore.user, () => {
           <div class="card-content">
             <h3>{{ item.titulo }}</h3>
             
-            <div class="card-meta-info" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+            <div v-if="props.sectionId !== 'causas'" class="card-meta-info" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
               <!-- Dynamic Metadata fields depending on type -->
               <span v-if="item.meta.institucion"><i class="fa-solid fa-building-columns"></i> {{ item.meta.institucion }}</span>
               <span v-if="item.meta.gratuito"><i class="fa-solid fa-tag"></i> {{ item.meta.gratuito }}</span>
@@ -269,9 +283,11 @@ watch(() => authStore.user, () => {
               <span v-if="item.fecha_evento"><i class="fa-regular fa-calendar"></i> {{ new Date(item.fecha_evento).toLocaleDateString() }}</span>
             </div>
 
-            <p style="margin-bottom: 20px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">{{ item.textoDescripcion }}</p>
+            <p style="margin-bottom: 20px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">
+              {{ props.sectionId === 'causas' ? getBriefDescription(item.textoDescripcion) : item.textoDescripcion }}
+            </p>
             
-            <div v-if="item.enlace_externo" class="card-actions" style="margin-top: auto;">
+            <div v-if="props.sectionId !== 'causas' && item.enlace_externo" class="card-actions" style="margin-top: auto;">
               <a 
                 :href="item.enlace_externo" 
                 target="_blank" 
@@ -379,5 +395,39 @@ watch(() => authStore.user, () => {
         width: 100%;
         justify-content: center;
     }
+}
+
+/* Causes Custom Card Metadata Tags styling */
+.card-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  color: #cbd5e1 !important;
+  font-weight: 600;
+  margin-right: 6px;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
+}
+.card-meta-tag:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(14, 165, 233, 0.4);
+}
+.meta-icon-circle {
+  background: white;
+  color: #0284c7; /* Sky/Teal matching Ajolote theme */
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 </style>
