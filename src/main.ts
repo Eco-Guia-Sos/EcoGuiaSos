@@ -9,6 +9,48 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 
+if ('serviceWorker' in navigator) {
+  // Registrar el SW controlando la caché del navegador para el script
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+    .then(reg => {
+      console.log('[SW] Service Worker registrado con éxito:', reg.scope);
+      
+      // Checar si hay actualizaciones regularmente
+      reg.update();
+      
+      // Si ya hay un SW esperando, decirle que tome el control
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+
+      // Escuchar cuando el nuevo SW se instala y queda esperando
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Enviar instrucción de activación inmediata
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        }
+      });
+    })
+    .catch(err => {
+      console.error('[SW] Error al registrar Service Worker:', err);
+    });
+
+  // Cuando cambie el controlador activo (nuevo SW activado), recargar para aplicar CSP limpia
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      console.log('[SW] Nuevo controlador detectado. Recargando página...');
+      window.location.reload();
+    }
+  });
+}
+
 const app = createApp(App)
 
 app.directive('reveal', {

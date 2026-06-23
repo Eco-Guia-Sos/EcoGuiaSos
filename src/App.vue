@@ -266,10 +266,7 @@ onMounted(() => {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     deferredPrompt.value = e
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    if (!isStandalone && !installBannerDismissed.value) {
-      showInstallBtn.value = true
-    }
+    showInstallBtn.value = true
   })
 
   window.addEventListener('appinstalled', () => {

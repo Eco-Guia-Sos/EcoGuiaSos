@@ -1,6 +1,6 @@
-const CACHE_NAME = 'ecoguiasos-v11';
+const CACHE_NAME = 'ecoguiasos-v13';
 
-// URLs que NO deben ser interceptadas por el SW (APIs dinámicas y recursos externos CDN/imágenes/fuentes)
+// URLs que NO deben ser interceptadas por el SW (APIs dinámicas y recursos externos CDN/imágenes/fuentes/CSP)
 const BYPASS_PATTERNS = [
     'supabase.co',           // Supabase API - AUTH y DB
     'googleapis.com',        // Google Maps / Gemini / Fonts
@@ -16,6 +16,8 @@ const BYPASS_PATTERNS = [
     'tile.openstreetmap.org', // OpenStreetMap Tiles
     'basemaps.cartocdn.com', // CartoDB Tiles
     'server.arcgisonline.com', // ArcGIS Tiles
+    'gofundme.com',          // GoFundMe Images (evita error CSP connect-src)
+    'cloudfront.net',        // CloudFront CDN
 ];
 
 // Recursos estáticos locales para cachear
@@ -40,6 +42,13 @@ self.addEventListener('install', event => {
             );
         })
     );
+});
+
+// Forzar activación inmediata al recibir mensaje
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // ==========================================
