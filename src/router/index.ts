@@ -172,6 +172,26 @@ const router = createRouter({
       component: () => import('../views/AdminView.vue'),
       meta: { requiresAuth: true, roles: ['admin', 'actor'] }
     },
+    // Admin Edit Redirect
+    {
+      path: '/admin/editar/:tipo/:id',
+      redirect: to => {
+        const tipo = to.params.tipo as string
+        const id = to.params.id as string
+        let section = 'eventos'
+        if (tipo === 'lugar') section = 'lugares'
+        else if (tipo === 'causa') section = 'causas'
+        return {
+          path: '/admin',
+          query: {
+            tab: 'tabla-seccion',
+            section: section,
+            action: 'edit',
+            id: id
+          }
+        }
+      }
+    },
     // Volunteer Profile View
     {
       path: '/mi-perfil',

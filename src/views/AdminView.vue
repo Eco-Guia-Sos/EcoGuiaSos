@@ -60,6 +60,8 @@ const stats = ref({
   actores: 0,
   voluntarios: 0,
   eventos: 0,
+  eventos_activos: 0,
+  eventos_inactivos: 0,
   lugares: 0,
   seguidores: 0
 })
@@ -84,6 +86,7 @@ const isVolunteerDetailModalOpen = ref(false)
 const selectedVolunteer = ref<any | null>(null)
 const volunteerFormEditable = ref(false)
 const volunteerFormSaving = ref(false)
+const savingItem = ref(false)
 interface VolunteerFormType {
   email: string
   nombre_completo: string
@@ -799,7 +802,7 @@ const fetchGlobalStats = async () => {
   try {
     let actQuery = supabase.from('perfiles').select('*', { count: 'exact', head: true }).or('rol.eq.admin,and(rol.eq.actor,actor_status.eq.approved)')
     let volQuery = supabase.from('perfiles').select('*', { count: 'exact', head: true }).eq('rol', 'user')
-    let evQuery = supabase.from('eventos').select('*', { count: 'exact', head: true })
+    let evQuery = supabase.from('eventos').select('fecha_inicio, fecha_fin')
     let plQuery = supabase.from('lugares').select('*', { count: 'exact', head: true })
     let segQuery = supabase.from('seguimientos_actores').select('*', { count: 'exact', head: true })
 
@@ -812,7 +815,7 @@ const fetchGlobalStats = async () => {
     const [
       { count: actCount },
       { count: volCount },
-      { count: evCount },
+      { data: evData },
       { count: plCount },
       { count: segCount }
     ] = await Promise.all([
@@ -822,6 +825,26 @@ const fetchGlobalStats = async () => {
       plQuery,
       segQuery
     ])
+
+    let activeEventsCount = 0
+    let inactiveEventsCount = 0
+    if (evData) {
+      const now = new Date()
+      evData.forEach(item => {
+        let isActive = false
+        if (item.fecha_fin || item.fecha_inicio) {
+          const end = item.fecha_fin ? new Date(item.fecha_fin) : null
+          const start = item.fecha_inicio ? new Date(item.fecha_inicio) : null
+          if (end) isActive = end >= now
+          else if (start) isActive = start >= now
+        }
+        if (isActive) {
+          activeEventsCount++
+        } else {
+          inactiveEventsCount++
+        }
+      })
+    }
 
     const { count: pendingActCount } = await supabase
       .from('perfiles')
@@ -833,7 +856,9 @@ const fetchGlobalStats = async () => {
     stats.value = {
       actores: actCount || 0,
       voluntarios: volCount || 0,
-      eventos: evCount || 0,
+      eventos: evData ? evData.length : 0,
+      eventos_activos: activeEventsCount,
+      eventos_inactivos: inactiveEventsCount,
       lugares: plCount || 0,
       seguidores: segCount || 0
     }
@@ -915,6 +940,96 @@ const loadVoluntariosList = async () => {
   
   if (data) voluntariosList.value = data
 }
+
+const eventValidityFilter = ref<'all' | 'active' | 'passed'>('all')
+const categoryFilter = ref<string>('all')
+const publisherFilter = ref<string>('all')
+const modalityFilter = ref<string>('all')
+const stateFilter = ref<string>('all')
+const searchQuery = ref<string>('')
+
+const uniqueCategories = computed(() => {
+  const cats = listItems.value.map(item => item.categoria)
+  return [...new Set(cats)].filter(Boolean)
+})
+
+const uniquePublishers = computed(() => {
+  const pubs = listItems.value.map(item => item.publicador?.nombre_completo || 'Sistema')
+  return [...new Set(pubs)].filter(Boolean)
+})
+
+const clearAllFilters = () => {
+  eventValidityFilter.value = 'all'
+  categoryFilter.value = 'all'
+  publisherFilter.value = 'all'
+  modalityFilter.value = 'all'
+  stateFilter.value = 'all'
+  searchQuery.value = ''
+}
+
+// Reset filters when changing sections to avoid sticky filtered states
+watch(selectedSection, () => {
+  clearAllFilters()
+})
+
+const isEventActive = (eventItem: any) => {
+  if (!eventItem.fecha_fin && !eventItem.fecha_inicio) return false
+  const now = new Date()
+  const end = eventItem.fecha_fin ? new Date(eventItem.fecha_fin) : null
+  const start = eventItem.fecha_inicio ? new Date(eventItem.fecha_inicio) : null
+  
+  if (end) return end >= now
+  if (start) return start >= now
+  return false
+}
+
+const filteredListItems = computed(() => {
+  return listItems.value.filter(item => {
+    // 0. Search Query Filter
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase().trim()
+      const title = (item.nombre || item.titulo || '').toLowerCase()
+      const desc = (item.descripcion || item.descripcion_texto || '').toLowerCase()
+      if (!title.includes(q) && !desc.includes(q)) return false
+    }
+
+    // 1. Validity Filter
+    if (selectedSection.value === 'eventos' && eventValidityFilter.value !== 'all') {
+      const active = isEventActive(item)
+      if (eventValidityFilter.value === 'active' && !active) return false
+      if (eventValidityFilter.value === 'passed' && active) return false
+    }
+
+    // 2. Category Filter
+    if (categoryFilter.value !== 'all' && item.categoria !== categoryFilter.value) {
+      return false
+    }
+
+    // 3. Publisher Filter
+    if (publisherFilter.value !== 'all') {
+      const pubName = item.publicador?.nombre_completo || 'Sistema'
+      if (pubName !== publisherFilter.value) return false
+    }
+
+    // 4. Modality Filter
+    if (selectedSection.value === 'eventos' && modalityFilter.value !== 'all') {
+      const isOnline = item.modalidad === 'en_linea'
+      const isHybrid = item.tiene_sesion_online
+      let itemMod = 'presencial'
+      if (isOnline) itemMod = 'en_linea'
+      else if (isHybrid) itemMod = 'hibrido'
+
+      if (modalityFilter.value !== itemMod) return false
+    }
+
+    // 5. State Filter
+    if (stateFilter.value !== 'all' && item.estado !== stateFilter.value) {
+      return false
+    }
+
+    return true
+  })
+})
 
 const filteredStaffList = computed(() => staffList.value)
 
@@ -1152,7 +1267,9 @@ const openAddModal = () => {
     social_x: '',
     social_yt: '',
     social_web: '',
-    imagenes: []
+    imagenes: [],
+    drive_fotos_url: '',
+    clave_fotos: ''
   }
 
   // Pre-fill meta structure if section contents
@@ -1229,7 +1346,9 @@ const openEditModal = (item: any) => {
     social_x: item.social_x || '',
     social_yt: item.social_yt || '',
     social_web: item.social_web || '',
-    imagenes: imgs
+    imagenes: imgs,
+    drive_fotos_url: item.drive_fotos_url || '',
+    clave_fotos: item.clave_fotos || ''
   }
 
   if (selectedSection.value === 'eventos') {
@@ -1283,11 +1402,16 @@ const openEditModal = (item: any) => {
 
 const saveItem = async () => {
   console.log('[Save Debug] saveItem function triggered!')
+  if (savingItem.value) {
+    console.warn('[Save Debug] Save aborted: already saving an item')
+    return
+  }
   if (!authStore.user) {
     console.warn('[Save Debug] Save aborted: authStore.user is null')
     alert('Tu sesión ha expirado o no estás logueado. Por favor, recarga la página o vuelve a iniciar sesión.')
     return
   }
+  savingItem.value = true
   console.log('[Save Debug] Logged user email:', authStore.user.email, 'ID:', authStore.user.id)
   console.log('[Save Debug] selectedSection:', selectedSection.value)
   if (!selectedSection.value) {
@@ -1328,7 +1452,9 @@ const saveItem = async () => {
         pet_friendly: editingItem.value.modalidad === 'presencial' ? (editingItem.value.pet_friendly || false) : false,
         apto_ninos: editingItem.value.modalidad === 'presencial' ? (editingItem.value.apto_ninos || false) : false,
         fecha_inicio: formatToISO(editingItem.value.fecha_inicio),
-        fecha_fin: formatToISO(editingItem.value.fecha_fin)
+        fecha_fin: formatToISO(editingItem.value.fecha_fin),
+        drive_fotos_url: editingItem.value.drive_fotos_url || '',
+        clave_fotos: editingItem.value.clave_fotos || ''
       }
 
       console.log('[Save Debug] Event data structured for validation:', eventData)
@@ -1453,6 +1579,8 @@ const saveItem = async () => {
   } catch (e: any) {
     console.error('[Save Debug] Exception caught in saveItem:', e)
     alert('Error al guardar el registro: ' + e.message)
+  } finally {
+    savingItem.value = false
   }
 }
 
@@ -2291,12 +2419,29 @@ const closeAllModals = () => {
   }
 }
 
+const fetchAndEditItem = async (section: string, id: string) => {
+  try {
+    let query: any = supabase.from(section).select('*')
+    if (section === 'eventos' || section === 'lugares') {
+      query = supabase.from(section).select('*, publicador:owner_id(nombre_completo)')
+    }
+    const { data, error } = await query.eq('id', id).single()
+    if (error) throw error
+    if (data) {
+      openEditModal(data)
+    }
+  } catch (err) {
+    console.error('Error fetching item for editing:', err)
+  }
+}
+
 // Handle query parameter deep linking
 const checkQueryParams = () => {
   const action = route.query.action
   const section = route.query.section as string
   const hub = route.query.hub as 'colibri' | 'ajolote' | 'lobo'
   const tab = route.query.tab as string
+  const id = route.query.id as string
 
   if (action === 'new' && section === 'lugares') {
     selectSection('lugares')
@@ -2305,6 +2450,9 @@ const checkQueryParams = () => {
     showHubMenu(hub)
     selectSection(section)
     setTimeout(() => openAddModal(), 300)
+  } else if (action === 'edit' && section && id) {
+    selectSection(section)
+    setTimeout(() => fetchAndEditItem(section, id), 300)
   } else if (tab) {
     activeTab.value = tab
     if (tab === 'tabla-seccion' && section) {
@@ -2645,8 +2793,13 @@ const formatRelativeDate = (dateStr: string) => {
                   <i class="fa-solid fa-calendar-days"></i>
                 </div>
                 <div class="stat-info">
-                  <h3>{{ stats.eventos }}</h3>
-                  <p>Eventos Activos</p>
+                  <h3 style="display: flex; align-items: baseline; gap: 8px;">
+                    <span>{{ stats.eventos_activos }}</span>
+                    <span style="font-size: 0.9rem; color: #4ade80; font-weight: 600;">Activos</span>
+                  </h3>
+                  <p style="font-size: 0.85rem; color: var(--admin-text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px;">
+                    <span>{{ stats.eventos_inactivos }} Inactivos</span>
+                  </p>
                 </div>
               </div>
 
@@ -2673,30 +2826,33 @@ const formatRelativeDate = (dateStr: string) => {
             </div>
           </template>
 
-          <!-- SECTION SPECIFIC: Header & Moderation Tabs -->
+          <!-- SECTION SPECIFIC: Header -->
           <template v-if="activeTab === 'tabla-seccion'">
             <div class="table-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
               <h2 style="color: white; font-weight: 800; font-size: 1.4rem; margin:0;">
                 Sección: {{ selectedSection?.toUpperCase() }}
               </h2>
             </div>
-
-            <div v-if="selectedSection !== 'seguidores' && isUserAdmin" class="moderation-tabs-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
-              <button class="tab-btn" :class="{ 'active': moderationFilter === 'all' }" @click="moderationFilter = 'all'">Todos</button>
-              <button class="tab-btn" :class="{ 'active': moderationFilter === 'approved' }" @click="moderationFilter = 'approved'">Aprobados</button>
-              <button class="tab-btn" :class="{ 'active': moderationFilter === 'pending' }" @click="moderationFilter = 'pending'">Pendientes</button>
-              <button class="tab-btn" :class="{ 'active': moderationFilter === 'rejected' }" @click="moderationFilter = 'rejected'">Rechazados</button>
-            </div>
           </template>
-          <!-- SHARED TABLE COMPONENT (Dashboard & Section) -->
-          <template v-if="['dashboard', 'tabla-seccion'].includes(activeTab)">
+          <!-- SHARED TABLE COMPONENT (Section Table only) -->
+          <template v-if="activeTab === 'tabla-seccion'">
             <!-- Search & Actions Header (Regular Sections) -->
-            <div v-if="selectedSection !== 'seguidores'" class="table-actions-container" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+             <div v-if="selectedSection !== 'seguidores'" class="table-actions-container" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
               <div class="admin-search-box" style="position: relative; flex: 1; max-width: 400px;">
                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--admin-text-muted);"></i>
-                <input type="text" placeholder="Buscar registros..." style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--admin-border); padding: 12px 15px 12px 40px; border-radius: 20px; color: white; font-family: 'Inter', sans-serif; transition: all 0.3s;" />
+                <input type="text" v-model="searchQuery" placeholder="Buscar registros..." style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--admin-border); padding: 12px 15px 12px 40px; border-radius: 20px; color: white; font-family: 'Inter', sans-serif; transition: all 0.3s;" />
               </div>
               
+              <!-- Reset Filters Button -->
+              <button 
+                class="btn btn-secondary" 
+                @click="clearAllFilters" 
+                style="border-radius: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 10px 18px; transition: all 0.3s; cursor: pointer;"
+                title="Restablecer todos los filtros de la tabla"
+              >
+                <i class="fa-solid fa-filter-circle-xmark"></i> Todos
+              </button>
+
               <button v-if="activeTab === 'tabla-seccion'" class="btn btn-primary" @click="openAddModal" style="border-radius: 12px; font-weight:700;">
                 <i class="fa-solid fa-circle-plus"></i> Nuevo Registro
               </button>
@@ -2735,7 +2891,7 @@ const formatRelativeDate = (dateStr: string) => {
             <div v-else-if="(selectedSection === 'seguidores' ? filteredSeguidoresList.length : listItems.length) === 0" class="empty-state" style="padding: 50px; text-align: center; background: rgba(255,255,255,0.01); border-radius: 16px; color: var(--text-muted);">
               No hay registros para mostrar.
             </div>
-            <div v-else-if="selectedSection === 'seguidores'" class="table-responsive glass-effect" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); overflow: visible;">
+            <div v-else-if="selectedSection === 'seguidores'" class="table-responsive" style="overflow: visible;">
               <table class="admin-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                   <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -2789,27 +2945,63 @@ const formatRelativeDate = (dateStr: string) => {
                 </tbody>
               </table>
             </div>
-            <div v-else class="table-responsive glass-effect" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); overflow: visible;">
+            <div v-else class="table-responsive" style="overflow: visible;">
               <table class="admin-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
-                  <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                     <th style="padding: 15px 20px; color: white;">Nombre</th>
-                    <th style="padding: 15px 20px; color: white;">Categoría</th>
-                    <th v-if="selectedSection === 'eventos'" style="padding: 15px 20px; color: white;">Modalidad</th>
-                    <th style="padding: 15px 20px; color: white;">Estado</th>
+                    <th style="padding: 15px 20px; color: white;">
+                      <select v-model="categoryFilter" style="background: transparent; color: white; border: none; font-weight: bold; font-size: inherit; cursor: pointer; outline: none; padding-right: 5px;">
+                        <option value="all" style="background: #1e293b; color: white;">Categoría (Todas)</option>
+                        <option v-for="cat in uniqueCategories" :key="cat" :value="cat" style="background: #1e293b; color: white;">
+                          {{ formatCategory(cat).toUpperCase() }}
+                        </option>
+                      </select>
+                    </th>
+                    <th v-if="selectedSection === 'eventos' || selectedSection === 'lugares'" style="padding: 15px 20px; color: white;">
+                      <select v-model="publisherFilter" style="background: transparent; color: white; border: none; font-weight: bold; font-size: inherit; cursor: pointer; outline: none; padding-right: 5px;">
+                        <option value="all" style="background: #1e293b; color: white;">Publicador (Todos)</option>
+                        <option v-for="pub in uniquePublishers" :key="pub" :value="pub" style="background: #1e293b; color: white;">
+                          {{ pub }}
+                        </option>
+                      </select>
+                    </th>
+                    <th v-if="selectedSection === 'eventos'" style="padding: 15px 20px; color: white;">
+                      <select v-model="modalityFilter" style="background: transparent; color: white; border: none; font-weight: bold; font-size: inherit; cursor: pointer; outline: none; padding-right: 5px;">
+                        <option value="all" style="background: #1e293b; color: white;">Modalidad (Todas)</option>
+                        <option value="presencial" style="background: #1e293b; color: white;">📍 Presencial</option>
+                        <option value="en_linea" style="background: #1e293b; color: white;">🖥️ En Línea</option>
+                        <option value="hibrido" style="background: #1e293b; color: white;">🔄 Híbrido</option>
+                      </select>
+                    </th>
+                    <th v-if="selectedSection === 'eventos'" style="padding: 15px 20px; color: white;">
+                      <select v-model="eventValidityFilter" style="background: transparent; color: white; border: none; font-weight: bold; font-size: inherit; cursor: pointer; outline: none; padding-right: 5px;">
+                        <option value="all" style="background: #1e293b; color: white;">Vigencia (Todos)</option>
+                        <option value="active" style="background: #1e293b; color: white;">Activos</option>
+                        <option value="passed" style="background: #1e293b; color: white;">Pasados</option>
+                      </select>
+                    </th>
+                    <th style="padding: 15px 20px; color: white;">
+                      <select v-model="stateFilter" style="background: transparent; color: white; border: none; font-weight: bold; font-size: inherit; cursor: pointer; outline: none; padding-right: 5px;">
+                        <option value="all" style="background: #1e293b; color: white;">Estado (Todos)</option>
+                        <option value="approved" style="background: #1e293b; color: white;">Aprobado</option>
+                        <option value="pending" style="background: #1e293b; color: white;">Pendiente</option>
+                        <option value="rejected" style="background: #1e293b; color: white;">Rechazado</option>
+                      </select>
+                    </th>
                     <th style="padding: 15px 20px; color: white; text-align: right;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in listItems" :key="item.id" style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                    <td style="padding: 15px 20px; color: #f8fafc; font-weight:600;">
+                  <tr v-for="item in filteredListItems" :key="item.id" style="border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
+                    <td style="padding: 15px 20px; color: #f8fafc; font-weight: 600;">
                       {{ item.nombre || item.titulo }}
-                      <div v-if="activeTab === 'dashboard'" style="font-size:0.75rem; color:#64748b; font-weight:400; margin-top:2px;">
-                        Publicado por: {{ item.publicador?.nombre_completo || (item.owner_id ? 'usuario' : 'sistema') }}
-                      </div>
                     </td>
-                    <td style="padding: 15px 20px; color: #94a3b8; font-weight:600;">
+                    <td style="padding: 15px 20px; color: #94a3b8; font-weight: 600;">
                       {{ formatCategory(item.categoria || (item.fecha_inicio ? 'EVENTO' : 'LUGAR')).toUpperCase() }}
+                    </td>
+                    <td v-if="selectedSection === 'eventos' || selectedSection === 'lugares'" style="padding: 15px 20px; color: #94a3b8; font-size: 0.9rem;">
+                      {{ item.publicador?.nombre_completo || 'Sistema' }}
                     </td>
                     <td v-if="selectedSection === 'eventos'" style="padding: 15px 20px;">
                       <span v-if="item.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;">
@@ -2820,6 +3012,14 @@ const formatRelativeDate = (dateStr: string) => {
                       </span>
                       <span v-else class="status-badge" style="background: rgba(114, 176, 77, 0.15); color: #72B04D;">
                         📍 Presencial
+                      </span>
+                    </td>
+                    <td v-if="selectedSection === 'eventos'" style="padding: 15px 20px;">
+                      <span v-if="isEventActive(item)" class="status-badge" style="background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2);">
+                        Activo
+                      </span>
+                      <span v-else class="status-badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);">
+                        Pasado
                       </span>
                     </td>
                     <td style="padding: 15px 20px;">
@@ -3731,6 +3931,27 @@ const formatRelativeDate = (dateStr: string) => {
               <span v-if="eventErrors.reg_link" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ eventErrors.reg_link }}</span>
             </div>
 
+            <!-- Drive Fotos y Clave (Nueva Acción) -->
+            <div class="form-group full-width" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; margin-top: 5px;">
+              <h4 style="color: #10b981; margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                📸 Compartir Fotografías del Evento (Drive)
+              </h4>
+            </div>
+            <div class="form-group">
+              <label>Enlace de Drive para Fotos <span class="optional-badge" style="font-size: 0.75rem; opacity: 0.6; color: #94a3b8; font-weight: normal;">(Opcional)</span></label>
+              <div class="input-wrapper green-effect">
+                <input type="url" v-model="editingItem.drive_fotos_url" placeholder="Ej: https://drive.google.com/drive/folders/..." />
+              </div>
+              <span v-if="eventErrors.drive_fotos_url" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ eventErrors.drive_fotos_url }}</span>
+            </div>
+            <div class="form-group">
+              <label>Clave de Acceso a Fotos <span class="optional-badge" style="font-size: 0.75rem; opacity: 0.6; color: #94a3b8; font-weight: normal;">(Opcional)</span></label>
+              <div class="input-wrapper green-effect">
+                <input type="text" v-model="editingItem.clave_fotos" placeholder="Ej: Clave Secreta para ver fotos" />
+              </div>
+              <span v-if="eventErrors.clave_fotos" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ eventErrors.clave_fotos }}</span>
+            </div>
+
             <!-- Social networks selector -->
             <div class="form-group full-width" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; margin-top: 5px;">
               <label>Redes Sociales del Evento (Haz clic en un icono para ingresar su enlace)</label>
@@ -3806,7 +4027,9 @@ const formatRelativeDate = (dateStr: string) => {
           <!-- Footer Buttons -->
           <div class="modal-footer" style="margin-top: 30px; display: flex; gap: 12px; justify-content: flex-end;">
             <button type="button" class="btn btn-secondary" @click="closeAllModals">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Evento</button>
+            <button type="submit" class="btn btn-primary" :disabled="savingItem">
+              {{ savingItem ? 'Guardando...' : 'Guardar Evento' }}
+            </button>
           </div>
         </form>
       </div>
@@ -3873,7 +4096,9 @@ const formatRelativeDate = (dateStr: string) => {
 
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
             <button type="button" class="btn btn-secondary" @click="closeAllModals">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="submit" class="btn btn-primary" :disabled="savingItem">
+              {{ savingItem ? 'Guardando...' : 'Guardar' }}
+            </button>
           </div>
         </form>
       </div>
@@ -3931,7 +4156,9 @@ const formatRelativeDate = (dateStr: string) => {
 
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
             <button type="button" class="btn btn-secondary" @click="closeAllModals">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="submit" class="btn btn-primary" :disabled="savingItem">
+              {{ savingItem ? 'Guardando...' : 'Guardar' }}
+            </button>
           </div>
         </form>
       </div>

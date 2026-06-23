@@ -52,6 +52,12 @@ const isFavorite = ref(false)
 const favoriteLoading = ref(false)
 const favoriteError = ref('')
 
+// Photo Passcode States
+const isPhotoPasscodeModalOpen = ref(false)
+const photoPasscodeText = ref('')
+const photoPasscodeError = ref('')
+const photoPasscodeVisible = ref(false)
+
 // Expand description states
 const isDescriptionExpanded = ref(false)
 const isCausaExpanded = ref(false)
@@ -482,6 +488,34 @@ const checkFavoriteStatus = async () => {
     isFavorite.value = !error && !!data
   } catch (e) {
     console.error('Error checking favorite status:', e)
+  }
+}
+
+const handleVerFotos = () => {
+  if (!item.value || !item.value.drive_fotos_url) return
+  if (item.value.clave_fotos && item.value.clave_fotos.trim() !== '') {
+    photoPasscodeText.value = ''
+    photoPasscodeError.value = ''
+    photoPasscodeVisible.value = false
+    isPhotoPasscodeModalOpen.value = true
+  } else {
+    window.open(item.value.drive_fotos_url, '_blank')
+  }
+}
+
+const closePhotoPasscodeModal = () => {
+  isPhotoPasscodeModalOpen.value = false
+  photoPasscodeText.value = ''
+  photoPasscodeError.value = ''
+}
+
+const checkPhotoPasscode = () => {
+  if (!item.value) return
+  if (photoPasscodeText.value === item.value.clave_fotos) {
+    window.open(item.value.drive_fotos_url, '_blank')
+    closePhotoPasscodeModal()
+  } else {
+    photoPasscodeError.value = 'Clave incorrecta. Por favor, intenta de nuevo.'
   }
 }
 
@@ -1002,6 +1036,23 @@ watch(() => route.path, () => {
                                 <button class="btn btn-outline full-width btn-share-effect" @click="shareContent">
                   <i class="fa-solid fa-share-nodes"></i> Compartir
                 </button>
+                <!-- Edit button for Admin or Owner -->
+                <button 
+                  v-if="authStore.profile?.rol === 'admin' || (authStore.profile?.rol === 'actor' && item && item.owner_id === authStore.user?.id)"
+                  class="btn btn-primary full-width btn-edit-effect"
+                  @click="router.push(`/admin/editar/${typeLabel}/${itemId}`)"
+                  style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; margin-bottom: 8px; justify-content: center; display: flex; align-items: center; gap: 8px; font-weight: 700;"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i> Editar {{ isCausaType ? 'Causa' : isEventType ? 'Evento' : 'Lugar' }}
+                </button>
+                <button 
+                  v-if="authStore.user && item && item.drive_fotos_url"
+                  class="btn btn-secondary full-width btn-photos-effect"
+                  @click="handleVerFotos"
+                  style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; margin-bottom: 8px; justify-content: center; display: flex; align-items: center; gap: 8px;"
+                >
+                  <i class="fa-solid fa-images"></i> Ver fotografías del evento
+                </button>
                                 <button 
                   v-if="authStore.user"
                   class="btn btn-outline full-width btn-favorite-effect" 
@@ -1259,12 +1310,184 @@ watch(() => route.path, () => {
         </template>
       </div>
     </main>
+
+    <!-- MODAL CLAVE ACCESO FOTOS -->
+    <div 
+      v-if="isPhotoPasscodeModalOpen" 
+      class="modal-overlay photo-passcode-overlay"
+      @click="closePhotoPasscodeModal"
+    >
+      <div class="modal-content glass-effect photo-passcode-modal" @click.stop>
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-lock" style="color: #10b981; margin-right: 8px;"></i>Acceso Protegido</h3>
+          <button class="close-modal-btn" @click="closePhotoPasscodeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">Este álbum de fotos está protegido. Ingresa la clave de acceso para continuar.</p>
+          <div class="input-wrapper green-effect" style="margin: 20px 0 10px; position: relative; display: flex; align-items: center;">
+            <input 
+              :type="photoPasscodeVisible ? 'text' : 'password'" 
+              v-model="photoPasscodeText" 
+              placeholder="Escribe la clave de acceso..." 
+              @keyup.enter="checkPhotoPasscode"
+              class="passcode-input"
+            />
+            <button 
+              type="button" 
+              class="toggle-visible-btn" 
+              @click="photoPasscodeVisible = !photoPasscodeVisible"
+            >
+              <i class="fa-solid" :class="photoPasscodeVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </div>
+          <p v-if="photoPasscodeError" class="passcode-error-msg">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ photoPasscodeError }}
+          </p>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" @click="closePhotoPasscodeModal">Cancelar</button>
+            <button class="btn btn-primary shimmer-extra" @click="checkPhotoPasscode">Ver Fotografías</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style>
 @import '../assets/css/detalles.css';
 @import '../assets/css/style.css';
+
+/* Custom Photo Passcode Modal Styles */
+.photo-passcode-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  backdrop-filter: blur(8px);
+}
+.photo-passcode-modal {
+  background: rgba(17, 24, 39, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  width: 90%;
+  max-width: 420px;
+  border-radius: 20px;
+  padding: 24px;
+  color: white;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  animation: modalFadeIn 0.3s ease;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.photo-passcode-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.photo-passcode-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+.photo-passcode-modal .close-modal-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+.photo-passcode-modal .close-modal-btn:hover {
+  color: white;
+}
+.photo-passcode-modal .modal-description {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+  margin: 0;
+}
+.photo-passcode-modal .passcode-input {
+  width: 100%;
+  padding: 12px 45px 12px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: white;
+  font-size: 0.95rem;
+  outline: none;
+  transition: 0.3s;
+}
+.photo-passcode-modal .passcode-input:focus {
+  border-color: #10b981;
+  background: rgba(255, 255, 255, 0.08);
+}
+.photo-passcode-modal .toggle-visible-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+.photo-passcode-modal .toggle-visible-btn:hover {
+  color: white;
+}
+.photo-passcode-modal .passcode-error-msg {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.photo-passcode-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+.photo-passcode-modal .modal-actions .btn {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.photo-passcode-modal .modal-actions .btn-secondary {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+}
+.photo-passcode-modal .modal-actions .btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+}
+.photo-passcode-modal .modal-actions .btn-primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+}
+.photo-passcode-modal .modal-actions .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
 
 /* Fix specific overrides and additions for details view styling */
 .full-screen-loader {

@@ -23,6 +23,8 @@ export const EventoSchema = z.object({
   apto_ninos: z.boolean(),
   fecha_inicio: z.string().datetime('Fecha de inicio inválida'),
   fecha_fin: z.string().datetime('Fecha de fin inválida'),
+  drive_fotos_url: z.string().url('Enlace de Drive inválido').optional().nullable().or(z.literal('')),
+  clave_fotos: z.string().optional().nullable().or(z.literal('')),
 }).superRefine((data, ctx) => {
   // Regla 1: Presenciales DEBEN tener ubicación y coords
   if (data.modalidad === 'presencial') {

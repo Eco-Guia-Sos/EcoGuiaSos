@@ -48,7 +48,12 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = currentSession?.user || null
     
     if (user.value) {
-      await fetchProfile(user.value.id)
+      // Execute fetchProfile asynchronously in the next event loop tick
+      // to let the onAuthStateChange listener finish and release its lock.
+      const userId = user.value.id
+      setTimeout(() => {
+        fetchProfile(userId)
+      }, 0)
     } else {
       profile.value = null
       // Clear cache on logout

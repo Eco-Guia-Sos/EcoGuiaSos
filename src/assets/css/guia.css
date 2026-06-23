@@ -573,8 +573,11 @@
     flex-shrink: 0;
 }
 
-.dropdown-open {
+.video-card-header.dropdown-open .dropdown-arrow {
     transform: rotate(180deg);
+}
+
+.video-card-header.dropdown-open {
     color: var(--accent-color, #2ecc71) !important;
 }
 
