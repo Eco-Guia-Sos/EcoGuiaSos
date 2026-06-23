@@ -60,6 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('eco_user_name')
       localStorage.removeItem('eco_user_role')
       localStorage.removeItem('eco_user_avatar')
+      localStorage.removeItem('eco_user_coords')
     }
     loading.value = false
   }

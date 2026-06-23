@@ -196,6 +196,12 @@ const handleWindowClick = () => {
 watch(() => authStore.user, (newUser) => {
   if (newUser) {
     setTimeout(() => obtenerUbicacionSilenciosa(), 1000)
+  } else {
+    userCoords.value = null
+    proximidadActiva.value = false
+    localStorage.removeItem('eco_user_coords')
+    homeStore.invalidateCache()
+    homeStore.cargarDatos(undefined, undefined, undefined, true)
   }
 }, { immediate: true })
 
