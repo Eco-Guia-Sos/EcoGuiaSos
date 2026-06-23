@@ -2573,7 +2573,7 @@ const formatRelativeDate = (dateStr: string) => {
 
         <nav class="admin-menu">
           <ul>
-            <li :class="{ 'active': activeTab === 'dashboard' }">
+            <li class="menu-item-dashboard" :class="{ 'active': activeTab === 'dashboard' }">
               <a href="#" @click.prevent="navigateTo('dashboard')">
                 <i class="fa-solid fa-chart-line" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">Dashboard</span>
@@ -2583,7 +2583,7 @@ const formatRelativeDate = (dateStr: string) => {
             <!-- ADMIN ONLY - PLATFORM MANAGEMENT -->
             <template v-if="isUserAdmin">
               <li class="menu-category" v-if="!isSidebarCollapsed">Gestión Plataforma</li>
-              <li :class="{ 'active': activeTab === 'usuarios' }">
+              <li class="menu-item-gestion" :class="{ 'active': activeTab === 'usuarios' }">
                 <a href="#" @click.prevent="navigateTo('usuarios')">
                   <i class="fa-solid fa-users-gear" style="margin-right:10px;"></i>
                   <span v-if="!isSidebarCollapsed">Actores / Staff</span>
@@ -2592,13 +2592,13 @@ const formatRelativeDate = (dateStr: string) => {
                   </span>
                 </a>
               </li>
-              <li :class="{ 'active': activeTab === 'voluntarios' }">
+              <li class="menu-item-gestion" :class="{ 'active': activeTab === 'voluntarios' }">
                 <a href="#" @click.prevent="navigateTo('voluntarios')">
                   <i class="fa-solid fa-users" style="margin-right:10px;"></i>
                   <span v-if="!isSidebarCollapsed">Voluntarios Totales</span>
                 </a>
               </li>
-              <li :class="{ 'active': activeTab === 'historial' }">
+              <li class="menu-item-gestion" :class="{ 'active': activeTab === 'historial' }">
                 <a href="#" @click.prevent="navigateTo('historial')">
                   <i class="fa-solid fa-clock-rotate-left" style="margin-right:10px;"></i>
                   <span v-if="!isSidebarCollapsed">Historial Actividad</span>
@@ -2611,6 +2611,7 @@ const formatRelativeDate = (dateStr: string) => {
             
             <li 
               v-if="isUserAdmin || actorFunctions.puede_crear_eventos" 
+              class="menu-item-contenidos"
               :class="{ 'active': selectedSection === 'eventos' }"
             >
               <a href="#" @click.prevent="selectSection('eventos')">
@@ -2621,6 +2622,7 @@ const formatRelativeDate = (dateStr: string) => {
 
             <li 
               v-if="isUserAdmin || actorFunctions.puede_crear_lugares || actorSections.includes('lugares')" 
+              class="menu-item-contenidos"
               :class="{ 'active': selectedSection === 'lugares' }"
             >
               <a href="#" @click.prevent="selectSection('lugares')">
@@ -2629,7 +2631,7 @@ const formatRelativeDate = (dateStr: string) => {
               </a>
             </li>
 
-            <li :class="{ 'active': selectedSection === 'seguidores' }">
+            <li class="menu-item-contenidos" :class="{ 'active': selectedSection === 'seguidores' }">
               <a href="#" @click.prevent="selectSection('seguidores')">
                 <i class="fa-solid fa-heart" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">Seguidores</span>
@@ -2641,6 +2643,7 @@ const formatRelativeDate = (dateStr: string) => {
             
             <li 
               v-if="isUserAdmin || actorSections.some(s => hubsConfig.colibri.sections.map(x => x.id).includes(s))" 
+              class="menu-item-colibri"
               :class="{ 'active': activeTab === 'colibri' }"
             >
               <a href="#" @click.prevent="showHubMenu('colibri')">
@@ -2651,6 +2654,7 @@ const formatRelativeDate = (dateStr: string) => {
 
             <li 
               v-if="isUserAdmin || actorSections.some(s => hubsConfig.ajolote.sections.map(x => x.id).includes(s))" 
+              class="menu-item-ajolote"
               :class="{ 'active': activeTab === 'ajolote' }"
             >
               <a href="#" @click.prevent="showHubMenu('ajolote')">
@@ -2661,6 +2665,7 @@ const formatRelativeDate = (dateStr: string) => {
 
             <li 
               v-if="isUserAdmin || actorSections.some(s => hubsConfig.lobo.sections.map(x => x.id).includes(s))" 
+              class="menu-item-lobo"
               :class="{ 'active': activeTab === 'lobo' }"
             >
               <a href="#" @click.prevent="showHubMenu('lobo')">
@@ -2672,7 +2677,7 @@ const formatRelativeDate = (dateStr: string) => {
             <!-- SETTINGS -->
             <li class="menu-category" v-if="!isSidebarCollapsed">Ajustes</li>
             
-            <li :class="{ 'active': activeTab === 'perfil' }">
+            <li class="menu-item-ajustes" :class="{ 'active': activeTab === 'perfil' }">
               <a href="#" @click.prevent="navigateTo('perfil')">
                 <i class="fa-solid fa-user-gear" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">Mi Perfil</span>
@@ -2681,6 +2686,7 @@ const formatRelativeDate = (dateStr: string) => {
 
             <li 
               v-if="isUserAdmin || actorFunctions.puede_enviar_notificaciones" 
+              class="menu-item-ajustes"
               :class="{ 'active': activeTab === 'notificaciones' }"
             >
               <a href="#" @click.prevent="navigateTo('notificaciones')">
@@ -2691,6 +2697,7 @@ const formatRelativeDate = (dateStr: string) => {
 
             <li 
               v-if="isUserAdmin || actorFunctions.puede_gestionar_slider" 
+              class="menu-item-ajustes"
               :class="{ 'active': activeTab === 'slider' }"
             >
               <a href="#" @click.prevent="navigateTo('slider')">
