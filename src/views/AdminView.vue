@@ -3071,10 +3071,11 @@ const formatRelativeDate = (dateStr: string) => {
               <div 
                 v-if="isUserAdmin || actorSections.includes(sec.id)"
                 class="hub-card glass-effect"
+                :class="`hub-card-${selectedHub}`"
                 @click="selectSection(sec.id)"
                 style="cursor: pointer; padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center; transition: all 0.3s ease;"
               >
-                <i :class="sec.icon" style="font-size: 2.5rem; color: var(--color-eco); margin-bottom: 15px; display: inline-block;"></i>
+                <i :class="sec.icon" style="font-size: 2.5rem; margin-bottom: 15px; display: inline-block;"></i>
                 <h3 style="color: white; font-size: 1.25rem; font-weight:700; margin: 0;">{{ sec.label }}</h3>
               </div>
             </template>

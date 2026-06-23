@@ -1004,8 +1004,8 @@ body.is-admin .stat-card.only-admin {
 .hub-card i {
     width: 60px;
     height: 60px;
-    background: rgba(114, 176, 77, 0.1); /* eco green alpha */
-    color: var(--color-eco, #72B04D);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--admin-text-muted);
     border-radius: 16px;
     display: flex;
     align-items: center;
@@ -1014,9 +1014,48 @@ body.is-admin .stat-card.only-admin {
     transition: all 0.3s;
 }
 
-.hub-card:hover i {
-    background: var(--color-eco, #72B04D);
-    color: white;
+/* Colibrí (Nivel 1 - Energía: Amarillo) */
+.hub-card-colibri i {
+    color: #ffd54f;
+    background: rgba(255, 193, 7, 0.1);
+}
+.hub-card-colibri:hover {
+    border-color: rgba(255, 193, 7, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(255, 193, 7, 0.15);
+}
+.hub-card-colibri:hover i {
+    background: #ffd54f;
+    color: #111;
+    transform: scale(1.1);
+}
+
+/* Ajolote (Nivel 2 - Nopal: Verde) */
+.hub-card-ajolote i {
+    color: #81c784;
+    background: rgba(76, 175, 80, 0.1);
+}
+.hub-card-ajolote:hover {
+    border-color: rgba(76, 175, 80, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(76, 175, 80, 0.15);
+}
+.hub-card-ajolote:hover i {
+    background: #81c784;
+    color: #111;
+    transform: scale(1.1);
+}
+
+/* Lobo (Nivel 3 - Agua: Azul) */
+.hub-card-lobo i {
+    color: #4fc3f7;
+    background: rgba(3, 169, 244, 0.1);
+}
+.hub-card-lobo:hover {
+    border-color: rgba(3, 169, 244, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(3, 169, 244, 0.15);
+}
+.hub-card-lobo:hover i {
+    background: #4fc3f7;
+    color: #111;
     transform: scale(1.1);
 }
 
