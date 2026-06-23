@@ -1046,7 +1046,7 @@ watch(() => route.path, () => {
                   <i class="fa-solid fa-pen-to-square"></i> Editar {{ isCausaType ? 'Causa' : isEventType ? 'Evento' : 'Lugar' }}
                 </button>
                 <button 
-                  v-if="authStore.user && item && item.drive_fotos_url"
+                  v-if="(authStore.profile?.rol === 'admin' || authStore.profile?.rol === 'actor') && item && item.drive_fotos_url"
                   class="btn btn-secondary full-width btn-photos-effect"
                   @click="handleVerFotos"
                   style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; margin-bottom: 8px; justify-content: center; display: flex; align-items: center; gap: 8px;"
