@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
@@ -79,8 +79,8 @@ const socialNetworks = [
   { id: 'web', icon: 'fa-solid fa-globe', title: 'Sitio Web', color: '#5bc2f7' }
 ]
 
-onMounted(() => {
-  const tabParam = route.query.tab
+// Función reutilizable para actualizar la pestaña según la URL
+const updateTabFromQuery = (tabParam: any) => {
   if (tabParam === 'signup' || tabParam === 'actor') {
     isSumateMode.value = true
     activeTab.value = tabParam as 'signup' | 'actor'
@@ -88,6 +88,15 @@ onMounted(() => {
     isSumateMode.value = false
     activeTab.value = 'login'
   }
+}
+
+// Watcher reactivo de la ruta para actualizaciones dentro de la misma vista
+watch(() => route.query.tab, (newTab) => {
+  updateTabFromQuery(newTab)
+})
+
+onMounted(() => {
+  updateTabFromQuery(route.query.tab)
 
   // Initialize Particles
   if (typeof particlesJS !== 'undefined') {
