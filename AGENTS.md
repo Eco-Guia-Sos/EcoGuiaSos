@@ -43,3 +43,44 @@ Este documento establece las reglas obligatorias de arquitectura, desarrollo y s
 
 * **Uso de Fallbacks de Marca:** Ningún elemento de la aplicación debe mostrar imágenes genéricas o ajenas al proyecto (como imágenes de K-Pop) cuando la carga falle o no exista archivo. Se debe utilizar la ruta del logotipo oficial: `/assets/img/logo-app.webp`.
 * **Transiciones Fluidas:** Toda interacción de menús, enlaces desplegables o listados dinámicos debe contar con transiciones Bezier fluidas, micro-desplazamientos de cortesía y efectos de brillo (glow) temáticos acordes a la paleta de colores del nivel o sección activa.
+
+---
+
+## 🔒 4. Anexo: Checklist Obligatorio de Seguridad (27 Chequeos)
+
+Cualquier agente de IA o desarrollador debe auditar y validar estas directivas en su código antes de enviar cambios al repositorio.
+
+### 4.1 Autenticación y Permisos
+1. **RLS Activo:** RLS habilitado en todas las tablas de Supabase.
+2. **Políticas RLS Específicas:** Prohibidas las reglas genéricas `USING (true)` para escrituras.
+3. **Validación Criptográfica de JWT:** Validar las sesiones usando la API de Supabase en backend (`supabase.auth.getUser()`) y no solo decodificando localmente.
+4. **Protección IDOR:** Filtrar siempre las consultas usando el identificador de usuario verificado (`.eq('user_id', user.id)`).
+5. **Aislamiento BOLA:** Validar membresías en consultas de grupos o recursos colaborativos.
+6. **Control de Roles:** Validar roles de administración directamente desde `app_metadata` en backend, no basándose en variables de la sesión frontend.
+7. **Password Reset:** Mantener flujos de reseteo con respuestas de mensajería genéricas para evitar enumeración de cuentas.
+8. **Expiración de Sesiones:** Mantener tokens efímeros autorrotativos en Supabase.
+9. **Rutas protegidas:** Proteger accesos en `router/index.ts` a nivel de middleware.
+
+### 4.2 Manejo de Secretos
+10. **Sin Secretos Hardcodeados:** Prohibido escribir API keys (`sk_...`) de forma estática en el código.
+11. **Variables de Frontend:** Solo variables con el prefijo `VITE_` público permitidas en cliente.
+12. **Historial Limpio:** Garantizar la ausencia de claves en commits antiguos.
+13. **Ignorar Entornos:** Exclusión absoluta de archivos `.env` en Git.
+14. **Service Role Resguardado:** La clave `service_role` de Supabase es exclusiva de funciones seguras y nunca debe exponerse en el cliente.
+15. **Rotación:** Las variables deben configurarse únicamente mediante Vercel Env Variables.
+
+### 4.3 Validación de Input
+16. **Prevención XSS:** Sanitizar cualquier entrada HTML a través del escape de Vue.
+17. **Evitar SQL Injection:** Utilizar exclusivamente la API parametrizada de Supabase/PostgREST.
+18. **SSRF:** Validar y mitigar accesos a localhost o IPs privadas en formularios de URLs externas.
+19. **Esquemas Robustos:** Validar tipos, longitudes y formatos mediante esquemas (Zod) antes de procesar operaciones.
+
+### 4.4 Infraestructura y Facturación
+20. **CORS:** Accesos API restringidos a dominios oficiales.
+21. **Cabeceras CSP:** Modificar las directivas `connect-src` e `img-src` en `vercel.json` cuando se integren servicios CDN o de imágenes.
+22. **Rate Limiting:** Asegurar el control de spammers en APIs críticas de contacto o registro.
+23. **Logs Seguros:** Prohibido imprimir contraseñas, hashes, claves o tokens en consola o reportes de error.
+24. **Firma de Webhooks:** Verificar firmas de servicios de pago en APIs de backend (si aplica).
+25. **Race Conditions:** Actualizar contadores o saldos mediante sentencias atómicas directamente en base de datos.
+26. **Validación de Precios:** No confiar en precios suministrados por el frontend.
+27. **Idempotencia:** Evitar peticiones duplicadas usando identificadores únicos de transacciones.
