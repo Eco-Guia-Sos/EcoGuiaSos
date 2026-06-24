@@ -81,7 +81,7 @@ const tableName = computed(() => {
 
 // Slide images helper
 const images = computed(() => {
-  if (!item.value) return ['/assets/img/kpop.webp']
+  if (!item.value) return ['/assets/img/logo-app.webp']
   let imgs = item.value.imagenes
   
   if (imgs) {
@@ -119,7 +119,7 @@ const images = computed(() => {
   }
 
   if (imgs.length === 0) {
-    imgs.push('/assets/img/kpop.webp')
+    imgs.push('/assets/img/logo-app.webp')
   }
 
   return imgs
@@ -819,10 +819,10 @@ watch(() => route.path, () => {
               >
                 <div style="height: 100px; width: 100%; overflow: hidden;">
                   <img 
-                    :src="ev.imagen_url || ev.imagen || '/assets/img/kpop.webp'" 
+                    :src="ev.imagen_url || ev.imagen || '/assets/img/logo-app.webp'" 
                     style="width: 100%; height: 100%; object-fit: cover;" 
                     :alt="ev.nombre"
-                    @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                    @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                   >
                 </div>
                 <div style="padding: 12px;">
@@ -857,9 +857,9 @@ watch(() => route.path, () => {
               <h3 style="font-size: 1.1rem; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Publicado por:</h3>
               <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <img 
-                  :src="actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'" 
+                  :src="actor.avatar_url || actor.imagen_url || '/assets/img/logo-app.webp'" 
                   style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
-                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                 >
                 <div style="flex-grow: 1;">
                   <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>
@@ -908,7 +908,7 @@ watch(() => route.path, () => {
                   :src="imgUrl" 
                   :alt="item.nombre" 
                   style="width: 100%; height: 100%; object-fit: cover; flex-shrink: 0;"
-                  @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                 >
               </div>
             </div>
@@ -1200,9 +1200,9 @@ watch(() => route.path, () => {
             <h3 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Publicado por:</h3>
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
               <img 
-                :src="actor.avatar_url || actor.imagen_url || '/assets/img/kpop.webp'" 
+                :src="actor.avatar_url || actor.imagen_url || '/assets/img/logo-app.webp'" 
                 style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
-                @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
               >
               <div style="flex-grow: 1;">
                 <h4 style="margin: 0; color: white; font-size: 1.2rem; font-weight: 700;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>

@@ -354,13 +354,13 @@ const actualizarMapa = () => {
     const el = document.createElement('div')
     el.className = 'user-marker-premium'
     
-    let avatarSrc = '/assets/img/kpop.webp'
+    let avatarSrc = '/assets/img/logo-app.webp'
     const cachedAvatar = localStorage.getItem('eco_user_avatar')
     if (cachedAvatar) avatarSrc = cachedAvatar
 
     el.innerHTML = `
       <div class="user-marker-avatar">
-        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/kpop.webp'">
+        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/logo-app.webp'">
       </div>
       <div class="user-marker-label">
         Tú <span class="status">Ahora</span>

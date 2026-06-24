@@ -284,10 +284,10 @@ onMounted(async () => {
           </span>
 
           <img 
-            :src="perfil.avatar_url || perfil.imagen_url || '/assets/img/kpop.webp'" 
+            :src="perfil.avatar_url || perfil.imagen_url || '/assets/img/logo-app.webp'" 
             :alt="perfil.nombre_completo || 'Agente'" 
             class="agente-img" 
-            @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+            @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
           >
           <div class="agente-info">
             <h3>{{ perfil.nombre_completo || 'Agente de Cambio' }}</h3>

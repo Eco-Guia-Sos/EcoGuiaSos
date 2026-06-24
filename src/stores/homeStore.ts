@@ -99,7 +99,7 @@ export const useHomeStore = defineStore('home', () => {
           categoria: row.categoria || 'General',
           ubicacion: row.ubicacion || 'CDMX',
           mapa_url: row.mapa_url || null,
-          imagen: firstImg || '/assets/img/kpop.webp',
+          imagen: firstImg || '/assets/img/logo-app.webp',
           descripcion: row.descripcion || 'Sin descripción.',
           tipo: tipo,
           coordenadas: (row.lat && row.lng) ? { lat: row.lat, lng: row.lng } : null,

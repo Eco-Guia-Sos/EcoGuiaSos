@@ -73,7 +73,7 @@ const getImgSrc = (ev: any) => {
   if (ev.imagenes && Array.isArray(ev.imagenes) && ev.imagenes.length > 0) {
     imgSrc = ev.imagenes[0]
   }
-  return imgSrc || '/assets/img/kpop.webp'
+  return imgSrc || '/assets/img/logo-app.webp'
 }
 
 const cleanWhatsappNumber = (wa: string) => {
@@ -121,7 +121,7 @@ const fetchAgentProfile = async () => {
 
     agente.value = {
       nombre: perfil.nombre_completo || 'Agente de Cambio',
-      imagen_url: perfil.avatar_url || perfil.imagen_url || '/assets/img/kpop.webp',
+      imagen_url: perfil.avatar_url || perfil.imagen_url || '/assets/img/logo-app.webp',
       banner_img: perfil.banner_img || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=2013&auto=format&fit=crop',
       especialidad: perfil.especialidad || (perfil.rol === 'actor' ? 'Líder Ambiental' : perfil.rol) || 'Agente de Cambio',
       descripcion: perfil.descripcion || null,
@@ -447,7 +447,7 @@ watch(() => authStore.user, (newUser) => {
         <div class="agent-profile-header">
           <img id="agent-banner" :src="agente.banner_img" alt="Banner" class="agent-banner">
           <div class="agent-info-overlay">
-            <img id="agent-avatar" :src="agente.imagen_url" alt="Avatar" class="agent-avatar-large" @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'">
+            <img id="agent-avatar" :src="agente.imagen_url" alt="Avatar" class="agent-avatar-large" @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'">
             <div class="agent-titles">
               <h1 id="agent-name">
                 {{ agente.nombre }}
@@ -537,7 +537,7 @@ watch(() => authStore.user, (newUser) => {
                         :alt="ev.nombre" 
                         class="dash-card-img" 
                         style="width: 100%; height: 100%; object-fit: cover;" 
-                        @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                        @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                       >
                     </div>
                     <div class="dash-card-body" style="padding: 15px; display: flex; flex-direction: column; gap: 8px;">

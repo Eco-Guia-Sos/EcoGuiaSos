@@ -236,7 +236,7 @@ const getImgSrc = (item: any) => {
   if (item.imagenes && Array.isArray(item.imagenes) && item.imagenes.length > 0) {
     imgSrc = item.imagenes[0]
   }
-  return imgSrc || '/assets/img/kpop.webp'
+  return imgSrc || '/assets/img/logo-app.webp'
 }
 
 const calcularDistancia = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -502,7 +502,7 @@ onMounted(async () => {
                     <img 
                       :src="getImgSrc(ev)" 
                       :alt="ev.nombre" 
-                      @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                      @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                     />
                   </div>
                   <div class="card-content">
@@ -582,9 +582,9 @@ onMounted(async () => {
                 >
                   <div class="card-image">
                     <img 
-                      :src="cs.imagen_url || '/assets/img/kpop.webp'" 
+                      :src="cs.imagen_url || '/assets/img/logo-app.webp'" 
                       :alt="cs.nombre" 
-                      @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                      @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                     />
                     <!-- Status badge overlay -->
                     <div style="position:absolute; top:10px; right:10px;">
@@ -649,7 +649,7 @@ onMounted(async () => {
                   <img 
                     :src="getImgSrc(lg)" 
                     :alt="lg.nombre" 
-                    @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                    @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
                   />
                 </div>
                 <div class="card-content" style="padding-top: 12px;">
@@ -700,10 +700,10 @@ onMounted(async () => {
               </span>
 
               <img 
-                :src="ac.avatar_url || ac.imagen_url || '/assets/img/kpop.webp'" 
+                :src="ac.avatar_url || ac.imagen_url || '/assets/img/logo-app.webp'" 
                 :alt="ac.nombre_completo || 'Agente'" 
                 class="agente-img" 
-                @error="($event.target as HTMLImageElement).src='/assets/img/kpop.webp'"
+                @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
               >
               <div class="agente-info">
                 <h3>{{ ac.nombre_completo || 'Agente de Cambio' }}</h3>

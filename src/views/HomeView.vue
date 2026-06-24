@@ -523,13 +523,13 @@ const actualizarMiniMapa = () => {
     const el = document.createElement('div')
     el.className = 'user-marker-premium'
     
-    let avatarSrc = '/assets/img/kpop.webp'
+    let avatarSrc = '/assets/img/logo-app.webp'
     const cachedAvatar = localStorage.getItem('eco_user_avatar')
     if (cachedAvatar) avatarSrc = cachedAvatar
 
     el.innerHTML = `
       <div class="user-marker-avatar">
-        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/kpop.webp'">
+        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/logo-app.webp'">
       </div>
       <div class="user-marker-label">
         Tú <span class="status">Ahora</span>
@@ -584,7 +584,7 @@ const actualizarMiniMapa = () => {
     if (count > 1) {
       el.className = `map-cluster-marker type-${p.tipo}`
       el.innerHTML = `
-        <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">
+        <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/logo-app.webp'">
         <div class="cluster-count-badge">${count > 2 ? '2+' : count}</div>
       `
       el.addEventListener('click', (e) => {
@@ -602,7 +602,7 @@ const actualizarMiniMapa = () => {
       })
     } else {
       el.className = `map-card-marker type-${p.tipo}`
-      el.innerHTML = `<img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/kpop.webp'">`
+      el.innerHTML = `<img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/logo-app.webp'">`
       
       el.addEventListener('click', (e) => {
         e.stopPropagation()
@@ -733,7 +733,7 @@ const fetchCalendarEvents = async () => {
         nombre: row.nombre,
         categoria: row.categoria || 'General',
         ubicacion: row.ubicacion || 'CDMX',
-        imagen: firstImg || '/assets/img/kpop.webp',
+        imagen: firstImg || '/assets/img/logo-app.webp',
         tipo: 'evento',
         fecha: row.fecha_inicio || row.created_at,
         fecha_inicio: row.fecha_inicio,
@@ -1407,7 +1407,7 @@ const scrollToSection = (id: string) => {
             style="cursor: pointer;"
           >
             <div class="card-image">
-              <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/kpop.webp'">
+              <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/logo-app.webp'">
               <span v-if="p.tipo === 'lugar'" class="place-event-badge">
                 <i class="fa-solid fa-calendar-star"></i> {{ p.conteo_eventos || 0 }}
               </span>
@@ -1607,7 +1607,7 @@ const scrollToSection = (id: string) => {
               @click="abrirPanelDetalle(p)"
             >
               <div class="nearby-card-img" style="position:relative;">
-                <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/kpop.webp'">
+                <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/logo-app.webp'">
               </div>
               <div class="nearby-card-info">
                 <div class="nearby-card-title" style="font-weight:700; line-height:1.1;">{{ p.nombre }}</div>
@@ -1643,7 +1643,7 @@ const scrollToSection = (id: string) => {
           class="sheet-event-item"
           @click="closeEventSheet(); router.push(`/eventos/${ev.id}`)"
         >
-          <img :src="ev.imagen" :alt="ev.nombre" onerror="this.src='/assets/img/kpop.webp'">
+          <img :src="ev.imagen" :alt="ev.nombre" onerror="this.src='/assets/img/logo-app.webp'">
           <div class="sheet-event-content">
             <h4>{{ ev.nombre }}</h4>
             <p><i class="fa-solid fa-location-dot"></i> {{ ev.ubicacion }}</p>
