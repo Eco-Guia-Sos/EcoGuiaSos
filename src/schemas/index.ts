@@ -102,7 +102,7 @@ export const PerfilSchema = z.object({
 export const AuthSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string()
-    .min(8, 'Mínimo 8 caracteres')
+    .min(6, 'Mínimo 6 caracteres')
     .regex(/[A-Z]/, 'Debe contener una mayúscula')
     .regex(/[0-9]/, 'Debe contener un número'),
 }).strict()
