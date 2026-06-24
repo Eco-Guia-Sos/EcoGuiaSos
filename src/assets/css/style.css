@@ -1109,11 +1109,13 @@ html {
 
 .tooltip-list ul li {
     padding: 15px 15px;
-    /* Mejorado para touch targets en mÃ³vil */
+    /* Mejorado para touch targets en móvil */
     font-size: 1rem;
     border-bottom: 1px solid #eee;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .tooltip-list ul li a {
@@ -1121,10 +1123,34 @@ html {
     text-decoration: none;
     display: block;
     width: 100%;
+    transition: all 0.3s ease;
 }
 
 .tooltip-list ul li:hover {
-    background-color: #f5f5f5;
+    background-color: #fafafa;
+    padding-left: 22px; /* Micro-desplazamiento a la derecha */
+}
+
+.tooltip-list ul li:hover a {
+    color: var(--color-eco, #72B04D);
+    text-shadow: 0 0 10px rgba(114, 176, 77, 0.4); /* Efecto de brillo/glow */
+    font-weight: 600;
+}
+
+.tooltip-list ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: var(--color-eco, #72B04D);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.tooltip-list ul li:hover::before {
+    transform: scaleY(1); /* Muestra barra de color lateral en hover */
 }
 
 .tooltip-list ul li:last-child {
