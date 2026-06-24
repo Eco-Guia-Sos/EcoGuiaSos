@@ -288,7 +288,7 @@
 /* --- FOOTER --- */
 .footer-main {
     background-color: rgba(0,0,0,0.9); padding: 40px 20px 20px; margin-top: 60px;
-    border-top: 1px solid #333; text-align: center; position: relative; z-index: 1;
+    border-top: 1px solid #333; text-align: center; position: relative; z-index: 2;
 }
 .footer-content { margin-bottom: 30px; }
 .footer-logo h4 { color: var(--nopal); font-size: 1.5rem; margin-bottom: 5px; }
