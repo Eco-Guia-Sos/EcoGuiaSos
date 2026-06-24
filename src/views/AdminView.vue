@@ -7,6 +7,8 @@ import { useValidation } from '../composables/useValidation'
 import { EventoSchema, LugarSchema } from '../schemas'
 import { TerritoryService, type Territory } from '../services/territory.service'
 
+import { compressImage } from '../utils/imageCompressor'
+
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
@@ -2040,94 +2042,26 @@ const compressAndUploadFile = async (file: File): Promise<string> => {
     throw new Error('Tu sesión ha expirado o no está activa. Por favor recarga la página.')
   }
 
-  // Helper: canvas to blob with timeout and jpeg fallback
-  const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> => {
-    return Promise.race([
-      new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob)
-          else reject(new Error(`toBlob devolvió null para ${type}`))
-        }, type, quality)
-      }),
-      new Promise<Blob>((_, reject) => setTimeout(() => reject(new Error('Timeout al comprimir imagen (toBlob)')), 15000))
-    ])
-  }
+  // La compresión nativa se delega directamente a la utilidad importada compressImage
 
-  // Helper: FileReader to DataURL with timeout
-  const readFileAsDataURL = (f: File): Promise<string> => {
-    return Promise.race([
-      new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = (e) => resolve(e.target?.result as string)
-        reader.onerror = () => reject(new Error('Error al leer el archivo desde el dispositivo.'))
-        reader.readAsDataURL(f)
-      }),
-      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('Timeout al leer el archivo')), 10000))
-    ])
-  }
+  console.log('[Upload Debug] Compressing image with Canvas native utility...')
+  let blob: Blob
+  let ext = 'jpg'
+  let mimeType = 'image/jpeg'
 
-  // Helper: load image from src with timeout
-  const loadImage = (src: string): Promise<HTMLImageElement> => {
-    return Promise.race([
-      new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error('El archivo no es una imagen válida o no se pudo cargar.'))
-        img.src = src
-      }),
-      new Promise<HTMLImageElement>((_, reject) => setTimeout(() => reject(new Error('Timeout al cargar la imagen')), 10000))
-    ])
-  }
-
-  console.log('[Upload Debug] Reading file as Data URL...')
-  const dataUrl = await readFileAsDataURL(file)
-  console.log('[Upload Debug] Loading image...')
-  const img = await loadImage(dataUrl)
-  console.log('[Upload Debug] Image dimensions:', img.width, 'x', img.height)
-
-  const canvas = document.createElement('canvas')
-  const MAX_WIDTH = 1200
-  const MAX_HEIGHT = 1200
-  let width = img.width
-  let height = img.height
-
-  if (width > MAX_WIDTH) {
-    height = Math.round(height * (MAX_WIDTH / width))
-    width = MAX_WIDTH
-  }
-  if (height > MAX_HEIGHT) {
-    width = Math.round(width * (MAX_HEIGHT / height))
-    height = MAX_HEIGHT
-  }
-  if (width < 1) width = 1
-  if (height < 1) height = 1
-
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('No se pudo obtener el contexto 2D del canvas')
-  ctx.drawImage(img, 0, 0, width, height)
-
-  // Try webp first, fallback to jpeg
-  let blob: Blob | null = null
-  let ext = 'webp'
-  let mimeType = 'image/webp'
   try {
-    console.log('[Upload Debug] Converting canvas to webp blob...')
-    blob = await canvasToBlob(canvas, 'image/webp', 0.8)
-  } catch (webpErr) {
-    console.warn('[Upload Debug] WebP compression failed, trying JPEG fallback...', webpErr)
-    // webp failed, try jpeg
-    try {
-      blob = await canvasToBlob(canvas, 'image/jpeg', 0.85)
-      ext = 'jpg'
-      mimeType = 'image/jpeg'
-    } catch (e2: any) {
-      throw new Error('No se pudo comprimir la imagen: ' + e2.message)
-    }
+    const compressed = await compressImage(file, 1200, 0.8)
+    blob = compressed
+    mimeType = compressed.type || 'image/jpeg'
+    ext = mimeType.split('/')[1] || 'jpg'
+    if (ext === 'jpeg') ext = 'jpg'
+  } catch (err: any) {
+    console.warn('[Upload Debug] Native Canvas compression helper failed, uploading original:', err)
+    blob = file
+    mimeType = file.type
+    ext = file.name.split('.').pop() || 'jpg'
   }
 
-  if (!blob) throw new Error('Error: el blob de la imagen está vacío')
   console.log('[Upload Debug] Compression success, size:', blob.size, 'type:', mimeType)
 
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`
