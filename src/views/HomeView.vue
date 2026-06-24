@@ -1063,6 +1063,7 @@ const scrollToSection = (id: string) => {
                 <li><RouterLink to="/agua">🌊 Agua</RouterLink></li>
                 <li><RouterLink to="/lecturas">📚 Lecturas</RouterLink></li>
                 <li><RouterLink to="/documentales">🎥 Documentales</RouterLink></li>
+                <li><RouterLink to="/firmas">✍️ Firmas</RouterLink></li>
               </ul>
             </div>
           </div>
