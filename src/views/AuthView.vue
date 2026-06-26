@@ -408,7 +408,7 @@ const handleActorRequest = async () => {
     // Open WhatsApp
     setTimeout(() => {
       const waMessage = encodeURIComponent(`¡Hola! Soy ${actorName.value}. Acabo de enviar mi solicitud como Actor en EcoGuía SOS. Mi correo es ${actorEmail.value}.`)
-      window.open(`https://wa.me/525540149022?text=${waMessage}`, '_blank')
+      window.open(`https://wa.me/525670069196?text=${waMessage}`, '_blank')
       
       // Reset form
       actorName.value = ''
