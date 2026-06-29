@@ -2,6 +2,7 @@
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
+import { uploadFile } from '../utils/fileUploader'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type TicketStatus = 'Abierto' | 'En Proceso' | 'Resuelto'
@@ -343,14 +344,7 @@ async function handleFileSelect(e: Event) {
     const ext = file.name.split('.').pop() || (isImage ? 'jpg' : 'mp4')
     const fileName = `chat-soporte/admin/${Date.now()}_${gid()}.${ext}`
 
-    const { error: uploadError } = await supabase.storage
-      .from('imagenes-plataforma')
-      .upload(fileName, uploadData, { contentType: file.type })
-
-    if (uploadError) throw uploadError
-
-    const { data: urlData } = supabase.storage.from('imagenes-plataforma').getPublicUrl(fileName)
-    const fileUrl = urlData.publicUrl
+    const fileUrl = await uploadFile(uploadData, fileName, file.type)
 
     await supabase
       .from('mensajes_soporte')
@@ -395,14 +389,7 @@ async function startRecording() {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
         const fileName = `chat-soporte/admin/${Date.now()}_${gid()}.webm`
 
-        const { error: uploadError } = await supabase.storage
-          .from('imagenes-plataforma')
-          .upload(fileName, audioBlob, { contentType: 'audio/webm' })
-
-        if (uploadError) throw uploadError
-
-        const { data: urlData } = supabase.storage.from('imagenes-plataforma').getPublicUrl(fileName)
-        const fileUrl = urlData.publicUrl
+        const fileUrl = await uploadFile(audioBlob, fileName, 'audio/webm')
 
         await supabase
           .from('mensajes_soporte')
