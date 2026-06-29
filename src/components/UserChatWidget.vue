@@ -1146,14 +1146,17 @@ defineExpose({
   .widget-root {
     bottom: 12px;
     right: 12px;
-    left: 12px;
-    align-items: stretch;
   }
   .chat-win {
-    width: 100%;
-    height: calc(100vh - 120px);
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: calc(100% - 24px) !important;
+    height: calc(100vh - 120px) !important;
     max-height: 520px;
     border-radius: 16px;
+    z-index: 10000;
   }
 }
 </style>
