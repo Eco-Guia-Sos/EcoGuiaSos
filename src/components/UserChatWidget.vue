@@ -335,6 +335,10 @@ async function openChatDirectly() {
 }
 
 async function sendText() {
+  if (isRecording.value) {
+    stopRecording(false)
+    return
+  }
   const text = inputText.value.trim()
   if (!text || !authStore.user) return
   

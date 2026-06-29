@@ -208,6 +208,10 @@ async function selectUser(uid: string) {
 }
 
 async function sendAdmin() {
+  if (isRecording.value) {
+    stopRecording(false)
+    return
+  }
   const text = adminInput.value.trim()
   if (!text || !active.value || !authStore.user) return
 
