@@ -218,21 +218,24 @@ export const TerritoryService = {
       if (stateLayer) {
         const { data, error } = await supabase
           .from('territories')
-          .select('id, code, name, parent_code, centroid')
+          .select('id, code, name, parent_code')
           .eq('layer_id', stateLayer.id)
           .order('name')
           
         if (error) throw error
         
-        const states = (data || []).map(s => ({
-          id: s.id,
-          code: s.code,
-          name: s.name,
-          parent_code: s.parent_code,
-          key: s.code,
-          region: getRegionByState(s.code),
-          centroid: s.centroid ? { coordinates: [s.centroid.coordinates[0], s.centroid.coordinates[1]] as [number, number] } : null
-        }))
+        const states = (data || []).map(s => {
+          const fallbackState = ESTADOS_MX_FALLBACK.find(fs => fs.code === s.code)
+          return {
+            id: s.id,
+            code: s.code,
+            name: s.name,
+            parent_code: s.parent_code,
+            key: s.code,
+            region: getRegionByState(s.code),
+            centroid: fallbackState?.centroid ? { coordinates: [fallbackState.centroid.coordinates[0], fallbackState.centroid.coordinates[1]] as [number, number] } : null
+          }
+        })
 
         this._cache.states = states
         return states
@@ -268,20 +271,23 @@ export const TerritoryService = {
       if (munLayer) {
         const { data, error } = await supabase
           .from('territories')
-          .select('id, code, name, parent_code, centroid')
+          .select('id, code, name, parent_code')
           .eq('layer_id', munLayer.id)
           .ilike('code', `${stateCode}%`)
           .order('name')
 
         if (!error && data && data.length > 0) {
-          const result = data.map(m => ({
-            id: m.id,
-            code: m.code,
-            name: m.name,
-            parent_code: m.parent_code,
-            key: m.code,
-            centroid: m.centroid ? { coordinates: [m.centroid.coordinates[0], m.centroid.coordinates[1]] as [number, number] } : null
-          }))
+          const result = data.map(m => {
+            const fallbackMun = MUNICIPIOS_FALLBACK[stateCode]?.find(fm => fm.code === m.code)
+            return {
+              id: m.id,
+              code: m.code,
+              name: m.name,
+              parent_code: m.parent_code,
+              key: m.code,
+              centroid: fallbackMun?.centroid ? { coordinates: [fallbackMun.centroid.coordinates[0], fallbackMun.centroid.coordinates[1]] as [number, number] } : null
+            }
+          })
           this._cache.municipalities.set(stateCode, result)
           return result
         }
