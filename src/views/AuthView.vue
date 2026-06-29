@@ -484,7 +484,7 @@ const handleActorRequest = async () => {
             </div>
             <span v-if="loginErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ loginErrors.password }}</span>
             <div class="forgot-password-container">
-              <RouterLink to="/reset-password" class="forgot-link">¿Olvidaste tu contraseña?</RouterLink>
+              <a href="https://wa.me/525670069196" target="_blank" rel="noopener noreferrer" class="forgot-link">¿Olvidaste tu contraseña?</a>
             </div>
           </div>
 

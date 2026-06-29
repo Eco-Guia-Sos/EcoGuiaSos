@@ -8,6 +8,7 @@ import { EventoSchema, LugarSchema } from '../schemas'
 import { TerritoryService, type Territory } from '../services/territory.service'
 
 import { compressImage } from '../utils/imageCompressor'
+import AdminSupportConsole from '../components/AdminSupportConsole.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -2617,6 +2618,12 @@ const formatRelativeDate = (dateStr: string) => {
                 <span v-if="!isSidebarCollapsed">Mi Perfil</span>
               </a>
             </li>
+            <li class="menu-item-ajustes" :class="{ 'active': activeTab === 'soporte' }" v-if="isUserAdmin">
+              <a href="#" @click.prevent="navigateTo('soporte')">
+                <i class="fa-solid fa-comments" style="margin-right:10px;"></i>
+                <span v-if="!isSidebarCollapsed">Chat de Soporte</span>
+              </a>
+            </li>
 
             <li 
               v-if="isUserAdmin || actorFunctions.puede_enviar_notificaciones" 
@@ -3662,6 +3669,10 @@ const formatRelativeDate = (dateStr: string) => {
           <i class="fa-solid fa-clock-rotate-left" style="font-size: 4rem; color: #f59e0b; margin-bottom: 20px;"></i>
           <h2 style="color: white; font-weight: 800; font-size: 1.8rem; margin-bottom: 10px;">Historial de Actividad Global</h2>
           <p style="color: #94a3b8; font-size: 1.1rem; max-width: 500px; margin: 0 auto;">El registro de auditoría y actividad del sistema estará disponible en una próxima actualización.</p>
+        </div>
+        <!-- 10. CHAT DE SOPORTE (Admin only) -->
+        <div v-else-if="activeTab === 'soporte' && isUserAdmin" class="soporte-view-container" style="height: 100%; max-height: 860px;">
+          <AdminSupportConsole />
         </div>
 
       </main>

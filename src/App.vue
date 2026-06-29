@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onErrorCaptured } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
+import UserChatWidget from './components/UserChatWidget.vue'
 import { useAuthStore } from './stores/authStore'
 import { useHomeStore } from './stores/homeStore'
 import { supabase } from './services/supabase.service'
@@ -24,6 +25,18 @@ const isMenuOpen = ref(false)
 const isUserDropdownOpen = ref(false)
 const isNotifDropdownOpen = ref(false)
 const isInstallDropdownOpen = ref(false)
+
+const supportChatRef = ref<any>(null)
+
+const openSupportChat = () => {
+  closeDropdowns()
+  closeMenu()
+  if (supportChatRef.value) {
+    supportChatRef.value.showFab()
+    supportChatRef.value.openChatDirectly()
+  }
+}
+
 
 // Notifications state
 const unreadCount = ref(0)
@@ -473,6 +486,10 @@ onErrorCaptured((err, instance, info) => {
               <RouterLink to="/favoritos" class="dropdown-item" @click="closeDropdowns(); closeMenu()">
                 <i class="fa-solid fa-star"></i> Mis Favoritos
               </RouterLink>
+              <!-- Support link -->
+              <a href="#" class="dropdown-item" @click.prevent="openSupportChat">
+                <i class="fa-solid fa-comments"></i> Soporte Técnico
+              </a>
               
               <div class="dropdown-divider"></div>
               <a href="#" @click.prevent="handleLogout" class="dropdown-item logout">
@@ -593,6 +610,9 @@ onErrorCaptured((err, instance, info) => {
         </div>
       </div>
     </transition>
+    
+    <!-- SOPORTE CHAT WIDGET -->
+    <UserChatWidget ref="supportChatRef" v-if="route.path !== '/admin'" />
   </div>
 </template>
 
