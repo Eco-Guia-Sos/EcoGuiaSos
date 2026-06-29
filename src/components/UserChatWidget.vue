@@ -118,6 +118,28 @@ onMounted(async () => {
   await loadAdminAvatar()
 })
 
+const playingAudioId = ref<string | null>(null)
+let activeAudio: HTMLAudioElement | null = null
+
+function togglePlayAudio(msgId: string, url: string) {
+  if (playingAudioId.value === msgId) {
+    if (activeAudio) activeAudio.pause()
+    playingAudioId.value = null
+  } else {
+    if (activeAudio) activeAudio.pause()
+    playingAudioId.value = msgId
+    activeAudio = new Audio(url)
+    activeAudio.play().catch(err => {
+      console.error('Error al reproducir audio:', err)
+      playingAudioId.value = null
+    })
+    activeAudio.onended = () => {
+      playingAudioId.value = null
+      activeAudio = null
+    }
+  }
+}
+
 watch(
   () => authStore.user,
   async (newUser) => {
@@ -647,11 +669,17 @@ defineExpose({
                 </div>
 
                 <!-- Audio -->
-                <div v-else-if="m.type === 'audio'" class="bubble__audio">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="audio-icon">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
-                  </svg>
-                  <div class="audio-bars">
+                <div v-else-if="m.type === 'audio'" class="bubble__audio" @click="togglePlayAudio(m.id, m.audio_url!)" style="cursor: pointer;">
+                  <button class="audio-play-btn" :aria-label="playingAudioId === m.id ? 'Pausar' : 'Reproducir'">
+                    <svg v-if="playingAudioId === m.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <rect x="6" y="4" width="4" height="16" rx="1" ry="1"/>
+                      <rect x="14" y="4" width="4" height="16" rx="1" ry="1"/>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                  </button>
+                  <div class="audio-bars" :class="{ 'audio-bars--playing': playingAudioId === m.id }">
                     <span v-for="i in 18" :key="i" class="audio-bar" :style="{ height: (Math.random() * 16 + 4) + 'px' }"></span>
                   </div>
                   <span class="audio-dur">{{ fmtDuration(m.audio_duration ?? 0) }}</span>
@@ -1073,5 +1101,59 @@ defineExpose({
   display: block;
   border: 1.5px solid rgba(255,255,255,0.25);
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.audio-play-btn {
+  background: rgba(114,176,77,0.15);
+  border: 1px solid rgba(114,176,77,0.3);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--eco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--tr);
+}
+.audio-play-btn:hover {
+  background: rgba(114,176,77,0.25);
+  transform: scale(1.05);
+}
+.audio-play-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.audio-bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.audio-bars--playing .audio-bar {
+  animation: audio-wave 1.2s ease-in-out infinite alternate;
+}
+.audio-bars--playing .audio-bar:nth-child(2n) { animation-delay: 0.15s; }
+.audio-bars--playing .audio-bar:nth-child(3n) { animation-delay: 0.3s; }
+.audio-bars--playing .audio-bar:nth-child(4n) { animation-delay: 0.45s; }
+
+@keyframes audio-wave {
+  0% { transform: scaleY(1); }
+  100% { transform: scaleY(2.2); }
+}
+
+@media (max-width: 480px) {
+  .widget-root {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    align-items: stretch;
+  }
+  .chat-win {
+    width: 100%;
+    height: calc(100vh - 120px);
+    max-height: 520px;
+    border-radius: 16px;
+  }
 }
 </style>

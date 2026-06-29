@@ -291,6 +291,28 @@ let recordTimer: ReturnType<typeof setInterval> | null = null
 let mediaRecorder: MediaRecorder | null = null
 let audioChunks: Blob[] = []
 
+const playingAudioId = ref<string | null>(null)
+let activeAudio: HTMLAudioElement | null = null
+
+function togglePlayAudio(msgId: string, url: string) {
+  if (playingAudioId.value === msgId) {
+    if (activeAudio) activeAudio.pause()
+    playingAudioId.value = null
+  } else {
+    if (activeAudio) activeAudio.pause()
+    playingAudioId.value = msgId
+    activeAudio = new Audio(url)
+    activeAudio.play().catch(err => {
+      console.error('Error al reproducir audio admin:', err)
+      playingAudioId.value = null
+    })
+    activeAudio.onended = () => {
+      playingAudioId.value = null
+      activeAudio = null
+    }
+  }
+}
+
 function triggerFile() { fileInputRef.value?.click() }
 
 function fmtDuration(s: number) {
@@ -627,14 +649,18 @@ watch(activeId, () => scrollToBottom())
                 </div>
 
                 <!-- Audio player -->
-                <div v-else-if="m.type === 'audio'" class="bubble__audio">
-                  <button class="audio-play" aria-label="Reproducir nota de voz">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div v-else-if="m.type === 'audio'" class="bubble__audio" @click="togglePlayAudio(m.id, m.audio_url!)" style="cursor: pointer;">
+                  <button class="audio-play" :aria-label="playingAudioId === m.id ? 'Pausar nota de voz' : 'Reproducir nota de voz'">
+                    <svg v-if="playingAudioId === m.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <rect x="6" y="4" width="4" height="16" rx="1" ry="1"/>
+                      <rect x="14" y="4" width="4" height="16" rx="1" ry="1"/>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polygon points="5 3 19 12 5 21 5 3"/>
                     </svg>
                   </button>
                   <div class="audio-track">
-                    <div class="audio-bars">
+                    <div class="audio-bars" :class="{ 'audio-bars--playing': playingAudioId === m.id }">
                       <span v-for="i in 22" :key="i" class="audio-bar" :style="{ height: (Math.sin(i*0.8)*8 + 10) + 'px' }"></span>
                     </div>
                     <div class="audio-meta">
@@ -1232,4 +1258,11 @@ watch(activeId, () => scrollToBottom())
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: 12px;
 }
+
+.audio-bars--playing .audio-bar {
+  animation: audio-wave 1.2s ease-in-out infinite alternate;
+}
+.audio-bars--playing .audio-bar:nth-child(2n) { animation-delay: 0.15s; }
+.audio-bars--playing .audio-bar:nth-child(3n) { animation-delay: 0.3s; }
+.audio-bars--playing .audio-bar:nth-child(4n) { animation-delay: 0.45s; }
 </style>
