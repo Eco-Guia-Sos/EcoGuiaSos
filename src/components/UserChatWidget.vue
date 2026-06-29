@@ -752,13 +752,6 @@ defineExpose({
                     <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
                   </svg>
                 </button>
-                <!-- Location -->
-                <button class="tool-btn" @click="shareLocation(); isActionsMenuOpen = false" title="Compartir ubicación">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                  </svg>
-                </button>
               </div>
             </Transition>
           </div>
