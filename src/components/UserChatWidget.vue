@@ -149,16 +149,26 @@ async function scrollToBottom() {
 }
 
 // ── DB Connection ──────────────────────────────────────────────────────────
+
+async function touchConversation() {
+  if (!conversacionId.value) return
+  await supabase
+    .from('conversaciones_soporte')
+    .update({ 
+      estado: 'Abierto', 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', conversacionId.value)
+}
+
 async function initChat() {
   if (!authStore.user) return
   try {
-    // 1. Buscamos conversación activa
+    // 1. Buscamos cualquier conversación registrada del usuario
     const { data: conv, error: convError } = await supabase
       .from('conversaciones_soporte')
-      .select('id')
+      .select('id, estado')
       .eq('usuario_id', authStore.user.id)
-      .in('estado', ['Abierto', 'En Proceso'])
-      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
@@ -166,8 +176,14 @@ async function initChat() {
 
     if (conv) {
       conversacionId.value = conv.id
+      if (conv.estado === 'Resuelto') {
+        await supabase
+          .from('conversaciones_soporte')
+          .update({ estado: 'Abierto', updated_at: new Date().toISOString() })
+          .eq('id', conv.id)
+      }
     } else {
-      // Crear nueva conversación si no hay una activa
+      // Crear nueva conversación si no hay ninguna
       const { data: newConv, error: newConvError } = await supabase
         .from('conversaciones_soporte')
         .insert({ usuario_id: authStore.user.id, estado: 'Abierto' })
@@ -320,6 +336,8 @@ async function sendText() {
 
   if (error) {
     console.error('Error al enviar mensaje:', error.message)
+  } else {
+    await touchConversation()
   }
 }
 
@@ -360,7 +378,7 @@ async function handleFileSelect(e: Event) {
     const { data: urlData } = supabase.storage.from('imagenes-plataforma').getPublicUrl(fileName)
     const fileUrl = urlData.publicUrl
 
-    await supabase
+    const { error: insertError } = await supabase
       .from('mensajes_soporte')
       .insert({
         conversacion_id: conversacionId.value,
@@ -371,6 +389,9 @@ async function handleFileSelect(e: Event) {
         image_url: isImage ? fileUrl : undefined,
         video_url: !isImage ? fileUrl : undefined
       })
+    if (!insertError) {
+      await touchConversation()
+    }
   } catch (err: any) {
     console.error('Error en subida de archivo:', err.message)
   } finally {
@@ -406,7 +427,7 @@ async function startRecording() {
         const { data: urlData } = supabase.storage.from('imagenes-plataforma').getPublicUrl(fileName)
         const fileUrl = urlData.publicUrl
 
-        await supabase
+        const { error: insertError } = await supabase
           .from('mensajes_soporte')
           .insert({
             conversacion_id: conversacionId.value,
@@ -416,6 +437,9 @@ async function startRecording() {
             audio_url: fileUrl,
             audio_duration: recordSeconds.value
           })
+        if (!insertError) {
+          await touchConversation()
+        }
       } catch (err: any) {
         console.error('Error subiendo nota de voz:', err.message)
       }
@@ -474,7 +498,7 @@ async function shareLocation() {
       const lat = parseFloat(pos.coords.latitude.toFixed(5))
       const lng = parseFloat(pos.coords.longitude.toFixed(5))
       
-      await supabase
+      const { error: insertError } = await supabase
         .from('mensajes_soporte')
         .insert({
           conversacion_id: conversacionId.value,
@@ -483,10 +507,13 @@ async function shareLocation() {
           type: 'location',
           location: { lat, lng, label: 'Mi ubicación actual' }
         })
+      if (!insertError) {
+        await touchConversation()
+      }
     },
     async () => {
       // Fallback a ubicación simulada (CDMX centro)
-      await supabase
+      const { error: insertError } = await supabase
         .from('mensajes_soporte')
         .insert({
           conversacion_id: conversacionId.value,
@@ -495,6 +522,9 @@ async function shareLocation() {
           type: 'location',
           location: { lat: 19.43260, lng: -99.13320, label: 'Mi ubicación actual (Aprox.)' }
         })
+      if (!insertError) {
+        await touchConversation()
+      }
     }
   )
 }
