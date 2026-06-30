@@ -986,8 +986,8 @@ defineExpose({
   position: absolute;
   top: -6px;
   right: -6px;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.15);
@@ -996,20 +996,17 @@ defineExpose({
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 0.2s, transform 0.2s;
-  z-index: 10;
-}
-.fab-container:hover .fab-close-shortcut {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   opacity: 1;
   transform: scale(1);
+  transition: all 0.2s ease-in-out;
+  z-index: 10;
 }
 .fab-close-shortcut:hover {
   background: #ef4444;
   color: #ffffff;
   border-color: #ef4444;
+  transform: scale(1.1);
 }
 .fab-close-shortcut svg {
   width: 9px;
