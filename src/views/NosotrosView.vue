@@ -93,18 +93,34 @@ onMounted(() => {
         <h3><i class="fas fa-fingerprint"></i> Nuestro Emblema</h3>
         <p class="section-intro">Nuestro logo es un mapa vivo de nuestras áreas de acción:</p>
 
-        <div class="logo-highlight">
-          <img src="/assets/img/logmov.gif" alt="Logo Animado EcoGuía SOS" class="main-logo-gif" />
+        <div class="logos-container">
+          <div class="logo-highlight-box">
+            <h4>Emblema Animado</h4>
+            <div class="logo-highlight">
+              <img src="/assets/img/logmov.gif" alt="Logo Animado EcoGuía SOS" class="main-logo-gif" />
+            </div>
+            <p class="logo-info">Representación completa de nuestra esencia e interconexión con el conocimiento y la naturaleza.</p>
+          </div>
+          
+          <div class="logo-highlight-box">
+            <h4>Logotipo de la App</h4>
+            <div class="logo-highlight">
+              <img src="/logo-app.webp" alt="Logo App Móvil EcoGuía SOS" class="main-logo-gif app-logo-img" />
+            </div>
+            <p class="logo-info">Identidad visual optimizada y simplificada de la aplicación móvil para dispositivos inteligentes.</p>
+          </div>
         </div>
 
-        <div class="name-item">
-          <span class="term txt-eco">Eco</span> <span class="def">Ecología Sensata</span>
-        </div>
-        <div class="name-item">
-          <span class="term txt-gaia">Guía</span> <span class="def">Directorio y Apoyo</span>
-        </div>
-        <div class="name-item">
-          <span class="term txt-sos">SOS</span> <span class="def">Llamado a la Acción</span>
+        <div class="name-breakdown">
+          <div class="name-item eco-item">
+            <span class="term txt-eco">Eco</span> <span class="def">Ecología Sensata</span>
+          </div>
+          <div class="name-item guia-item">
+            <span class="term txt-gaia">Guía</span> <span class="def">Directorio y Apoyo</span>
+          </div>
+          <div class="name-item sos-item">
+            <span class="term txt-sos">SOS</span> <span class="def">Llamado a la Acción</span>
+          </div>
         </div>
 
         <div class="symbols-grid">
