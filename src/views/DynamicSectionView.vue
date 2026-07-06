@@ -31,7 +31,8 @@ const hubsConfig = {
       { name: 'Agua', path: '/agua', icon: 'fa-solid fa-water', id: 'agua' },
       { name: 'Lecturas', path: '/lecturas', icon: 'fa-solid fa-book', id: 'lecturas' },
       { name: 'Documentales', path: '/documentales', icon: 'fa-solid fa-video', id: 'documentales' },
-      { name: 'Firmas', path: '/firmas', icon: 'fa-solid fa-file-signature', id: 'firmas' }
+      { name: 'Firmas', path: '/firmas', icon: 'fa-solid fa-file-signature', id: 'firmas' },
+      { name: 'Eco-tecnología', path: '/eco-tecnologia', icon: 'fa-solid fa-microchip', id: 'eco-tecnologia' }
     ],
     labels: {
       cursos: 'Curso',
@@ -39,7 +40,8 @@ const hubsConfig = {
       documentales: 'Documental',
       ecotecnias: 'Ecotecnia',
       agua: 'Recurso de Agua',
-      firmas: 'Petición'
+      firmas: 'Petición',
+      'eco-tecnologia': 'Recurso Tecnológico'
     } as Record<string, string>
   },
   ajolote: {
@@ -79,15 +81,19 @@ const hubsConfig = {
 const currentHub = computed(() => hubsConfig[props.parentHub])
 const proposalLabel = computed(() => currentHub.value.labels[props.sectionId] || 'Recurso')
 
+const profilesMap = ref<Record<string, any>>({})
+
 // Parse description helper (extracts meta from JSON if applicable)
 const parseItem = (item: any) => {
   let textoDescripcion = item.descripcion || ''
   let meta: any = {}
+  let descripcionCorta = ''
   
   try {
     if (textoDescripcion.trim().startsWith('{')) {
       meta = JSON.parse(textoDescripcion)
       textoDescripcion = meta.descripcion_texto || ''
+      descripcionCorta = meta.descripcion_corta || ''
     }
   } catch (e) {
     // Silent
@@ -96,11 +102,99 @@ const parseItem = (item: any) => {
   return {
     ...item,
     meta,
-    textoDescripcion
+    textoDescripcion,
+    descripcion_corta: descripcionCorta,
+    perfiles: item.owner_id ? profilesMap.value[item.owner_id] : null
   }
 }
 
 const parsedItems = computed(() => items.value.map(parseItem))
+
+// State for Eco-tecnología filters
+const searchQuery = ref('')
+const activeCategory = ref('Todos')
+const activeResource = ref('Todos')
+const isAdvancedSearchOpen = ref(false)
+
+const categories = ['Todos', 'Inteligencia Artificial', 'Hardware/IoT', 'Software Verde', 'Energías Limpias']
+const resourceTypes = ['Todos', 'Sitios Web', 'Videos', 'Repositorios', 'Artículos']
+
+const filteredTechProjects = computed(() => {
+  if (props.sectionId !== 'eco-tecnologia') {
+    return parsedItems.value
+  }
+  
+  const q = searchQuery.value.trim().toLowerCase()
+  return parsedItems.value.filter(p => {
+    const matchesQuery = !q ||
+      (p.titulo || '').toLowerCase().includes(q) ||
+      (p.textoDescripcion || '').toLowerCase().includes(q) ||
+      (p.meta?.desarrollador || '').toLowerCase().includes(q)
+      
+    const itemCat = p.meta?.categoria_tech || 'Todos'
+    const matchesCategory = activeCategory.value === 'Todos' || itemCat === activeCategory.value
+    
+    const itemType = p.meta?.tipo_recurso || 'Todos'
+    const typeMapping: Record<string, string> = {
+      'web': 'Sitios Web',
+      'video': 'Videos',
+      'github': 'Repositorios',
+      'repositorio': 'Repositorios',
+      'articulo': 'Artículos'
+    }
+    const mappedType = typeMapping[itemType.toLowerCase()] || itemType
+    const matchesResource = activeResource.value === 'Todos' || mappedType === activeResource.value
+    
+    return matchesQuery && matchesCategory && matchesResource
+  })
+})
+
+function categoryAccent(cat: string): string {
+  const map: Record<string, string> = {
+    'Inteligencia Artificial': '#eab308',
+    'Hardware/IoT': '#72B04D',
+    'Software Verde': '#2ec4b6',
+    'Energías Limpias': '#ca8a04',
+  }
+  return map[cat] ?? '#72B04D'
+}
+
+function resourceIcon(type: string): string {
+  const map: Record<string, string> = {
+    'Sitios Web': 'fa-solid fa-globe',
+    'Videos': 'fa-solid fa-video',
+    'Repositorios': 'fa-brands fa-github',
+    'Artículos': 'fa-solid fa-file-lines',
+  }
+  return map[type] ?? 'fa-solid fa-globe'
+}
+
+function ctaLabel(type: string): string {
+  const map: Record<string, string> = {
+    'Sitios Web': 'Visitar Sitio',
+    'Videos': 'Ver Video',
+    'Repositorios': 'Acceder al Proyecto',
+    'Artículos': 'Leer Artículo',
+  }
+  return map[type] ?? 'Acceder al Proyecto'
+}
+
+function fallbackGradient(id: string): string {
+  const seed = id ? id.charCodeAt(0) % 3 : 0
+  const gradients = [
+    'linear-gradient(135deg, rgba(46,196,182,0.35), rgba(10,14,18,0.9))',
+    'linear-gradient(135deg, rgba(234,179,8,0.3), rgba(10,14,18,0.9))',
+    'linear-gradient(135deg, rgba(131,56,236,0.3), rgba(10,14,18,0.9))',
+  ]
+  return (gradients[seed] || gradients[0]) as string
+}
+
+function clearFilters() {
+  searchQuery.value = ''
+  activeCategory.value = 'Todos'
+  activeResource.value = 'Todos'
+}
+
 
 const getBriefDescription = (text: string) => {
   if (!text) return ''
@@ -124,6 +218,23 @@ const fetchContent = async () => {
 
     if (error) throw error
     items.value = data || []
+    
+    // Fetch profiles for the owners to bypass missing DB foreign key mapping
+    const ownerIds = [...new Set(items.value.map(item => item.owner_id).filter(Boolean))] as string[]
+    if (ownerIds.length > 0) {
+      const { data: profs, error: pErr } = await supabase
+        .from('perfiles')
+        .select('id, nombre_completo, avatar_url')
+        .in('id', ownerIds)
+        
+      if (!pErr && profs) {
+        const map: Record<string, any> = {}
+        profs.forEach(p => {
+          map[p.id] = p
+        })
+        profilesMap.value = map
+      }
+    }
   } catch (err: any) {
     console.error(`[DynamicSection] Error:`, err)
     errorMsg.value = 'Error al conectar con la base de datos.'
@@ -217,87 +328,244 @@ watch(() => authStore.user, () => {
     </header>
 
     <main class="content-section">
+      <!-- Loader -->
       <div v-if="loading" class="no-events">
         <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando contenido...
       </div>
       
+      <!-- Error Message -->
       <div v-else-if="errorMsg" class="no-events">
         <p class="error-msg">{{ errorMsg }}</p>
       </div>
 
-      <div v-else-if="parsedItems.length === 0" class="no-events">
-        <p class="empty-msg">Aún no hay contenido en esta sección. ¡Sé el primero en proponer algo!</p>
+      <!-- Search and Filters (Eco-tecnología only) -->
+      <template v-else-if="props.sectionId === 'eco-tecnologia'">
+        <!-- Search bar -->
+        <div class="search-bar-row fade-in" style="margin-bottom: 20px;">
+          <div class="search-bar-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              placeholder="Buscar por título, descripción o desarrollador..." 
+              autocomplete="off"
+            >
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-buttons-row fade-in" style="display:flex; justify-content:space-between; align-items:center; gap: 15px; margin-bottom: 25px;">
+          <button 
+            class="btn btn-secondary glass-effect" 
+            :class="{ 'active': isAdvancedSearchOpen }"
+            @click="isAdvancedSearchOpen = !isAdvancedSearchOpen"
+          >
+            <i class="fa-solid fa-sliders"></i> Búsqueda Avanzada
+          </button>
+        </div>
+
+        <!-- Advanced Search Panel -->
+        <div 
+          v-if="isAdvancedSearchOpen"
+          class="advanced-search-panel glass-effect fade-in" 
+          style="margin-bottom: 25px; padding: 25px; border-radius: 20px;"
+        >
+          <div class="search-panel-grid lugar-grid">
+            <!-- Col 1: Categorías Tech -->
+            <div class="search-col">
+              <h3>¿Qué tecnología buscas?</h3>
+              <div class="category-pills-grid">
+                <button 
+                  v-for="cat in categories"
+                  :key="cat"
+                  class="cat-pill" 
+                  :class="{ 'active': activeCategory === cat }"
+                  @click="activeCategory = cat"
+                >
+                  {{ cat === 'Todos' ? '🌍 Todo' : cat }}
+                </button>
+              </div>
+            </div>
+            
+            <!-- Col 2: Tipo de Recurso -->
+            <div class="search-col">
+              <h3>Tipo de recurso</h3>
+              <div class="category-pills-grid">
+                <button 
+                  v-for="type in resourceTypes"
+                  :key="type"
+                  class="cat-pill" 
+                  :class="{ 'active': activeResource === type }"
+                  @click="activeResource = type"
+                >
+                  {{ type === 'Todos' ? '📁 Todo' : type }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Info -->
+        <div class="results-bar" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <span class="results-bar__count" style="color: #94a3b8; font-size: 0.9rem;">
+            {{ filteredTechProjects.length }} {{ filteredTechProjects.length === 1 ? 'recurso encontrado' : 'recursos encontrados' }}
+          </span>
+          <button 
+            v-if="searchQuery || activeCategory !== 'Todos' || activeResource !== 'Todos'"
+            class="btn btn-link" 
+            style="padding: 0; background: none; border: none; color: #72B04D; cursor: pointer; text-decoration: underline; font-weight: 600;"
+            @click="clearFilters"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      </template>
+
+      <!-- Empty States -->
+      <div v-if="!loading && !errorMsg && filteredTechProjects.length === 0" class="no-events">
+        <template v-if="parsedItems.length === 0">
+          <p class="empty-msg">Aún no hay contenido en esta sección. ¡Sé el primero en proponer algo!</p>
+        </template>
+        <template v-else>
+          <p class="empty-msg">No se encontraron resultados para los filtros seleccionados.</p>
+          <button class="btn btn-secondary" style="margin-top: 15px;" @click="clearFilters">Limpiar filtros</button>
+        </template>
       </div>
 
-      <div v-else class="card-grid-container">
+      <!-- Content Grid -->
+      <div v-else-if="!loading && !errorMsg" class="card-grid-container">
         <article 
-          v-for="item in parsedItems" 
+          v-for="item in filteredTechProjects" 
           :key="item.id"
           class="glass-card fade-in"
-          :style="props.sectionId === 'causas' ? 'cursor: pointer;' : ''"
-          @click="props.sectionId === 'causas' ? router.push(`/causas/${item.id}`) : null"
+          :style="props.sectionId === 'causas' || props.sectionId === 'eco-tecnologia' ? 'cursor: pointer;' : ''"
+          @click="props.sectionId === 'causas' ? router.push(`/causas/${item.id}`) : (props.sectionId === 'eco-tecnologia' ? router.push(`/eco-tecnologia/${item.id}`) : null)"
         >
-          <div v-if="item.imagen_url" class="card-img-container">
-            <img 
-              :src="item.imagen_url" 
-              :alt="item.titulo" 
-              @error="($event.target as HTMLImageElement).src='/assets/img/colibri.webp'"
-            >
-            <span 
-              v-if="item.meta.area || item.meta.ambito" 
-              class="card-badge"
-            >
-              {{ item.meta.area || item.meta.ambito }}
-            </span>
-          </div>
-
-          <div class="card-content">
-            <h3>{{ item.titulo }}</h3>
-            
-            <div v-if="props.sectionId !== 'causas'" class="card-meta-info" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
-              <!-- Dynamic Metadata fields depending on type -->
-              <span v-if="item.meta.institucion"><i class="fa-solid fa-building-columns"></i> {{ item.meta.institucion }}</span>
-              <span v-if="item.meta.gratuito"><i class="fa-solid fa-tag"></i> {{ item.meta.gratuito }}</span>
-              
-              <span v-if="item.meta.tipo_norma"><i class="fa-solid fa-scale-balanced"></i> {{ item.meta.tipo_norma }}</span>
-              <span v-if="item.meta.organismo"><i class="fa-solid fa-building"></i> {{ item.meta.organismo }}</span>
-
-              <span v-if="item.meta.autor"><i class="fa-solid fa-user-pen"></i> {{ item.meta.autor }}</span>
-              <span v-if="item.meta.tipo_lectura"><i class="fa-solid fa-book"></i> {{ item.meta.tipo_lectura }}</span>
-
-              <span v-if="item.meta.director"><i class="fa-solid fa-clapperboard"></i> {{ item.meta.director }}</span>
-              <span v-if="item.meta.duracion"><i class="fa-solid fa-clock"></i> {{ item.meta.duracion }}</span>
-
-              <span v-if="item.meta.tipo_apoyo"><i class="fa-solid fa-hand-holding-dollar"></i> {{ item.meta.tipo_apoyo }}</span>
-              <span v-if="item.meta.monto"><i class="fa-solid fa-sack-dollar"></i> {{ item.meta.monto }}</span>
-
-              <span v-if="item.meta.tipo_fondo"><i class="fa-solid fa-sack-dollar"></i> {{ item.meta.tipo_fondo }}</span>
-              <span v-if="item.meta.origen"><i class="fa-solid fa-earth-americas"></i> {{ item.meta.origen }}</span>
-              <span v-if="item.meta.monto_aprox"><i class="fa-solid fa-coins"></i> {{ item.meta.monto_aprox }}</span>
-
-              <span v-if="item.meta.plataforma_firmas"><i class="fa-solid fa-pen-nib"></i> {{ item.meta.plataforma_firmas }}</span>
-              <span v-if="item.meta.meta_firmas"><i class="fa-solid fa-users"></i> Meta: {{ item.meta.meta_firmas }} firmas</span>
-
-              <!-- Common fields -->
-              <span v-if="item.meta.fecha_limite || item.meta.fecha_cierre"><i class="fa-regular fa-calendar-check"></i> Límite: {{ item.meta.fecha_limite || item.meta.fecha_cierre }}</span>
-              <span v-if="item.fecha_evento"><i class="fa-regular fa-calendar"></i> {{ new Date(item.fecha_evento).toLocaleDateString() }}</span>
-            </div>
-
-            <p style="margin-bottom: 20px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">
-              {{ props.sectionId === 'causas' ? getBriefDescription(item.textoDescripcion) : item.textoDescripcion }}
-            </p>
-            
-            <div v-if="props.sectionId !== 'causas' && item.enlace_externo" class="card-actions" style="margin-top: auto;">
-              <a 
-                :href="item.enlace_externo" 
-                target="_blank" 
-                class="btn btn-primary" 
-                style="width: 100%; justify-content: center; padding: 10px; border-radius: 30px;"
+          <!-- TEMPLATE 1: ECO-TECNOLOGÍA (Claude UI) -->
+          <template v-if="props.sectionId === 'eco-tecnologia'">
+            <div class="card-img-container" :style="!item.imagen_url ? { background: fallbackGradient(item.id) } : {}">
+              <img v-if="item.imagen_url" :src="item.imagen_url" :alt="item.titulo" @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'" />
+              <div v-else class="card-cover-fallback" style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                <i class="fa-solid fa-microchip" style="font-size: 3rem; opacity: 0.15;"></i>
+              </div>
+              <span 
+                class="card-badge" 
+                :style="{ 
+                  background: `${categoryAccent(item.meta.categoria_tech || 'Todos')}22`, 
+                  borderColor: `${categoryAccent(item.meta.categoria_tech || 'Todos')}55`, 
+                  color: categoryAccent(item.meta.categoria_tech || 'Todos'), 
+                  border: '1px solid',
+                  textTransform: 'none'
+                }"
               >
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Acceder al Recurso
-              </a>
+                {{ item.meta.categoria_tech || 'General' }}
+              </span>
             </div>
-          </div>
+            
+            <div class="card-content">
+              <!-- Autor info block -->
+              <div v-if="item.perfiles" class="card-author-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <img 
+                  :src="item.perfiles.avatar_url || '/assets/img/logo-app.webp'" 
+                  style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+                />
+                <span style="font-size: 0.8rem; color: #a3aab1; font-weight: 500;">
+                  {{ item.perfiles.nombre_completo }}
+                </span>
+              </div>
+              <h3>{{ item.titulo }}</h3>
+              
+              <div class="card-meta-info" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                <span v-if="item.meta.desarrollador || item.meta.autor" class="card-meta-tag" style="margin: 0; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;">
+                  <i class="fa-solid fa-user-gear"></i> {{ item.meta.desarrollador || item.meta.autor }}
+                </span>
+                <span v-if="item.meta.stack" class="card-meta-tag" style="margin: 0; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;">
+                  <i class="fa-solid fa-code"></i> {{ item.meta.stack }}
+                </span>
+              </div>
+              
+              <p style="margin-bottom: 0; color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; flex-grow: 1;">
+                {{ item.descripcion_corta || getBriefDescription(item.textoDescripcion) }}
+              </p>
+            </div>
+          </template>
+
+          <!-- TEMPLATE 2: ESTÁNDAR (Existente) -->
+          <template v-else>
+            <div v-if="item.imagen_url" class="card-img-container">
+              <img 
+                :src="item.imagen_url" 
+                :alt="item.titulo" 
+                @error="($event.target as HTMLImageElement).src='/assets/img/colibri.webp'"
+              >
+              <span 
+                v-if="item.meta.area || item.meta.ambito" 
+                class="card-badge"
+              >
+                {{ item.meta.area || item.meta.ambito }}
+              </span>
+            </div>
+
+            <div class="card-content">
+              <!-- Autor info block -->
+              <div v-if="item.perfiles" class="card-author-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <img 
+                  :src="item.perfiles.avatar_url || '/assets/img/logo-app.webp'" 
+                  style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+                />
+                <span style="font-size: 0.8rem; color: #a3aab1; font-weight: 500;">
+                  {{ item.perfiles.nombre_completo }}
+                </span>
+              </div>
+              <h3>{{ item.titulo }}</h3>
+              
+              <div v-if="props.sectionId !== 'causas'" class="card-meta-info" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                <!-- Dynamic Metadata fields depending on type -->
+                <span v-if="item.meta.institucion"><i class="fa-solid fa-building-columns"></i> {{ item.meta.institucion }}</span>
+                <span v-if="item.meta.gratuito"><i class="fa-solid fa-tag"></i> {{ item.meta.gratuito }}</span>
+                
+                <span v-if="item.meta.tipo_norma"><i class="fa-solid fa-scale-balanced"></i> {{ item.meta.tipo_norma }}</span>
+                <span v-if="item.meta.organismo"><i class="fa-solid fa-building"></i> {{ item.meta.organismo }}</span>
+
+                <span v-if="item.meta.autor"><i class="fa-solid fa-user-pen"></i> {{ item.meta.autor }}</span>
+                <span v-if="item.meta.tipo_lectura"><i class="fa-solid fa-book"></i> {{ item.meta.tipo_lectura }}</span>
+
+                <span v-if="item.meta.director"><i class="fa-solid fa-clapperboard"></i> {{ item.meta.director }}</span>
+                <span v-if="item.meta.duracion"><i class="fa-solid fa-clock"></i> {{ item.meta.duracion }}</span>
+
+                <span v-if="item.meta.tipo_apoyo"><i class="fa-solid fa-hand-holding-dollar"></i> {{ item.meta.tipo_apoyo }}</span>
+                <span v-if="item.meta.monto"><i class="fa-solid fa-sack-dollar"></i> {{ item.meta.monto }}</span>
+
+                <span v-if="item.meta.tipo_fondo"><i class="fa-solid fa-sack-dollar"></i> {{ item.meta.tipo_fondo }}</span>
+                <span v-if="item.meta.origen"><i class="fa-solid fa-earth-americas"></i> {{ item.meta.origen }}</span>
+                <span v-if="item.meta.monto_aprox"><i class="fa-solid fa-coins"></i> {{ item.meta.monto_aprox }}</span>
+
+                <span v-if="item.meta.plataforma_firmas"><i class="fa-solid fa-pen-nib"></i> {{ item.meta.plataforma_firmas }}</span>
+                <span v-if="item.meta.meta_firmas"><i class="fa-solid fa-users"></i> Meta: {{ item.meta.meta_firmas }} firmas</span>
+
+                <!-- Common fields -->
+                <span v-if="item.meta.fecha_limite || item.meta.fecha_cierre"><i class="fa-regular fa-calendar-check"></i> Límite: {{ item.meta.fecha_limite || item.meta.fecha_cierre }}</span>
+                <span v-if="item.fecha_evento"><i class="fa-regular fa-calendar"></i> {{ new Date(item.fecha_evento).toLocaleDateString() }}</span>
+              </div>
+
+              <p style="margin-bottom: 20px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.5;">
+                {{ item.descripcion_corta || getBriefDescription(item.textoDescripcion) }}
+              </p>
+              
+              <div v-if="props.sectionId !== 'causas' && item.enlace_externo" class="card-actions" style="margin-top: auto;">
+                <a 
+                  :href="item.enlace_externo" 
+                  target="_blank" 
+                  class="btn btn-primary" 
+                  style="width: 100%; justify-content: center; padding: 10px; border-radius: 30px;"
+                >
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Acceder al Recurso
+                </a>
+              </div>
+            </div>
+          </template>
         </article>
       </div>
     </main>

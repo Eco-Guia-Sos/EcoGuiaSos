@@ -1064,6 +1064,7 @@ const scrollToSection = (id: string) => {
                 <li><RouterLink to="/lecturas">📚 Lecturas</RouterLink></li>
                 <li><RouterLink to="/documentales">🎥 Documentales</RouterLink></li>
                 <li><RouterLink to="/firmas">✍️ Firmas</RouterLink></li>
+                <li><RouterLink to="/eco-tecnologia">🔌 Eco-tecnología</RouterLink></li>
               </ul>
             </div>
           </div>
@@ -1688,6 +1689,10 @@ const scrollToSection = (id: string) => {
           <RouterLink to="/firmas" class="nivel-btn-item glass-effect">
             <span class="nivel-btn-title">✍️ Firmas</span>
             <p class="nivel-btn-desc">Apoya causas ambientales importantes.</p>
+          </RouterLink>
+          <RouterLink to="/eco-tecnologia" class="nivel-btn-item glass-effect">
+            <span class="nivel-btn-title">🔌 Eco-tecnología</span>
+            <p class="nivel-btn-desc">Innovaciones y desarrollos tecnológicos ambientales.</p>
           </RouterLink>
         </div>
         <button @click="scrollToTop" class="btn-back-to-top">

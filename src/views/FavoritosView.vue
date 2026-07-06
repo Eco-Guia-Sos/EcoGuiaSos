@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
@@ -8,7 +8,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // State
-const activeTab = ref<'eventos' | 'lugares' | 'causas' | 'actores'>('eventos')
+const activeTab = ref<'eventos' | 'lugares' | 'causas' | 'actores' | 'recursos'>('eventos')
 const loading = ref(true)
 const eventFilter = ref<'actuales' | 'historial'>('actuales')
 const causaFilter = ref<'activas' | 'historial'>('activas')
@@ -16,8 +16,80 @@ const causaFilter = ref<'activas' | 'historial'>('activas')
 const eventos = ref<any[]>([])
 const lugares = ref<any[]>([])
 const causas = ref<any[]>([])
+const recursos = ref<any[]>([])
 const actores = ref<any[]>([])
 const userCoords = ref<{ lat: number; lng: number } | null>(null)
+
+const sectionLabels: Record<string, string> = {
+  cursos: '🎓 Curso',
+  ecotecnias: '💡 Ecotecnia',
+  agua: '🌊 Recurso de Agua',
+  lecturas: '📚 Lectura',
+  documentales: '🎥 Documental',
+  firmas: '✍️ Petición',
+  'eco-tecnologia': '🔌 Recurso Tecnológico',
+  normativa: '⚖️ Norma',
+  fondos: '💰 Fondo',
+  voluntariados: '🤝 Voluntariado',
+  convocatoria: '📢 Convocatoria'
+}
+
+const sectionEmojis: Record<string, string> = {
+  cursos: '🎓',
+  ecotecnias: '💡',
+  agua: '🌊',
+  lecturas: '📚',
+  documentales: '🎥',
+  firmas: '✍️',
+  'eco-tecnologia': '🔌',
+  normativa: '⚖️',
+  fondos: '💰',
+  voluntariados: '🤝',
+  convocatoria: '📢'
+}
+
+const sectionHubs: Record<string, string> = {
+  cursos: 'colibri',
+  ecotecnias: 'colibri',
+  agua: 'colibri',
+  lecturas: 'colibri',
+  documentales: 'colibri',
+  firmas: 'colibri',
+  'eco-tecnologia': 'colibri',
+  normativa: 'lobo',
+  fondos: 'lobo',
+  voluntariados: 'ajolote',
+  convocatoria: 'ajolote'
+}
+
+const activeHubFilter = ref<'todos' | 'colibri' | 'ajolote' | 'lobo'>('todos')
+const activeSectionFilter = ref<string>('todos')
+
+// Reset sub-filter when changing the main hub
+watch(activeHubFilter, () => {
+  activeSectionFilter.value = 'todos'
+})
+
+// Helper to get dynamic section IDs associated with a specific hub
+const getSectionsForHub = (hub: string): string[] => {
+  return Object.keys(sectionHubs).filter(key => sectionHubs[key] === hub)
+}
+
+const filteredRecursos = computed(() => {
+  let result = recursos.value
+
+  // 1. Filter by animal hub level
+  if (activeHubFilter.value !== 'todos') {
+    result = result.filter(rc => sectionHubs[rc.seccion_id] === activeHubFilter.value)
+    
+    // 2. Filter by specific sub-section
+    if (activeSectionFilter.value !== 'todos') {
+      result = result.filter(rc => rc.seccion_id === activeSectionFilter.value)
+    }
+  }
+
+  return result
+})
 
 const filteredEventos = computed(() => {
   const now = new Date()
@@ -140,10 +212,63 @@ const fetchFavoritesData = async () => {
       } else {
         causas.value = []
       }
+
+      const dynamicSectionTypes = ['cursos', 'ecotecnias', 'agua', 'lecturas', 'documentales', 'firmas', 'eco-tecnologia', 'normativa', 'fondos', 'voluntariados', 'convocatoria']
+      const dynamicSectionIds = favs.filter(f => dynamicSectionTypes.includes(f.item_tipo)).map(f => f.item_id)
+
+      if (dynamicSectionIds.length > 0) {
+        const { data: css, error: cssErr } = await supabase
+          .from('contenido_secciones')
+          .select('*')
+          .in('id', dynamicSectionIds)
+        
+        if (cssErr) console.error('[Favoritos] Error al cargar recursos:', cssErr)
+        
+        // Fetch profiles manually to bypass missing DB foreign key caching in Supabase
+        const ownerIds = [...new Set((css || []).map(item => item.owner_id).filter(Boolean))] as string[]
+        let profilesMap: Record<string, any> = {}
+        if (ownerIds.length > 0) {
+          const { data: profs } = await supabase
+            .from('perfiles')
+            .select('id, nombre_completo, avatar_url')
+            .in('id', ownerIds)
+          if (profs) {
+            profs.forEach(p => {
+              profilesMap[p.id] = p
+            })
+          }
+        }
+
+        recursos.value = (css || []).map(item => {
+          let textoDescripcion = item.descripcion || ''
+          let meta: any = {}
+          let descripcionCorta = ''
+          try {
+            if (textoDescripcion.trim().startsWith('{')) {
+              meta = JSON.parse(textoDescripcion)
+              textoDescripcion = meta.descripcion_texto || ''
+              descripcionCorta = meta.descripcion_corta || ''
+            }
+          } catch (e) {
+            // ignore
+          }
+          return {
+            ...item,
+            nombre: item.titulo,
+            meta,
+            descripcion_texto: textoDescripcion,
+            descripcion_corta: descripcionCorta,
+            perfiles: item.owner_id ? profilesMap[item.owner_id] : null
+          }
+        })
+      } else {
+        recursos.value = []
+      }
     } else {
       eventos.value = []
       lugares.value = []
       causas.value = []
+      recursos.value = []
     }
 
     // 2. Fetch followed actors
@@ -257,6 +382,15 @@ const formatearFechaSubtext = (fecha: string) => {
   } catch (e) {
     return ''
   }
+}
+
+const getBriefDescription = (text: string) => {
+  if (!text) return ''
+  const firstParagraph = text.split(/\r?\n\r?\n/)[0] || ''
+  if (firstParagraph.length > 150) {
+    return firstParagraph.substring(0, 150).trim() + '...'
+  }
+  return firstParagraph
 }
 
 const getNivelClass = (categoria: string) => {
@@ -437,6 +571,14 @@ onMounted(async () => {
           >
             <i class="fa-solid fa-users"></i>
             <span>Siguiendo</span>
+          </button>
+          <button 
+            class="segment-btn" 
+            :class="{ 'active': activeTab === 'recursos' }" 
+            @click="activeTab = 'recursos'"
+          >
+            <i class="fa-solid fa-book-open"></i>
+            <span>Biblioteca y Recursos</span>
           </button>
         </div>
       </div>
@@ -744,6 +886,111 @@ onMounted(async () => {
             </article>
           </div>
         </div>
+
+        <!-- Tab: Recursos -->
+        <div v-if="activeTab === 'recursos'" class="tab-content active">
+          <div v-if="recursos.length === 0" class="empty-favorites-state">
+            <i class="fa-solid fa-book-open" style="font-size:3rem; margin-bottom:15px; color:#475569;"></i>
+            <p>Aún no has guardado ningún recurso o biblioteca de los hubs.</p>
+          </div>
+          <div v-else>
+            <!-- Hub Filters Sub-bar -->
+            <div class="hub-filters-bar" style="display: flex; gap: 12px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+              <button 
+                class="hub-filter-pill"
+                :class="{ 'active': activeHubFilter === 'todos' }"
+                @click="activeHubFilter = 'todos'"
+              >
+                🌎 Todos
+              </button>
+              <button 
+                class="hub-filter-pill colibri"
+                :class="{ 'active': activeHubFilter === 'colibri' }"
+                @click="activeHubFilter = 'colibri'"
+              >
+                🕊️ Colibrí
+              </button>
+              <button 
+                class="hub-filter-pill ajolote"
+                :class="{ 'active': activeHubFilter === 'ajolote' }"
+                @click="activeHubFilter = 'ajolote'"
+              >
+                🐸 Ajolote
+              </button>
+              <button 
+                class="hub-filter-pill lobo"
+                :class="{ 'active': activeHubFilter === 'lobo' }"
+                @click="activeHubFilter = 'lobo'"
+              >
+                🐺 Lobo
+              </button>
+            </div>
+
+            <!-- Sub-section Filters Bar (Only shown if a specific animal hub is selected) -->
+            <div v-if="activeHubFilter !== 'todos'" class="sub-filters-bar" style="display: flex; gap: 8px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap;">
+              <button 
+                class="sub-filter-pill"
+                :class="{ 'active': activeSectionFilter === 'todos', 'colibri': activeHubFilter === 'colibri', 'ajolote': activeHubFilter === 'ajolote', 'lobo': activeHubFilter === 'lobo' }"
+                @click="activeSectionFilter = 'todos'"
+              >
+                ✨ Todo {{ activeHubFilter.charAt(0).toUpperCase() + activeHubFilter.slice(1) }}
+              </button>
+              <button 
+                v-for="secId in getSectionsForHub(activeHubFilter)"
+                :key="secId"
+                class="sub-filter-pill"
+                :class="{ 'active': activeSectionFilter === secId, 'colibri': activeHubFilter === 'colibri', 'ajolote': activeHubFilter === 'ajolote', 'lobo': activeHubFilter === 'lobo' }"
+                @click="activeSectionFilter = secId"
+              >
+                {{ sectionLabels[secId] || secId }}
+              </button>
+            </div>
+
+            <div v-if="filteredRecursos.length === 0" class="empty-favorites-state">
+              <i class="fa-solid fa-folder-open" style="font-size:3rem; margin-bottom:15px; color:#475569;"></i>
+              <p>No tienes guardado ningún recurso en este nivel de animal.</p>
+            </div>
+
+            <div v-else class="card-grid-container" id="contenedor-tarjetas">
+              <div 
+                v-for="rc in filteredRecursos" 
+                :key="rc.id" 
+                class="card-wrapper"
+              >
+                <div v-if="rc.perfiles?.nombre_completo" class="actor-badge" :title="`Publicado por: ${rc.perfiles.nombre_completo}`">
+                  <i class="fa-solid fa-user-pen"></i>
+                  <span>{{ rc.perfiles.nombre_completo }}</span>
+                </div>
+                <article 
+                  class="card fade-in" 
+                  :class="`card-${sectionHubs[rc.seccion_id] || 'general'}`"
+                  @click="router.push(`/${rc.seccion_id}/${rc.id}`)" 
+                  style="cursor: pointer;"
+                >
+                  <div class="card-image">
+                    <img 
+                      :src="rc.imagen_url || '/assets/img/logo-app.webp'" 
+                      @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+                      style="width:100%; height:100%; object-fit:cover;"
+                    >
+                  </div>
+                  <div class="card-content" style="padding-top: 12px;">
+                    <div class="card-meta-row">
+                      <span class="card-meta-category">
+                        <span class="category-icon-bg">{{ sectionEmojis[rc.seccion_id] || '📚' }}</span>
+                        {{ sectionLabels[rc.seccion_id] || 'Recurso' }}
+                      </span>
+                    </div>
+                    <h3 class="card-title" style="margin-bottom:2px; font-size: 1rem; line-height: 1.25; color: white;">{{ rc.titulo }}</h3>
+                    <p style="font-size:0.8rem; color:#94a3b8; line-height:1.4; margin-top:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                      {{ rc.descripcion_corta || getBriefDescription(rc.descripcion_texto) }}
+                    </p>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -790,6 +1037,112 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateX(-5px);
+}
+
+/* Hub filters sub-bar styling */
+.hub-filter-pill {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a3aab1;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+}
+.hub-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transform: translateY(-2px);
+}
+.hub-filter-pill.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+/* Colibrí (Green) */
+.hub-filter-pill.colibri:hover,
+.hub-filter-pill.colibri.active {
+  border-color: rgba(114, 176, 77, 0.5) !important;
+  color: #72b04d !important;
+}
+.hub-filter-pill.colibri.active {
+  background: rgba(114, 176, 77, 0.1) !important;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.2) !important;
+}
+/* Ajolote (Blue) */
+.hub-filter-pill.ajolote:hover,
+.hub-filter-pill.ajolote.active {
+  border-color: rgba(91, 194, 247, 0.5) !important;
+  color: #5bc2f7 !important;
+}
+.hub-filter-pill.ajolote.active {
+  background: rgba(91, 194, 247, 0.1) !important;
+  box-shadow: 0 0 15px rgba(91, 194, 247, 0.2) !important;
+}
+/* Lobo (Purple/Orange) */
+.hub-filter-pill.lobo:hover,
+.hub-filter-pill.lobo.active {
+  border-color: rgba(253, 186, 116, 0.5) !important;
+  color: #fdba74 !important;
+}
+.hub-filter-pill.lobo.active {
+  background: rgba(253, 186, 116, 0.1) !important;
+  box-shadow: 0 0 15px rgba(253, 186, 116, 0.2) !important;
+}
+/* Sub-filters pill bar styles */
+.sub-filters-bar {
+  opacity: 0;
+  animation: filterFadeIn 0.3s forwards ease-out;
+}
+@keyframes filterFadeIn {
+  to { opacity: 1; }
+}
+.sub-filter-pill {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
+.sub-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+/* Sub-filter hover/active styles mapped dynamically by main level active class */
+.sub-filter-pill.colibri:hover,
+.sub-filter-pill.colibri.active {
+  border-color: rgba(114, 176, 77, 0.3) !important;
+  color: #72b04d !important;
+}
+.sub-filter-pill.colibri.active {
+  background: rgba(114, 176, 77, 0.07) !important;
+}
+.sub-filter-pill.ajolote:hover,
+.sub-filter-pill.ajolote.active {
+  border-color: rgba(91, 194, 247, 0.3) !important;
+  color: #5bc2f7 !important;
+}
+.sub-filter-pill.ajolote.active {
+  background: rgba(91, 194, 247, 0.07) !important;
+}
+.sub-filter-pill.lobo:hover,
+.sub-filter-pill.lobo.active {
+  border-color: rgba(253, 186, 116, 0.3) !important;
+  color: #fdba74 !important;
+}
+.sub-filter-pill.lobo.active {
+  background: rgba(253, 186, 116, 0.07) !important;
 }
 .dash-header {
   background: rgba(255, 255, 255, 0.02);

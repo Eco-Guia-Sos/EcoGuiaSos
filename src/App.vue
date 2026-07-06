@@ -203,7 +203,7 @@ const isFullLayoutHidden = computed(() =>
 // Rutas que necesitan fondo oscuro (todas excepto Home y Mapa)
 const darkRoutes = [
   '/cursos', '/ecotecnias', '/agua', '/lecturas', '/documentales', '/firmas',
-  '/agentes', '/voluntariados', '/convocatoria', '/normativa', '/fondos',
+  '/eco-tecnologia', '/agentes', '/voluntariados', '/convocatoria', '/normativa', '/fondos',
   '/nosotros', '/auth', '/como-usar', '/favoritos', '/admin',
   '/eventos/', '/lugares', '/guia-usuario', '/guia-actor',
   '/reset-password', '/admin-login', '/causas'

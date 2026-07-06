@@ -439,31 +439,31 @@ body.is-admin .stat-card.only-admin {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
 }
 
-/* 4. Hub Colibrí (Nivel 1 - Energía: Amarillo/Dorado) */
+/* 4. Hub Colibrí (Verde Colibrí) */
 .admin-menu li.menu-item-colibri a:hover,
 .admin-menu li.menu-item-colibri.active a {
-    background: rgba(255, 193, 7, 0.08);
-    color: #ffd54f;
-    border-color: rgba(255, 193, 7, 0.3);
-    box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+    background: rgba(114, 176, 77, 0.08);
+    color: #72b04d;
+    border-color: rgba(114, 176, 77, 0.3);
+    box-shadow: 0 0 15px rgba(114, 176, 77, 0.25);
 }
 
-/* 5. Hub Ajolote (Nivel 2 - Nopal: Verde) */
+/* 5. Hub Ajolote (Azul Ajolote) */
 .admin-menu li.menu-item-ajolote a:hover,
 .admin-menu li.menu-item-ajolote.active a {
-    background: rgba(76, 175, 80, 0.08);
-    color: #81c784;
-    border-color: rgba(76, 175, 80, 0.4);
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.35);
+    background: rgba(59, 130, 246, 0.08);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
 }
 
-/* 6. Hub Lobo (Nivel 3 - Agua: Azul) */
+/* 6. Hub Lobo (Morado Lobo) */
 .admin-menu li.menu-item-lobo a:hover,
 .admin-menu li.menu-item-lobo.active a {
-    background: rgba(3, 169, 244, 0.08);
-    color: #4fc3f7;
-    border-color: rgba(3, 169, 244, 0.4);
-    box-shadow: 0 0 15px rgba(3, 169, 244, 0.35);
+    background: rgba(139, 92, 246, 0.08);
+    color: #8b5cf6;
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
 }
 
 /* 7. Ajustes (Gris Slate Moderno) */
@@ -1014,48 +1014,48 @@ body.is-admin .stat-card.only-admin {
     transition: all 0.3s;
 }
 
-/* Colibrí (Nivel 1 - Energía: Amarillo) */
+/* Colibrí (Verde Colibrí) */
 .hub-card-colibri i {
-    color: #ffd54f;
-    background: rgba(255, 193, 7, 0.1);
+    color: #72b04d;
+    background: rgba(114, 176, 77, 0.1);
 }
 .hub-card-colibri:hover {
-    border-color: rgba(255, 193, 7, 0.4);
-    box-shadow: 0 10px 25px -5px rgba(255, 193, 7, 0.15);
+    border-color: rgba(114, 176, 77, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(114, 176, 77, 0.15);
 }
 .hub-card-colibri:hover i {
-    background: #ffd54f;
-    color: #111;
+    background: #72b04d;
+    color: #fff;
     transform: scale(1.1);
 }
 
-/* Ajolote (Nivel 2 - Nopal: Verde) */
+/* Ajolote (Azul Ajolote) */
 .hub-card-ajolote i {
-    color: #81c784;
-    background: rgba(76, 175, 80, 0.1);
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
 }
 .hub-card-ajolote:hover {
-    border-color: rgba(76, 175, 80, 0.4);
-    box-shadow: 0 10px 25px -5px rgba(76, 175, 80, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15);
 }
 .hub-card-ajolote:hover i {
-    background: #81c784;
-    color: #111;
+    background: #3b82f6;
+    color: #fff;
     transform: scale(1.1);
 }
 
-/* Lobo (Nivel 3 - Agua: Azul) */
+/* Lobo (Morado Lobo) */
 .hub-card-lobo i {
-    color: #4fc3f7;
-    background: rgba(3, 169, 244, 0.1);
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.1);
 }
 .hub-card-lobo:hover {
-    border-color: rgba(3, 169, 244, 0.4);
-    box-shadow: 0 10px 25px -5px rgba(3, 169, 244, 0.15);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15);
 }
 .hub-card-lobo:hover i {
-    background: #4fc3f7;
-    color: #111;
+    background: #8b5cf6;
+    color: #fff;
     transform: scale(1.1);
 }
 

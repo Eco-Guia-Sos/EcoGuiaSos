@@ -84,3 +84,17 @@ Cualquier agente de IA o desarrollador debe auditar y validar estas directivas e
 25. **Race Conditions:** Actualizar contadores o saldos mediante sentencias atómicas directamente en base de datos.
 26. **Validación de Precios:** No confiar en precios suministrados por el frontend.
 27. **Idempotencia:** Evitar peticiones duplicadas usando identificadores únicos de transacciones.
+
+---
+
+## 🎨 5. Estándares de Tarjetas Dinámicas (Hubs de Animales)
+
+### 5.1 Estructura y Mapeo de Datos
+* **Almacenamiento**: Todos los recursos dinámicos (Cursos, Ecotecnias, Agua, Lecturas, Documentales, Firmas, Eco-tecnología, Normativa, Fondos, Voluntariados, Convocatorias, Causas) se guardan en la tabla `contenido_secciones` con su respectivo `seccion_id`.
+* **Mapeo de Relaciones**: No dependas de consultas relacionales directas de Supabase/PostgREST en la tabla `contenido_secciones` para obtener perfiles de autor (`perfiles`). Realiza un mapa manual en JavaScript en el frontend consultando los IDs de perfil únicos para evadir errores de cache relacional de Supabase.
+
+### 5.2 Formato de Descripción y Resumen
+* **Descripción Corta (Tarjeta)**: Toda tarjeta que muestre texto a la vista debe priorizar el campo `descripcion_corta` almacenado dentro de la columna JSON de `descripcion`.
+* **Fallback**: Si `descripcion_corta` está ausente o vacío, se debe recortar la descripción larga automáticamente a los primeros 150 caracteres usando el helper `getBriefDescription`.
+* **Aislamiento**: Las tarjetas de las secciones fijas **Eventos** (`eventos`) y **Lugares** (`lugares`) no deben ser modificadas, ya que tienen su propio formato estandarizado sin descripción a la vista.
+

@@ -85,6 +85,12 @@ const router = createRouter({
       component: DynamicSectionView,
       props: { sectionId: 'firmas', parentHub: 'colibri' }
     },
+    {
+      path: '/eco-tecnologia',
+      name: 'eco-tecnologia',
+      component: DynamicSectionView,
+      props: { sectionId: 'eco-tecnologia', parentHub: 'colibri' }
+    },
     // Dynamic sections for Hub Ajolote
     {
       path: '/voluntariados',
@@ -131,6 +137,11 @@ const router = createRouter({
     {
       path: '/causas/:id',
       name: 'causa-detalle',
+      component: DetailView
+    },
+    {
+      path: '/eco-tecnologia/:id',
+      name: 'eco-tecnologia-detalle',
       component: DetailView
     },
     {

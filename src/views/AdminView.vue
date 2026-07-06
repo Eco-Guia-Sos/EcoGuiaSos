@@ -124,6 +124,7 @@ const editingItem = ref<any>({
   titulo: '',
   descripcion: '',
   descripcion_texto: '',
+  descripcion_corta: '',
   categoria: 'General',
   ubicacion: 'CDMX',
   lat: 19.4326,
@@ -605,6 +606,15 @@ const SECTION_CONFIGS: Record<string, { label: string; fields: Array<{ id: strin
       { id: 'instagram', label: 'Instagram (URL)', type: 'text', placeholder: 'https://instagram.com/...' },
       { id: 'facebook', label: 'Facebook (URL)', type: 'text', placeholder: 'https://facebook.com/...' }
     ]
+  },
+  'eco-tecnologia': {
+    label: 'Eco-tecnología',
+    fields: [
+      { id: 'categoria_tech', label: 'Categoría Tecnológica', type: 'select', options: ['Inteligencia Artificial', 'Hardware/IoT', 'Software Verde', 'Energías Limpias'] },
+      { id: 'tipo_recurso', label: 'Tipo de Recurso', type: 'select', options: ['Sitios Web', 'Videos', 'Repositorios', 'Artículos'] },
+      { id: 'desarrollador', label: 'Desarrollador / Organización', type: 'text', placeholder: 'Ej: Rainforest Connection' },
+      { id: 'stack', label: 'Tecnologías / Stack', type: 'text', placeholder: 'Ej: Python, Raspberry Pi, TensorFlow' }
+    ]
   }
 }
 
@@ -617,7 +627,8 @@ const hubsConfig = {
       { id: 'agua', label: 'Agua', icon: 'fa-solid fa-water' },
       { id: 'lecturas', label: 'Lecturas', icon: 'fa-solid fa-book' },
       { id: 'documentales', label: 'Documentales', icon: 'fa-solid fa-video' },
-      { id: 'firmas', label: 'Firmas', icon: 'fa-solid fa-file-signature' }
+      { id: 'firmas', label: 'Firmas', icon: 'fa-solid fa-file-signature' },
+      { id: 'eco-tecnologia', label: 'Eco-tecnología', icon: 'fa-solid fa-microchip' }
     ]
   },
   ajolote: {
@@ -1245,6 +1256,7 @@ const openAddModal = () => {
     titulo: '',
     descripcion: '',
     descripcion_texto: '',
+    descripcion_corta: '',
     categoria: '',
     ubicacion: 'CDMX',
     lat: 19.4326,
@@ -1398,6 +1410,7 @@ const openEditModal = (item: any) => {
 
     editingItem.value.titulo = item.titulo || item.nombre || ''
     editingItem.value.descripcion_texto = descTxt
+    editingItem.value.descripcion_corta = metaFields.descripcion_corta || ''
     editingItem.value.meta = metaFields
     isContentModalOpen.value = true
   }
@@ -1505,6 +1518,7 @@ const saveItem = async () => {
       // Dynamic Section Contents
       const fullDesc = JSON.stringify({
         ...editingItem.value.meta,
+        descripcion_corta: editingItem.value.descripcion_corta || '',
         descripcion_texto: editingItem.value.descripcion_texto
       })
       
@@ -4068,6 +4082,11 @@ const formatRelativeDate = (dateStr: string) => {
           <div class="form-group">
             <label>Título / Nombre</label>
             <input type="text" v-model="editingItem.titulo" required />
+          </div>
+          
+          <div class="form-group" v-if="selectedSection && selectedSection !== 'eventos' && selectedSection !== 'lugares'">
+            <label>Descripción Corta (Para Tarjetas)</label>
+            <textarea v-model="editingItem.descripcion_corta" rows="2" placeholder="Pequeño resumen para la tarjeta de presentación..."></textarea>
           </div>
           
           <div class="form-group">

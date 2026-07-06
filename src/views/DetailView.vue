@@ -67,14 +67,16 @@ let mapInstance: any = null
 
 const itemId = computed(() => route.params.id as string)
 const isCausaType = computed(() => route.path.includes('causas'))
+const isEcoTecType = computed(() => route.path.includes('eco-tecnologia'))
 const isEventType = computed(() => route.path.includes('eventos'))
 const typeLabel = computed(() => {
   if (isCausaType.value) return 'causa'
+  if (isEcoTecType.value) return 'eco-tecnologia'
   if (isEventType.value) return 'evento'
   return 'lugar'
 })
 const tableName = computed(() => {
-  if (isCausaType.value) return 'contenido_secciones'
+  if (isCausaType.value || isEcoTecType.value) return 'contenido_secciones'
   if (isEventType.value) return 'eventos'
   return 'lugares'
 })
@@ -719,7 +721,7 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <div :class="isCausaType ? 'theme-ajolote' : (isEventType ? 'theme-gaia' : 'theme-eco')">
+  <div :class="isCausaType ? 'theme-ajolote' : (isEcoTecType ? 'theme-colibri' : (isEventType ? 'theme-gaia' : 'theme-eco'))">
     <!-- LOADING SHIMMER -->
     <div v-if="loading" id="detail-loader" class="full-screen-loader">
       <div class="spinner"></div>
@@ -745,7 +747,7 @@ watch(() => route.path, () => {
             <div class="hero-meta">
               <div class="meta-item">
                 <i class="fa-solid fa-tag"></i>
-                <span id="detail-category">{{ formatCategory(item.categoria) }}</span>
+                <span id="detail-category">{{ isEcoTecType ? (item.meta?.categoria_tech || 'Eco-tecnología') : formatCategory(item.categoria) }}</span>
               </div>
               <div class="meta-item highlight">
                 <i class="fa-solid fa-clock"></i>
@@ -917,9 +919,9 @@ watch(() => route.path, () => {
             <span 
               id="detail-type-badge" 
               class="badge-pill type-badge"
-              :style="`background: ${isCausaType ? 'var(--color-eco)' : (isEventType ? 'var(--color-gaia)' : 'var(--color-eco)')};`"
+              :style="`background: ${isCausaType ? 'var(--color-eco)' : (isEcoTecType ? 'var(--color-colibri)' : (isEventType ? 'var(--color-gaia)' : 'var(--color-eco)'))};`"
             >
-              {{ isCausaType ? 'CAUSA SOLIDARIA' : (isEventType ? 'EVENTO ECOLÓGICO' : 'LUGAR SUSTENTABLE') }}
+              {{ isCausaType ? 'CAUSA SOLIDARIA' : (isEcoTecType ? 'RECURSO TECNOLÓGICO' : (isEventType ? 'EVENTO ECOLÓGICO' : 'LUGAR SUSTENTABLE')) }}
             </span>
 
             <!-- Controls (if more than 1 image) -->
@@ -955,7 +957,23 @@ watch(() => route.path, () => {
             
             <div class="sidebar-info">
               <!-- Location block -->
-              <div v-if="isCausaType" class="location-box" style="margin-bottom: 20px;">
+              <div v-if="isEcoTecType" class="location-box" style="margin-bottom: 20px;">
+                <p class="location-label">DESARROLLADOR / CREADOR</p>
+                <h4 style="color: var(--color-colibri); margin: 4px 0 12px 0; font-weight: 700; font-size: 1.15rem;">
+                  👨‍💻 {{ item.meta?.desarrollador || 'Desarrollador' }}
+                </h4>
+                
+                <p class="location-label">CATEGORÍA TECNOLÓGICA</p>
+                <h4 style="color: white; margin: 4px 0 12px 0; font-weight: 700; font-size: 1.1rem;">
+                  🌍 {{ item.meta?.categoria_tech || 'General' }}
+                </h4>
+                
+                <p v-if="item.meta?.stack" class="location-label">STACK / TECNOLOGÍAS</p>
+                <h4 v-if="item.meta?.stack" style="color: #5bc2f7; margin: 4px 0 0 0; font-weight: 700; font-size: 1.1rem;">
+                  💻 {{ item.meta.stack }}
+                </h4>
+              </div>
+              <div v-else-if="isCausaType" class="location-box" style="margin-bottom: 20px;">
                 <p class="location-label">ORGANIZADOR</p>
                 <h4 style="color: var(--color-eco); margin: 4px 0 12px 0; font-weight: 700; font-size: 1.15rem;">
                   🐢 {{ item.meta?.organizador || 'Campamento Tortuguero Palmarito' }}
@@ -1024,9 +1042,20 @@ watch(() => route.path, () => {
                   <i class="fa-solid fa-hand-holding-dollar"></i> Apoyar en GoFundMe
                 </a>
 
+                <!-- Redirection button for Eco-tecnología resource -->
+                <a 
+                  v-if="isEcoTecType && item.enlace_externo"
+                  :href="item.enlace_externo" 
+                  target="_blank" 
+                  class="btn btn-primary full-width shimmer-extra"
+                  style="margin-bottom: 8px; justify-content: center; background: var(--color-colibri); color: #000; font-weight: 700; border-color: transparent;"
+                >
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Acceder al Recurso
+                </a>
+
                 <!-- Google Maps redirection (Presencial / Hybrid only) -->
                 <a 
-                  v-if="!isCausaType && item.modalidad !== 'en_linea' && item.lat && item.lng"
+                  v-if="!isCausaType && !isEcoTecType && item.modalidad !== 'en_linea' && item.lat && item.lng"
                   :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
                   target="_blank" 
                   class="btn btn-secondary full-width"
@@ -1043,7 +1072,7 @@ watch(() => route.path, () => {
                   @click="router.push(`/admin/editar/${typeLabel}/${itemId}`)"
                   style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; margin-bottom: 8px; justify-content: center; display: flex; align-items: center; gap: 8px; font-weight: 700;"
                 >
-                  <i class="fa-solid fa-pen-to-square"></i> Editar {{ isCausaType ? 'Causa' : isEventType ? 'Evento' : 'Lugar' }}
+                  <i class="fa-solid fa-pen-to-square"></i> Editar {{ isCausaType ? 'Causa' : (isEcoTecType ? 'Recurso' : (isEventType ? 'Evento' : 'Lugar')) }}
                 </button>
                 <button 
                   v-if="authStore.user && item && item.drive_fotos_url"
