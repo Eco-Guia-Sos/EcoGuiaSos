@@ -44,6 +44,7 @@ const resolveItemSection = (item: any) => {
   if (selectedSection.value) return selectedSection.value
   if (item.seccion_id) return item.seccion_id
   if (item.fecha_inicio) return 'eventos'
+  if (item.descripcion_general !== undefined) return 'super-eventos'
   return 'lugares'
 }
 
@@ -79,6 +80,7 @@ const isMobileSidebarActive = ref(false)
 // Modals
 const isEventModalOpen = ref(false)
 const isPlaceModalOpen = ref(false)
+const isSuperEventModalOpen = ref(false)
 const isContentModalOpen = ref(false)
 const isPermissionsModalOpen = ref(false)
 const isProfileAdminModalOpen = ref(false)
@@ -659,7 +661,8 @@ const actorFunctions = ref<Record<string, boolean>>({
   puede_crear_lugares: true,
   puede_enviar_notificaciones: false,
   visible_en_directorio: true,
-  puede_gestionar_slider: false
+  puede_gestionar_slider: false,
+  puede_crear_super_eventos: false
 })
 
 const fetchActorPermissions = async () => {
@@ -766,6 +769,8 @@ const fetchListData = async () => {
       query = supabase.from('eventos').select('*, publicador:owner_id(nombre_completo)')
     } else if (selectedSection.value === 'lugares') {
       query = supabase.from('lugares').select('*, publicador:owner_id(nombre_completo)')
+    } else if (selectedSection.value === 'super-eventos') {
+      query = supabase.from('super_eventos').select('*, publicador:owner_id(nombre_completo)')
     } else {
       query = supabase.from('contenido_secciones').select('*').eq('seccion_id', selectedSection.value)
     }
@@ -1118,9 +1123,11 @@ const activeSocialInputs = ref<Record<string, boolean>>({
 })
 
 const approvedPlacesList = ref<any[]>([])
+const superEventosList = ref<any[]>([])
 const gmapsLink = ref('')
 const isUploadingImages = ref(false)
 const eventImagesInput = ref<HTMLInputElement | null>(null)
+const superEventImagesInput = ref<HTMLInputElement | null>(null)
 
 const fetchApprovedPlaces = async () => {
   try {
@@ -1133,6 +1140,21 @@ const fetchApprovedPlaces = async () => {
     }
   } catch (err) {
     console.error('Error fetching approved places:', err)
+  }
+}
+
+const fetchSuperEventosList = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('super_eventos')
+      .select('id, nombre')
+      .eq('estado', 'approved')
+      .order('nombre', { ascending: true })
+    if (!error && data) {
+      superEventosList.value = data
+    }
+  } catch (err) {
+    console.error('Error fetching approved super eventos:', err)
   }
 }
 
@@ -1301,6 +1323,9 @@ const openAddModal = () => {
     isEventModalOpen.value = true
   } else if (selectedSection.value === 'lugares') {
     isPlaceModalOpen.value = true
+  } else if (selectedSection.value === 'super-eventos') {
+    editingItem.value.descripcion_general = ''
+    isSuperEventModalOpen.value = true
   } else {
     isContentModalOpen.value = true
   }
@@ -1383,6 +1408,27 @@ const openEditModal = (item: any) => {
     isEventModalOpen.value = true
   } else if (selectedSection.value === 'lugares') {
     isPlaceModalOpen.value = true
+  } else if (selectedSection.value === 'super-eventos') {
+    editingItem.value.nombre = item.nombre || ''
+    editingItem.value.descripcion_corta = item.descripcion_corta || ''
+    editingItem.value.descripcion_general = item.descripcion_general || ''
+    editingItem.value.social_fb = item.social_fb || ''
+    editingItem.value.social_ig = item.social_ig || ''
+    editingItem.value.social_wa = item.social_wa || ''
+    editingItem.value.social_x = item.social_x || ''
+    editingItem.value.social_yt = item.social_yt || ''
+    editingItem.value.social_web = item.social_web || ''
+
+    activeSocialInputs.value = {
+      fb: !!item.social_fb,
+      ig: !!item.social_ig,
+      wa: !!item.social_wa,
+      x: !!item.social_x,
+      yt: !!item.social_yt,
+      web: !!item.social_web
+    }
+
+    isSuperEventModalOpen.value = true
   } else {
     // Parse meta fields from description JSON
     let descTxt = item.descripcion || ''
@@ -1485,6 +1531,7 @@ const saveItem = async () => {
 
       dbPayload = {
         ...eventData,
+        super_evento_id: editingItem.value.super_evento_id || null,
         imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
         imagenes: editingItem.value.imagenes || [],
         estado: isEditing ? editingItem.value.estado : (isUserAdmin.value ? 'approved' : 'pending')
@@ -1513,6 +1560,26 @@ const saveItem = async () => {
         ...placeData,
         imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
         estado: isEditing ? editingItem.value.estado : (isUserAdmin.value ? 'approved' : 'pending')
+      }
+    } else if (selectedSection.value === 'super-eventos') {
+      if (!editingItem.value.nombre) {
+        alert('El nombre del súper evento es obligatorio.')
+        savingItem.value = false
+        return
+      }
+      dbPayload = {
+        nombre: editingItem.value.nombre,
+        descripcion_corta: editingItem.value.descripcion_corta || '',
+        descripcion_general: editingItem.value.descripcion_general || '',
+        imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
+        social_fb: editingItem.value.social_fb || '',
+        social_ig: editingItem.value.social_ig || '',
+        social_wa: editingItem.value.social_wa || '',
+        social_x: editingItem.value.social_x || '',
+        social_yt: editingItem.value.social_yt || '',
+        social_web: editingItem.value.social_web || '',
+        imagenes: editingItem.value.imagenes || [],
+        estado: isEditing ? editingItem.value.estado : (isUserAdmin.value || actorFunctions.value.puede_crear_super_eventos ? 'approved' : 'pending')
       }
     } else {
       // Dynamic Section Contents
@@ -1567,6 +1634,16 @@ const saveItem = async () => {
         const { error: e } = await supabase.from('lugares').insert(dbPayload)
         error = e
       }
+    } else if (selectedSection.value === 'super-eventos') {
+      if (isEditing) {
+        console.log('[Save Debug] Calling Supabase super_eventos UPDATE for ID:', editingItem.value.id)
+        const { error: e } = await supabase.from('super_eventos').update(dbPayload).eq('id', editingItem.value.id)
+        error = e
+      } else {
+        console.log('[Save Debug] Calling Supabase super_eventos INSERT')
+        const { error: e } = await supabase.from('super_eventos').insert(dbPayload)
+        error = e
+      }
     } else {
       if (isEditing) {
         console.log('[Save Debug] Calling Supabase contenido_secciones UPDATE for ID:', editingItem.value.id)
@@ -1613,6 +1690,9 @@ const deleteItem = async (item: any) => {
       error = e
     } else if (section === 'lugares') {
       const { error: e } = await supabase.from('lugares').delete().eq('id', item.id)
+      error = e
+    } else if (section === 'super-eventos') {
+      const { error: e } = await supabase.from('super_eventos').delete().eq('id', item.id)
       error = e
     } else {
       const { error: e } = await supabase.from('contenido_secciones').delete().eq('id', item.id)
@@ -2356,6 +2436,7 @@ const navigateTo = (view: string) => {
 const closeAllModals = () => {
   isEventModalOpen.value = false
   isPlaceModalOpen.value = false
+  isSuperEventModalOpen.value = false
   isContentModalOpen.value = false
   isPermissionsModalOpen.value = false
   isProfileAdminModalOpen.value = false
@@ -2436,6 +2517,7 @@ onMounted(async () => {
     fetchGlobalStats(),
     fetchDashboardList(),
     fetchApprovedPlaces(),
+    fetchSuperEventosList(),
     isUserAdmin.value ? loadConfig() : Promise.resolve()
   ])
 
@@ -2566,6 +2648,17 @@ const formatRelativeDate = (dateStr: string) => {
               <a href="#" @click.prevent="selectSection('eventos')">
                 <i class="fa-solid fa-calendar-days" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">{{ isUserAdmin ? 'Eventos' : 'Mis Eventos' }}</span>
+              </a>
+            </li>
+
+            <li 
+              v-if="isUserAdmin || actorFunctions.puede_crear_super_eventos" 
+              class="menu-item-contenidos"
+              :class="{ 'active': selectedSection === 'super-eventos' }"
+            >
+              <a href="#" @click.prevent="selectSection('super-eventos')">
+                <i class="fa-solid fa-trophy" style="margin-right:10px;"></i>
+                <span v-if="!isSidebarCollapsed">Super Eventos</span>
               </a>
             </li>
 
@@ -2920,7 +3013,7 @@ const formatRelativeDate = (dateStr: string) => {
                         </option>
                       </select>
                     </th>
-                    <th v-if="selectedSection === 'eventos' || selectedSection === 'lugares'" style="padding: 15px 20px; color: white;">
+                    <th v-if="selectedSection === 'eventos' || selectedSection === 'lugares' || selectedSection === 'super-eventos'" style="padding: 15px 20px; color: white;">
                       <select v-model="publisherFilter" style="background: transparent; color: white; border: none; font-weight: bold; font-size: inherit; cursor: pointer; outline: none; padding-right: 5px;">
                         <option value="all" style="background: #1e293b; color: white;">Publicador (Todos)</option>
                         <option v-for="pub in uniquePublishers" :key="pub" :value="pub" style="background: #1e293b; color: white;">
@@ -2960,9 +3053,9 @@ const formatRelativeDate = (dateStr: string) => {
                       {{ item.nombre || item.titulo }}
                     </td>
                     <td style="padding: 15px 20px; color: #94a3b8; font-weight: 600;">
-                      {{ formatCategory(item.categoria || (item.fecha_inicio ? 'EVENTO' : 'LUGAR')).toUpperCase() }}
+                      {{ selectedSection === 'super-eventos' ? 'SÚPER EVENTO' : formatCategory(item.categoria || (item.fecha_inicio ? 'EVENTO' : 'LUGAR')).toUpperCase() }}
                     </td>
-                    <td v-if="selectedSection === 'eventos' || selectedSection === 'lugares'" style="padding: 15px 20px; color: #94a3b8; font-size: 0.9rem;">
+                    <td v-if="selectedSection === 'eventos' || selectedSection === 'lugares' || selectedSection === 'super-eventos'" style="padding: 15px 20px; color: #94a3b8; font-size: 0.9rem;">
                       {{ item.publicador?.nombre_completo || 'Sistema' }}
                     </td>
                     <td v-if="selectedSection === 'eventos'" style="padding: 15px 20px;">
@@ -3766,6 +3859,19 @@ const formatRelativeDate = (dateStr: string) => {
               </div>
             </div>
 
+            <!-- Súper Evento -->
+            <div class="form-group">
+              <label>Súper Evento (Opcional)</label>
+              <div class="input-wrapper">
+                <select v-model="editingItem.super_evento_id">
+                  <option value="">Ninguno / Evento Independiente</option>
+                  <option v-for="se in superEventosList" :key="se.id" :value="se.id">
+                    {{ se.nombre }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
             <!-- Fechas -->
             <div class="form-group">
               <label>Fecha Inicio</label>
@@ -3996,6 +4102,108 @@ const formatRelativeDate = (dateStr: string) => {
             <button type="button" class="btn btn-secondary" @click="closeAllModals">Cancelar</button>
             <button type="submit" class="btn btn-primary" :disabled="savingItem">
               {{ savingItem ? 'Guardando...' : 'Guardar Evento' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL REGISTRO: SUPER EVENTO -->
+    <div v-if="isSuperEventModalOpen" class="modal-overlay">
+      <div class="modal-content admin-modal glass-effect" style="max-width: 600px; width: 90%;">
+        <div class="modal-header">
+          <h3>{{ editingItem.id ? 'Editar Super Evento' : 'Agregar Super Evento' }}</h3>
+          <button class="close-modal-btn" @click="closeAllModals">&times;</button>
+        </div>
+        <form @submit.prevent="saveItem" class="modal-body" style="display: flex; flex-direction: column; gap: 15px; padding: 20px;">
+          <div class="form-group">
+            <label>Nombre del Súper Evento</label>
+            <input type="text" v-model="editingItem.nombre" placeholder="Ej: Agroolimpiadas 2026" required />
+          </div>
+          <div class="form-group">
+            <label>Descripción Corta (Introducción / Tarjeta)</label>
+            <textarea v-model="editingItem.descripcion_corta" rows="3" placeholder="Un breve resumen del súper evento que aparecerá en la parte superior del detalle y en la tarjeta." required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Descripción General / Historia</label>
+            <textarea v-model="editingItem.descripcion_general" rows="6" placeholder="Explica a fondo los detalles del evento, los colectivos participantes, su historia y enlaces adicionales..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Imagen de Portada (URL)</label>
+            <input type="url" v-model="editingItem.imagen" placeholder="URL de la imagen de portada" />
+            <div style="margin-top: 8px;">
+              <span style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 4px;">O subir imagen local:</span>
+              <input type="file" @change="handleItemImageUpload($event, 'imagen')" accept="image/*" />
+            </div>
+          </div>
+
+          <!-- Imágenes de Galería / Cronogramas -->
+          <div class="form-group">
+            <label>Imágenes de Galería / Cronogramas</label>
+            <div class="image-upload-wrapper">
+              <button type="button" class="btn-admin" @click="superEventImagesInput?.click()" style="width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                <i class="fa-solid fa-images"></i> Añadir Imágenes
+              </button>
+              <input ref="superEventImagesInput" type="file" @change="handleEventImagesUpload" accept="image/*" multiple style="display: none;" />
+              
+              <div v-if="isUploadingImages" style="font-size: 0.85rem; color: var(--color-eco); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Subiendo imágenes...
+              </div>
+
+              <div v-if="editingItem.imagenes && editingItem.imagenes.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 10px;">
+                <div v-for="(img, idx) in editingItem.imagenes" :key="idx" style="position: relative; width: 100%; padding-bottom: 100%; border-radius: 8px; overflow: hidden;">
+                  <img :src="img" style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; object-fit: cover;" />
+                  <button type="button" @click="removeEventImage(Number(idx))" style="position: absolute; top: 5px; right: 5px; background: rgba(255, 0, 0, 0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Redes Sociales selector -->
+          <div class="form-group" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+            <label>Redes Sociales del Súper Evento (Haz clic en un icono para ingresar su enlace)</label>
+            <div class="social-selector" style="margin-bottom: 10px; display: flex; gap: 8px;">
+              <button type="button" class="social-btn facebook" :class="{ 'active': activeSocialInputs.fb }" @click="toggleSocialInput('fb')" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+              <button type="button" class="social-btn instagram" :class="{ 'active': activeSocialInputs.ig }" @click="toggleSocialInput('ig')" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+              <button type="button" class="social-btn whatsapp" :class="{ 'active': activeSocialInputs.wa }" @click="toggleSocialInput('wa')" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+              <button type="button" class="social-btn x-twitter" :class="{ 'active': activeSocialInputs.x }" @click="toggleSocialInput('x')" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+              <button type="button" class="social-btn youtube" :class="{ 'active': activeSocialInputs.yt }" @click="toggleSocialInput('yt')" title="YouTube"><i class="fa-brands fa-youtube"></i></button>
+              <button type="button" class="social-btn web" :class="{ 'active': activeSocialInputs.web }" @click="toggleSocialInput('web')" title="Sitio Web"><i class="fa-solid fa-globe"></i></button>
+            </div>
+            
+            <div class="social-inputs-container" style="display: flex; flex-direction: column; gap: 10px;">
+              <div v-if="activeSocialInputs.fb" class="social-input-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="color: #1877F2; width: 30px; margin: 0; display: inline-block; text-align: center;"><i class="fa-brands fa-facebook"></i></label>
+                <input type="url" v-model="editingItem.social_fb" placeholder="URL de Facebook..." style="flex: 1;" />
+              </div>
+              <div v-if="activeSocialInputs.ig" class="social-input-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="color: #E1306C; width: 30px; margin: 0; display: inline-block; text-align: center;"><i class="fa-brands fa-instagram"></i></label>
+                <input type="url" v-model="editingItem.social_ig" placeholder="URL de Instagram..." style="flex: 1;" />
+              </div>
+              <div v-if="activeSocialInputs.wa" class="social-input-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="color: #25D366; width: 30px; margin: 0; display: inline-block; text-align: center;"><i class="fa-brands fa-whatsapp"></i></label>
+                <input type="url" v-model="editingItem.social_wa" placeholder="Enlace de contacto / grupo WhatsApp..." style="flex: 1;" />
+              </div>
+              <div v-if="activeSocialInputs.x" class="social-input-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="color: #000000; width: 30px; margin: 0; display: inline-block; text-align: center;"><i class="fa-brands fa-x-twitter"></i></label>
+                <input type="url" v-model="editingItem.social_x" placeholder="Enlace de X (Twitter)..." style="flex: 1;" />
+              </div>
+              <div v-if="activeSocialInputs.yt" class="social-input-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="color: #FF0000; width: 30px; margin: 0; display: inline-block; text-align: center;"><i class="fa-brands fa-youtube"></i></label>
+                <input type="url" v-model="editingItem.social_yt" placeholder="Video / Canal de YouTube..." style="flex: 1;" />
+              </div>
+              <div v-if="activeSocialInputs.web" class="social-input-group" style="display: flex; align-items: center; gap: 8px;">
+                <label style="color: #72B04D; width: 30px; margin: 0; display: inline-block; text-align: center;"><i class="fa-solid fa-globe"></i></label>
+                <input type="url" v-model="editingItem.social_web" placeholder="Sitio Web oficial..." style="flex: 1;" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="margin-top: 15px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" @click="closeAllModals">Cancelar</button>
+            <button type="submit" class="btn btn-primary" :disabled="savingItem">
+              {{ savingItem ? 'Guardando...' : 'Guardar Súper Evento' }}
             </button>
           </div>
         </form>

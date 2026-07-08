@@ -209,6 +209,17 @@ const router = createRouter({
       name: 'mi-perfil',
       component: () => import('../views/MiPerfilVoluntarioView.vue'),
       meta: { requiresAuth: true }
+    },
+    // Super Eventos Views
+    {
+      path: '/super-eventos',
+      name: 'super-eventos',
+      component: () => import('../views/SuperEventosView.vue')
+    },
+    {
+      path: '/super-eventos/:id',
+      name: 'super-evento-detalle',
+      component: () => import('../views/SuperEventoDetalleView.vue')
     }
   ],
   scrollBehavior(_to, _from, savedPosition) {

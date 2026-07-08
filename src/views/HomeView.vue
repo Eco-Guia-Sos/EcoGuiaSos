@@ -1086,6 +1086,7 @@ const scrollToSection = (id: string) => {
                 <li><RouterLink to="/voluntariados">🤝 Ayuda</RouterLink></li>
                 <li><RouterLink to="/causas">💝 Causas / Rifas</RouterLink></li>
                 <li><RouterLink to="/lugares">🌿 Lugares</RouterLink></li>
+                <li><RouterLink to="/super-eventos">🏆 Eventos Especiales</RouterLink></li>
               </ul>
             </div>
           </div>
