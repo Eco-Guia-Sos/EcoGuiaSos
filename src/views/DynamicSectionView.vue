@@ -50,10 +50,11 @@ const hubsConfig = {
     heroDesc: 'Encuentra agentes de cambio, súmate a voluntariados o participa en convocatorias activas.',
     links: [
       { name: 'Agentes', path: '/agentes', icon: 'fa-solid fa-users', id: 'agentes' },
-      { name: 'Voluntariados', path: '/voluntariados', icon: 'fa-solid fa-hands-helping', id: 'voluntariados' },
-      { name: 'Convocatoria', path: '/convocatoria', icon: 'fa-solid fa-bullhorn', id: 'convocatoria' },
-      { name: 'Causas', path: '/causas', icon: 'fa-solid fa-hand-holding-heart', id: 'causas' },
-      { name: 'Lugares', path: '/lugares', icon: 'fa-solid fa-map-pin', id: 'lugares' }
+      { name: 'Convocatorias', path: '/convocatoria', icon: 'fa-solid fa-bullhorn', id: 'convocatorias' },
+      { name: 'Ayuda', path: '/voluntariados', icon: 'fa-solid fa-handshake', id: 'voluntariados' },
+      { name: 'Causas / Rifas', path: '/causas', icon: 'fa-solid fa-hand-holding-heart', id: 'causas' },
+      { name: 'Lugares', path: '/lugares', icon: 'fa-solid fa-map-pin', id: 'lugares' },
+      { name: 'Eventos Especiales', path: '/super-eventos', icon: 'fa-solid fa-trophy', id: 'super-eventos' }
     ],
     labels: {
       agentes: 'Agente',

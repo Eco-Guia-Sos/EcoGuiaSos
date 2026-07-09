@@ -171,10 +171,11 @@ onMounted(async () => {
       <div class="subnav-scroll-wrapper fade-in">
         <nav class="level-subnav">
           <RouterLink to="/agentes" class="subnav-link active"><i class="fa-solid fa-users"></i> Agentes</RouterLink>
-          <RouterLink to="/voluntariados" class="subnav-link"><i class="fa-solid fa-hands-helping"></i> Voluntariados</RouterLink>
-          <RouterLink to="/convocatoria" class="subnav-link"><i class="fa-solid fa-bullhorn"></i> Convocatoria</RouterLink>
-          <RouterLink to="/causas" class="subnav-link"><i class="fa-solid fa-hand-holding-heart"></i> Causas</RouterLink>
+          <RouterLink to="/convocatoria" class="subnav-link"><i class="fa-solid fa-bullhorn"></i> Convocatorias</RouterLink>
+          <RouterLink to="/voluntariados" class="subnav-link"><i class="fa-solid fa-handshake"></i> Ayuda</RouterLink>
+          <RouterLink to="/causas" class="subnav-link"><i class="fa-solid fa-hand-holding-heart"></i> Causas / Rifas</RouterLink>
           <RouterLink to="/lugares" class="subnav-link"><i class="fa-solid fa-map-pin"></i> Lugares</RouterLink>
+          <RouterLink to="/super-eventos" class="subnav-link"><i class="fa-solid fa-trophy"></i> Eventos Especiales</RouterLink>
         </nav>
       </div>
     </header>
