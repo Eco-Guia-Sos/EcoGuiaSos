@@ -18,6 +18,10 @@ export const useHomeStore = defineStore('home', () => {
 
   const cargarDatos = async (lat?: number, lng?: number, radiusKm?: number, force = false) => {
     console.log('[homeStore] cargarDatos started. lat:', lat, 'lng:', lng, 'radiusKm:', radiusKm, 'force:', force)
+    if (loading.value) {
+      console.log('[homeStore] cargarDatos skipped: fetch already in progress')
+      return
+    }
     // Skip fetch if cache is still fresh and no specific coordinate parameters are specified
     if (!force && isCacheValid() && lat === undefined) {
       console.log('[homeStore] cargarDatos skipped: cache valid')
@@ -28,14 +32,12 @@ export const useHomeStore = defineStore('home', () => {
     error.value = null
 
     try {
-      // Fetch carousel
-      const { data: slides } = await supabase
+      // Setup carousel query promise
+      const slidesPromise = supabase
         .from('carrusel_principal')
         .select('*')
         .eq('activo', true)
         .order('orden', { ascending: true })
-
-      if (slides) carruselSlides.value = slides
 
       // Fetch events (upcoming and active events, lightweight payload)
       const today = new Date()
@@ -63,7 +65,13 @@ export const useHomeStore = defineStore('home', () => {
         queryEventos = queryEventos.order('fecha_inicio', { ascending: true }).limit(30)
       }
 
-      const { data: eventosData } = await queryEventos
+      // Execute both promises concurrently
+      const [slidesResult, eventosResult] = await Promise.all([slidesPromise, queryEventos])
+
+      const { data: slides } = slidesResult
+      const { data: eventosData } = eventosResult
+
+      if (slides) carruselSlides.value = slides
 
       // Fetch owner profiles
       const ownerIds = (eventosData || []).map((r: any) => r.owner_id).filter((v, i, a) => v && a.indexOf(v) === i)
