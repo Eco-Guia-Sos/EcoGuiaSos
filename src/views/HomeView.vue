@@ -1718,12 +1718,20 @@ const scrollToSection = (id: string) => {
             <p class="nivel-btn-desc">Oportunidades para tus proyectos.</p>
           </RouterLink>
           <RouterLink to="/voluntariados" class="nivel-btn-item glass-effect">
-            <span class="nivel-btn-title">🤝 Voluntariados</span>
+            <span class="nivel-btn-title">🤝 Ayuda</span>
             <p class="nivel-btn-desc">Eventos y jornadas cerca de ti.</p>
           </RouterLink>
           <RouterLink to="/causas" class="nivel-btn-item glass-effect">
             <span class="nivel-btn-title">💝 Causas / Rifas</span>
             <p class="nivel-btn-desc">Apoya causas locales y solidarias.</p>
+          </RouterLink>
+          <RouterLink to="/lugares" class="nivel-btn-item glass-effect">
+            <span class="nivel-btn-title">🌿 Lugares</span>
+            <p class="nivel-btn-desc">Lugares sustentables para visitar.</p>
+          </RouterLink>
+          <RouterLink to="/super-eventos" class="nivel-btn-item glass-effect">
+            <span class="nivel-btn-title">🏆 Eventos Especiales</span>
+            <p class="nivel-btn-desc">Festivales y macro eventos colectivos.</p>
           </RouterLink>
         </div>
         <button @click="scrollToTop" class="btn-back-to-top">

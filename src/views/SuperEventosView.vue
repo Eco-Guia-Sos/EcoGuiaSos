@@ -34,7 +34,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="theme-colibri" style="min-height: 100vh; background: #0b1329;">
+  <div class="theme-ajolote" style="min-height: 100vh; background: #0b1329;">
     <header class="interior-hero">
       <div class="hero-glass-panel">
         <span class="category-badge">🏆 Macro Eventos</span>

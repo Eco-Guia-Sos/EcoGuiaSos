@@ -338,7 +338,7 @@ watch(selectedEventDetail, (newVal, oldVal) => {
 </script>
 
 <template>
-  <div class="theme-colibri" style="min-height: 100vh; background: #0b1329;">
+  <div class="theme-ajolote" style="min-height: 100vh; background: #0b1329;">
     <!-- HEADER HERO BANNER -->
     <header class="interior-hero" style="position: relative; overflow: hidden; padding-bottom: 2rem;">
       <div 
