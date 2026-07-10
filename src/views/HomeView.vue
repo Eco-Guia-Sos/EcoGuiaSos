@@ -144,7 +144,7 @@ const isAdvancedSearchOpen = ref(false)
 const filtrosAvanzados = ref({
   categoria: 'all',
   ubicacion: userCoords.value ? 'nearby' : 'all',
-  distancia: 20,
+  distancia: 40,
   fechas: 'all',
   fechaExacta: '',
   soloGratis: false,
@@ -688,7 +688,7 @@ const obtenerUbicacionSilenciosa = () => {
         if (diff < 0.05) { // menos de 50 metros
           console.log('[GPS Silencioso] Ubicación sin cambios significativos (<50m).')
           proximidadActiva.value = true
-          filtrosAvanzados.value.distancia = 20
+          filtrosAvanzados.value.distancia = 40
           filtrosAvanzados.value.ubicacion = 'nearby'
           return
         }
@@ -696,7 +696,7 @@ const obtenerUbicacionSilenciosa = () => {
       userCoords.value = { lat: newLat, lng: newLng }
       localStorage.setItem('eco_user_coords', JSON.stringify(userCoords.value))
       proximidadActiva.value = true
-      filtrosAvanzados.value.distancia = 20
+      filtrosAvanzados.value.distancia = 40
       filtrosAvanzados.value.ubicacion = 'nearby'
     },
     (error) => {
@@ -936,7 +936,7 @@ const resetFiltros = () => {
   filtrosAvanzados.value = {
     categoria: 'all',
     ubicacion: 'all',
-    distancia: 20, // matching default initial value of 20
+    distancia: 40, // matching default initial value of 40
     fechas: 'all',
     fechaExacta: '',
     soloGratis: false,

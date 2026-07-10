@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecoguiasos-v13';
+const CACHE_NAME = 'ecoguiasos-v14';
 
 // URLs que NO deben ser interceptadas por el SW (APIs dinámicas y recursos externos CDN/imágenes/fuentes/CSP)
 const BYPASS_PATTERNS = [
@@ -26,7 +26,8 @@ const STATIC_ASSETS = [
     '/index.html',
     '/assets/img/logo-navbar.webp',
     '/assets/img/logo-carga.webp',
-    '/logo-app.webp'
+    '/logo-app.webp',
+    '/assets/gif/EGSBOOK.webp'
 ];
 
 // ==========================================
@@ -99,6 +100,10 @@ self.addEventListener('fetch', event => {
                 // Sin red: buscar en caché (modo offline)
                 return caches.match(event.request).then(cachedResponse => {
                     if (cachedResponse) return cachedResponse;
+                    // SPA Offline Fallback: si es una petición de navegación, servir index.html
+                    if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {
+                        return caches.match('/index.html');
+                    }
                     return new Response('Recurso no disponible offline', { status: 404, statusText: 'Offline' });
                 });
             })
