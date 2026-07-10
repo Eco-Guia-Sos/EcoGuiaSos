@@ -876,35 +876,6 @@ watch(() => route.path, () => {
               </div>
             </section>
 
-            <!-- Parent Super Event Card Section -->
-            <section 
-              v-if="parentSuperEvento" 
-              class="info-section actor-card-lite"
-              style="margin-top: 40px; padding: 20px; background: rgba(114, 176, 77, 0.05); border-radius: 15px; border: 1px solid rgba(114, 176, 77, 0.15);"
-            >
-              <h3 style="font-size: 1.1rem; color: #72b04d; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Este evento forma parte de:</h3>
-              <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <img 
-                  :src="parentSuperEvento.imagen_url || '/assets/img/logo-app.webp'" 
-                  style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid #72b04d;"
-                  @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
-                >
-                <div style="flex-grow: 1;">
-                  <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ parentSuperEvento.nombre }}</h4>
-                  <p style="margin: 3px 0 0 0; color: #cbd5e1; font-size: 0.85rem;">{{ parentSuperEvento.descripcion_corta }}</p>
-                </div>
-                <div style="display: flex; gap: 10px; margin-left: auto;">
-                  <RouterLink 
-                    :to="`/super-eventos/${parentSuperEvento.id}`" 
-                    class="btn btn-primary" 
-                    style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: #72b04d; border-color: #72b04d; color: white;"
-                  >
-                    🏆 Ver Súper Evento
-                  </RouterLink>
-                </div>
-              </div>
-            </section>
-
             <!-- Publisher Actor Card Section -->
             <section 
               v-if="actor" 
@@ -942,6 +913,35 @@ watch(() => route.path, () => {
                   >
                     {{ isFollowingActor ? '✓ Siguiendo' : '+ Seguir' }}
                   </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Parent Super Event Card Section -->
+            <section 
+              v-if="parentSuperEvento" 
+              class="info-section actor-card-lite"
+              style="margin-top: 20px; padding: 20px; background: rgba(114, 176, 77, 0.05); border-radius: 15px; border: 1px solid rgba(114, 176, 77, 0.15);"
+            >
+              <h3 style="font-size: 1.1rem; color: #72b04d; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Este evento forma parte de:</h3>
+              <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <img 
+                  :src="parentSuperEvento.imagen_url || '/assets/img/logo-app.webp'" 
+                  style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid #72b04d;"
+                  @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+                >
+                <div style="flex-grow: 1;">
+                  <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ parentSuperEvento.nombre }}</h4>
+                  <p style="margin: 3px 0 0 0; color: #cbd5e1; font-size: 0.85rem;">{{ parentSuperEvento.descripcion_corta }}</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-left: auto;">
+                  <RouterLink 
+                    :to="`/super-eventos/${parentSuperEvento.id}`" 
+                    class="btn btn-primary" 
+                    style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: #72b04d; border-color: #72b04d; color: white;"
+                  >
+                    🏆 Ver Súper Evento
+                  </RouterLink>
                 </div>
               </div>
             </section>
