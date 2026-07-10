@@ -1517,9 +1517,162 @@ html, body, #app {
     color: #5bc2f7;
 }
 
-/* Opción A: Esconder el chat del Header en móviles si hay botón de instalar, dejando que actúe el widget inferior */
-@media (max-width: 500px) {
-    .nav-actions-wrapper:has(.nav-install-item) .nav-chat-item {
+/* Ocultar menú de acciones móviles en pantallas de escritorio */
+.nav-mobile-actions-item {
+    display: none;
+    position: relative;
+}
+
+/* En pantallas móviles, ocultar botones individuales e interactivos del header y mostrar el botón unificado */
+@media (max-width: 768px) {
+    .nav-chat-item,
+    .nav-notif-item,
+    .nav-install-item {
         display: none !important;
     }
+    
+    .nav-mobile-actions-item {
+        display: flex;
+        align-items: center;
+    }
+
+    /* Fixed full-width overlays on mobile */
+    .notif-dropdown,
+    .install-dropdown {
+        position: fixed !important;
+        top: 75px !important;
+        left: 5% !important;
+        right: 5% !important;
+        width: 90% !important;
+        max-width: none !important;
+        z-index: 100000 !important;
+    }
+}
+
+.nav-mobile-actions-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-eco);
+    font-size: 1.25rem;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(5px);
+    position: relative;
+    outline: none;
+}
+
+.nav-mobile-actions-btn:hover {
+    background: rgba(114, 176, 77, 0.15);
+    border-color: var(--color-eco);
+}
+
+.mobile-notif-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ef4444;
+}
+
+/* Dropdown Menu styling */
+.mobile-actions-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 250px;
+    background: rgba(15, 22, 30, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    margin-top: 10px;
+    z-index: 99999;
+    overflow: hidden;
+}
+
+.mobile-actions-dropdown.hidden {
+    display: none;
+}
+
+.mobile-action-header {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-texto-secundario);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mobile-action-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-action-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 18px;
+    color: white;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.2s ease;
+}
+
+.mobile-action-link:last-child {
+    border-bottom: none;
+}
+
+.mobile-action-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-action-link i {
+    font-size: 1.15rem;
+    width: 22px;
+    text-align: center;
+}
+
+.mobile-action-link .fa-bell {
+    color: var(--color-eco);
+}
+
+.mobile-action-link .fa-comments {
+    color: var(--color-colibri);
+}
+
+.mobile-action-link .fa-circle-down {
+    color: #f59e0b;
+}
+
+.mobile-action-link.highlight-install {
+    background: rgba(245, 158, 11, 0.03);
+}
+
+.mobile-action-link.highlight-install:hover {
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.mobile-action-link .badge-count {
+    background: #ef4444;
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: auto;
 }

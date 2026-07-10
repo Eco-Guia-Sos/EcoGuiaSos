@@ -25,6 +25,7 @@ const isMenuOpen = ref(false)
 const isUserDropdownOpen = ref(false)
 const isNotifDropdownOpen = ref(false)
 const isInstallDropdownOpen = ref(false)
+const isMobileActionsOpen = ref(false)
 
 const supportChatRef = ref<any>(null)
 
@@ -35,6 +36,15 @@ const openSupportChat = () => {
     supportChatRef.value.showFab()
     supportChatRef.value.openChatDirectly()
   }
+}
+
+const toggleMobileActionsDropdown = (e: Event) => {
+  e.preventDefault()
+  e.stopPropagation()
+  isMobileActionsOpen.value = !isMobileActionsOpen.value
+  isUserDropdownOpen.value = false
+  isNotifDropdownOpen.value = false
+  isInstallDropdownOpen.value = false
 }
 
 
@@ -85,6 +95,7 @@ const closeDropdowns = () => {
   isUserDropdownOpen.value = false
   isNotifDropdownOpen.value = false
   isInstallDropdownOpen.value = false
+  isMobileActionsOpen.value = false
 }
 
 const displayName = computed(() => {
@@ -435,6 +446,47 @@ onErrorCaptured((err, instance, info) => {
                 <button v-if="!isiOS" class="btn btn-primary btn-install-dropdown" @click="triggerInstallPrompt">
                   <i class="fa-solid fa-download"></i> Instalar ahora
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Menú de Acciones Móvil (Solo visible en móviles) -->
+          <div class="nav-mobile-actions-item" @click.stop>
+            <button 
+              class="nav-mobile-actions-btn" 
+              @click="toggleMobileActionsDropdown"
+              aria-label="Menú de interacciones"
+            >
+              <i class="fa-solid fa-circle-nodes"></i>
+              <span v-if="unreadCount > 0" class="mobile-notif-dot"></span>
+            </button>
+
+            <div class="mobile-actions-dropdown" :class="{ 'hidden': !isMobileActionsOpen }">
+              <div class="mobile-action-header">Interacciones</div>
+              <div class="mobile-action-list">
+                <!-- Opción 1: Notificaciones -->
+                <a v-if="authStore.user" href="#" class="mobile-action-link" @click.prevent="toggleNotifDropdown">
+                  <i class="fa-solid fa-bell"></i>
+                  <span>Notificaciones</span>
+                  <span v-if="unreadCount > 0" class="badge-count">{{ unreadCount }}</span>
+                </a>
+
+                <!-- Opción 2: Soporte / Chat -->
+                <a v-if="authStore.user" href="#" class="mobile-action-link" @click.prevent="openSupportChat">
+                  <i class="fa-solid fa-comments"></i>
+                  <span>Soporte Técnico</span>
+                </a>
+
+                <!-- Opción 3: Instalar (Dinámico) -->
+                <a 
+                  v-if="showInstallBtn || deferredPrompt || isiOS" 
+                  href="#" 
+                  class="mobile-action-link highlight-install" 
+                  @click.prevent="toggleInstallDropdown"
+                >
+                  <i class="fa-solid fa-circle-down"></i>
+                  <span>Instalar Aplicación</span>
+                </a>
               </div>
             </div>
           </div>
