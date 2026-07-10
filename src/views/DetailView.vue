@@ -786,7 +786,8 @@ watch(() => route.path, () => {
 
       <!-- 2. CONTENT GRID -->
       <div class="content-wrapper container">
-        <article class="main-content">
+        <div class="left-column-wrapper">
+          <article class="main-content">
           <!-- Description -->
           <template v-if="isCausaType && parsedCausa">
             <!-- Section 1: La Causa (Antecedentes) -->
@@ -1224,6 +1225,7 @@ watch(() => route.path, () => {
             </div>
           </section>
         </div>
+      </div>
       </div>
 
       <!-- 2.5 CAUSAS SPLIT ROW BELOW THE GRID FOR DESKTOP/TABLET, OR STACKED -->
