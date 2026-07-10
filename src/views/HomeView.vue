@@ -1538,11 +1538,11 @@ const scrollToSection = (id: string) => {
           >
             <span v-if="dayObj.day" class="calendar-day-number">{{ dayObj.day }}</span>
             <img 
-              v-if="dayObj.day && dayObj.events.length === 1" 
+              v-if="dayObj.day && dayObj.events.length >= 1" 
               :src="dayObj.events[0].imagen" 
               class="event-image-bg"
             >
-            <span v-else-if="dayObj.day && dayObj.events.length > 1" class="event-count-badge">
+            <span v-if="dayObj.day && dayObj.events.length > 1" class="event-count-badge">
               {{ dayObj.events.length }} eventos
             </span>
           </div>

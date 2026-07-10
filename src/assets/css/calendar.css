@@ -397,6 +397,7 @@
         justify-content: center !important;
         aspect-ratio: 1 / 1 !important;
         position: relative !important;
+        overflow: hidden !important;
     }
     .calendar-day-number {
         font-size: 0.72rem !important;
@@ -406,11 +407,23 @@
         width: 100% !important;
         height: 100% !important;
         margin: 0 !important;
-        position: static !important;
+        position: relative !important;
+        z-index: 2 !important;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 1px 5px rgba(0, 0, 0, 0.8) !important;
+        font-weight: 700 !important;
     }
     /* Hide heavy elements in compact view */
-    .calendar-day.has-single-event .event-image-bg {
-        display: none !important;
+    .calendar-day.has-single-event .event-image-bg,
+    .calendar-day.has-multiple-events .event-image-bg {
+        display: block !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        opacity: 0.55 !important;
+        z-index: 1 !important;
     }
     .calendar-day.has-single-event::after {
         display: none !important;
