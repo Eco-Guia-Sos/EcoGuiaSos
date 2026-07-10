@@ -880,6 +880,80 @@ watch(() => route.path, () => {
           </template>
         </article>
 
+        <!-- 4. BOTTOM CARDS SECTION -->
+        <div v-if="!isCausaType && (actor || parentSuperEvento)" class="bottom-cards-section">
+          <!-- Publisher Actor Card Section -->
+          <section 
+            v-if="actor" 
+            class="info-section actor-card-lite"
+            style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);"
+          >
+            <h3 style="font-size: 1.1rem; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Publicado por:</h3>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+              <img 
+                :src="actor.avatar_url || actor.imagen_url || '/assets/img/logo-app.webp'" 
+                style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
+                @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+              >
+              <div style="flex-grow: 1;">
+                <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>
+                <p style="margin: 3px 0 0 0; color: var(--primary-color); font-size: 0.9rem;">{{ actor.especialidad || 'Líder Ambiental' }}</p>
+              </div>
+              <div style="display: flex; gap: 10px; margin-left: auto;">
+                <RouterLink 
+                  :to="`/agentes/${actor.id}`" 
+                  class="btn-ver-perfil-actor" 
+                  style="padding: 10px 18px; font-size: 0.85rem; color: #72B04D; border: 1px solid #72B04D; border-radius: 30px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
+                >
+                  Ver perfil
+                </RouterLink>
+                 <button 
+                  v-if="authStore.user && authStore.user.id !== actor.id"
+                  id="btn-follow-actor" 
+                  class="btn btn-primary" 
+                  :class="{ 'btn-follow-glow': !isFollowingActor }"
+                  style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px;"
+                  :style="isFollowingActor ? 'background: #333; border-color: #72B04D; color: #72B04D;' : ''"
+                  :disabled="followActorLoading"
+                  @click="handleFollowActorToggle"
+                >
+                  {{ isFollowingActor ? '✓ Siguiendo' : '+ Seguir' }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Parent Super Event Card Section -->
+          <section 
+            v-if="parentSuperEvento" 
+            class="info-section actor-card-lite"
+            style="margin-top: 20px; padding: 20px; background: rgba(114, 176, 77, 0.05); border-radius: 15px; border: 1px solid rgba(114, 176, 77, 0.15);"
+          >
+            <h3 style="font-size: 1.1rem; color: #72b04d; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Este evento forma parte de:</h3>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+              <img 
+                :src="parentSuperEvento.imagen_url || '/assets/img/logo-app.webp'" 
+                style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid #72b04d;"
+                @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+              >
+              <div style="flex-grow: 1;">
+                <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ parentSuperEvento.nombre }}</h4>
+                <p style="margin: 3px 0 0 0; color: #cbd5e1; font-size: 0.85rem;">{{ parentSuperEvento.descripcion_corta }}</p>
+              </div>
+              <div style="display: flex; gap: 10px; margin-left: auto;">
+                <RouterLink 
+                  :to="`/super-eventos/${parentSuperEvento.id}`" 
+                  class="btn btn-primary" 
+                  style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: #72b04d; border-color: #72b04d; color: white;"
+                >
+                  🏆 Ver Súper Evento
+                </RouterLink>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
         <!-- Col 2: Flyer / Imagen Central -->
         <div class="flyer-content">
           <div class="flyer-wrapper" id="slider-container" style="position: relative; overflow: visible; border-radius: 20px; background: rgba(0,0,0,0.2);">
@@ -1152,80 +1226,6 @@ watch(() => route.path, () => {
             </div>
           </div>
         </aside>
-
-        <!-- 4. BOTTOM CARDS SECTION (Moved below side-panel) -->
-        <div v-if="!isCausaType && (actor || parentSuperEvento)" class="bottom-cards-section">
-          <!-- Publisher Actor Card Section -->
-          <section 
-            v-if="actor" 
-            class="info-section actor-card-lite"
-            style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);"
-          >
-            <h3 style="font-size: 1.1rem; color: #888; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Publicado por:</h3>
-            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-              <img 
-                :src="actor.avatar_url || actor.imagen_url || '/assets/img/logo-app.webp'" 
-                style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);"
-                @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
-              >
-              <div style="flex-grow: 1;">
-                <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ actor.nombre_completo || 'Agente de Cambio' }}</h4>
-                <p style="margin: 3px 0 0 0; color: var(--primary-color); font-size: 0.9rem;">{{ actor.especialidad || 'Líder Ambiental' }}</p>
-              </div>
-              <div style="display: flex; gap: 10px; margin-left: auto;">
-                <RouterLink 
-                  :to="`/agentes/${actor.id}`" 
-                  class="btn-ver-perfil-actor" 
-                  style="padding: 10px 18px; font-size: 0.85rem; color: #72B04D; border: 1px solid #72B04D; border-radius: 30px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
-                >
-                  Ver perfil
-                </RouterLink>
-                 <button 
-                  v-if="authStore.user && authStore.user.id !== actor.id"
-                  id="btn-follow-actor" 
-                  class="btn btn-primary" 
-                  :class="{ 'btn-follow-glow': !isFollowingActor }"
-                  style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px;"
-                  :style="isFollowingActor ? 'background: #333; border-color: #72B04D; color: #72B04D;' : ''"
-                  :disabled="followActorLoading"
-                  @click="handleFollowActorToggle"
-                >
-                  {{ isFollowingActor ? '✓ Siguiendo' : '+ Seguir' }}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Parent Super Event Card Section -->
-          <section 
-            v-if="parentSuperEvento" 
-            class="info-section actor-card-lite"
-            style="margin-top: 20px; padding: 20px; background: rgba(114, 176, 77, 0.05); border-radius: 15px; border: 1px solid rgba(114, 176, 77, 0.15);"
-          >
-            <h3 style="font-size: 1.1rem; color: #72b04d; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Este evento forma parte de:</h3>
-            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-              <img 
-                :src="parentSuperEvento.imagen_url || '/assets/img/logo-app.webp'" 
-                style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid #72b04d;"
-                @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
-              >
-              <div style="flex-grow: 1;">
-                <h4 style="margin: 0; color: white; font-size: 1.2rem;">{{ parentSuperEvento.nombre }}</h4>
-                <p style="margin: 3px 0 0 0; color: #cbd5e1; font-size: 0.85rem;">{{ parentSuperEvento.descripcion_corta }}</p>
-              </div>
-              <div style="display: flex; gap: 10px; margin-left: auto;">
-                <RouterLink 
-                  :to="`/super-eventos/${parentSuperEvento.id}`" 
-                  class="btn btn-primary" 
-                  style="padding: 10px 18px; font-size: 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; background: #72b04d; border-color: #72b04d; color: white;"
-                >
-                  🏆 Ver Súper Evento
-                </RouterLink>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
       </div>
 
       <!-- 2.5 CAUSAS SPLIT ROW BELOW THE GRID FOR DESKTOP/TABLET, OR STACKED -->
