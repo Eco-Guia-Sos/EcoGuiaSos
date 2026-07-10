@@ -97,6 +97,14 @@
 /* Main content cards */
 .main-content { display: flex; flex-direction: column; gap: 30px; }
 
+.bottom-cards-section {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
 .info-section {
     background: var(--tarjeta-bg-dark);
     -webkit-backdrop-filter: blur(12px);
@@ -228,7 +236,8 @@
     }
     .flyer-content { grid-column: 1; grid-row: 1; position: static; }
     .main-content { grid-column: 1; grid-row: 2; }
-    .side-panel { grid-column: 2; grid-row: 1 / span 2; }
+    .side-panel { grid-column: 2; grid-row: 1 / span 3; }
+    .bottom-cards-section { grid-column: 1; grid-row: 3; }
     .flyer-wrapper { max-width: 500px; margin: 0 auto; }
 }
 
@@ -243,6 +252,7 @@
     .main-content { grid-column: 1; grid-row: 2; }
     .side-panel { grid-column: 1; grid-row: 3; margin-top: 10px; }
     .side-panel .sticky-card { position: static; } /* Deja de arrastrarse cuando baja al final */
+    .bottom-cards-section { grid-column: 1; grid-row: 4; margin-top: 20px; }
 }
 
 @media (max-width: 768px) {
