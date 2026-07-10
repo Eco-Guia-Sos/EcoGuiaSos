@@ -394,6 +394,19 @@ onErrorCaptured((err, instance, info) => {
             </div>
           </div>
 
+          <!-- Chat Button -->
+          <div v-if="authStore.user" class="nav-chat-item" @click.stop>
+            <a 
+              href="#" 
+              class="nav-chat-btn" 
+              id="nav-chat-btn"
+              @click.prevent="openSupportChat"
+              aria-label="Abrir chat de soporte"
+            >
+              <i class="fa-solid fa-comments"></i>
+            </a>
+          </div>
+
           <!-- PWA Install Icon & Dropdown -->
           <div v-if="showInstallBtn || deferredPrompt || isiOS" class="nav-install-item" @click.stop>
             <a 

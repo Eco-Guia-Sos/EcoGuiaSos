@@ -1485,3 +1485,41 @@ html, body, #app {
 }
 
 
+/* ========== NAVBAR CHAT/SUPPORT BUTTON ========== */
+.nav-chat-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.nav-chat-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-colibri);
+    font-size: 1.2rem;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(5px);
+    position: relative;
+    text-decoration: none;
+}
+
+.nav-chat-btn:hover {
+    background: rgba(91, 194, 247, 0.15);
+    border-color: #5bc2f7;
+    transform: scale(1.05);
+    color: #5bc2f7;
+}
+
+/* Opción A: Esconder el chat del Header en móviles si hay botón de instalar, dejando que actúe el widget inferior */
+@media (max-width: 500px) {
+    .nav-actions-wrapper:has(.nav-install-item) .nav-chat-item {
+        display: none !important;
+    }
+}
