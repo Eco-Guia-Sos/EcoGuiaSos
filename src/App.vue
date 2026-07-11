@@ -551,10 +551,6 @@ onErrorCaptured((err, instance, info) => {
               <RouterLink to="/favoritos" class="dropdown-item" @click="closeDropdowns(); closeMenu()">
                 <i class="fa-solid fa-star"></i> Mis Favoritos
               </RouterLink>
-              <!-- Support link -->
-              <a href="#" class="dropdown-item" @click.prevent="openSupportChat">
-                <i class="fa-solid fa-comments"></i> Soporte Técnico
-              </a>
               
               <div class="dropdown-divider"></div>
               <a href="#" @click.prevent="handleLogout" class="dropdown-item logout">
