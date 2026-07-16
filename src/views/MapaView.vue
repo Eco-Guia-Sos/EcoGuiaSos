@@ -62,6 +62,7 @@ const allItems = ref<any[]>([])
 const filteredItems = ref<any[]>([])
 const activeItem = ref<any | null>(null)
 const userCoords = ref<{ lat: number; lng: number } | null>(null)
+const isLoggedIn = ref(false)
 
 // Advanced search state
 const isAdvancedSearchOpen = ref(false)
@@ -659,6 +660,13 @@ const formatDateBadge = (dateStr: string) => {
 
 // Init maplibre
 onMounted(async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  isLoggedIn.value = !!session
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    isLoggedIn.value = !!session
+  })
+
   await loadTerritoryData()
 
   map = new maplibregl.Map({
@@ -734,8 +742,10 @@ onMounted(async () => {
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right')
 
-  // Auto locate user
-  setTimeout(() => locateUser(), 1200)
+  // Auto locate user if logged in
+  if (isLoggedIn.value) {
+    setTimeout(() => locateUser(), 1200)
+  }
 })
 
 onUnmounted(() => {
@@ -899,6 +909,7 @@ onUnmounted(() => {
     <!-- RIGHT ACTION CONTROLS -->
     <div class="map-right-controls">
       <button 
+        v-if="isLoggedIn"
         class="map-btn" 
         :class="{ 'active': isLocating }" 
         @click="locateUser" 
@@ -989,6 +1000,11 @@ onUnmounted(() => {
           :data-id="item.id"
           @click="openDetail(item)"
         >
+          <!-- Actor badge at top left -->
+          <span v-if="item.owner_id && profilesMap[item.owner_id]" class="card-actor-badge">
+            <i class="fa-solid fa-circle-user"></i> {{ profilesMap[item.owner_id].nombre_completo }}
+          </span>
+          <!-- Date badge at top right -->
           <span v-if="item.fecha_inicio" class="card-date-badge">
             <i class="fa-regular fa-calendar"></i> {{ formatDateBadge(item.fecha_inicio) }}
           </span>
@@ -1000,10 +1016,7 @@ onUnmounted(() => {
           <div class="map-event-info">
             <h4>{{ item.nombre }}</h4>
             <p><i class="fa-solid fa-layer-group"></i> {{ formatCategory(item.categoria) }}</p>
-            <p v-if="item.owner_id && profilesMap[item.owner_id]" style="font-size: 0.72rem; color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 5px; margin: 4px 0 0 0; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
-              <i class="fa-solid fa-circle-user" style="color: var(--color-eco); font-size: 0.8rem;"></i> {{ profilesMap[item.owner_id].nombre_completo }}
-            </p>
-            <p v-if="userCoords" class="map-event-dist">
+            <p v-if="isLoggedIn && userCoords" class="map-event-dist">
               <i class="fa-solid fa-person-walking"></i> {{ getDistanceText(item) }}
             </p>
           </div>
@@ -1031,8 +1044,14 @@ onUnmounted(() => {
           <p class="panel-meta">
             <i class="fa-solid fa-layer-group"></i> {{ formatCategory(activeItem.categoria) }}
           </p>
-          <p class="panel-meta">
+          <p v-if="activeItem.fecha_inicio" class="panel-meta">
+            <i class="fa-regular fa-calendar"></i> {{ new Date(activeItem.fecha_inicio).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }) }}
+          </p>
+          <p v-if="isLoggedIn" class="panel-meta">
             <i class="fa-solid fa-location-dot"></i> {{ activeItem.ubicacion || 'Ubicación registrada' }}
+          </p>
+          <p v-else class="panel-meta" style="color: rgba(255, 255, 255, 0.4); font-size: 0.8rem; font-style: italic;">
+            <i class="fa-solid fa-lock"></i> Inicia sesión para ver la ubicación exacta
           </p>
           
           <!-- Publisher Actor Info -->
@@ -1867,7 +1886,7 @@ onUnmounted(() => {
 .card-date-badge {
   position: absolute;
   top: 6px;
-  left: 6px;
+  right: 6px;
   background: rgba(15,20,25,0.85);
   color: #0ea5e9;
   font-size: 0.65rem;
@@ -1876,6 +1895,24 @@ onUnmounted(() => {
   border-radius: 10px;
   border: 1px solid rgba(14,165,233,0.3);
   z-index: 2;
+}
+
+.card-actor-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(15,20,25,0.85);
+  color: var(--color-eco);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(114,176,77,0.3);
+  z-index: 2;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @keyframes pulse-marker {

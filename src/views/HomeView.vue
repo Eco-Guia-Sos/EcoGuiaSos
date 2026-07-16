@@ -42,6 +42,16 @@ const formatCategory = (cat: string) => {
   return CATEGORY_LABELS[key] || cat
 }
 
+const formatFechaShort = (dateStr: string) => {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })
+  } catch (e) {
+    return ''
+  }
+}
+
 const getCategoryIcon = (cat: string) => {
   if (!cat) return '💡'
   const key = cat.toLowerCase()
@@ -643,6 +653,11 @@ const abrirPanelDetalle = (p: any) => {
 
 // GPS / Location
 const toggleProximidad = () => {
+  if (!authStore.user) {
+    alert('Inicia sesión para buscar eventos cerca de ti.')
+    filtrosAvanzados.value.ubicacion = 'all'
+    return
+  }
   if (filtrosAvanzados.value.ubicacion === 'nearby') {
     activarProximidad()
   } else {
@@ -1582,8 +1597,17 @@ const scrollToSection = (id: string) => {
             <div v-if="selectedProjectDetail" class="panel-content" style="padding: 12px;">
               <span class="badge">{{ selectedProjectDetail.tipo.toUpperCase() }}</span>
               <h3 style="font-size: 16px;">{{ selectedProjectDetail.nombre }}</h3>
-              <p class="panel-meta" style="font-size: 12px;">
+              <p v-if="authStore.user" class="panel-meta" style="font-size: 12px;">
                 <i class="fa-solid fa-location-dot"></i> <span>{{ selectedProjectDetail.ubicacion }}</span>
+              </p>
+              <p v-else class="panel-meta" style="font-size: 12px; color: rgba(255,255,255,0.4); font-style: italic;">
+                <i class="fa-solid fa-lock"></i> Inicia sesión para ver la ubicación
+              </p>
+              <p v-if="selectedProjectDetail.fecha" class="panel-meta" style="font-size: 12px; margin-top: 4px;">
+                <i class="fa-regular fa-calendar"></i> <span>{{ new Date(selectedProjectDetail.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }) }}</span>
+              </p>
+              <p v-if="selectedProjectDetail.actor_nombre" class="panel-meta" style="font-size: 12px; margin-top: 4px; color: var(--color-eco); font-weight: 600;">
+                <i class="fa-solid fa-circle-user"></i> <span>Publicado por: {{ selectedProjectDetail.actor_nombre }}</span>
               </p>
             </div>
             <div v-if="selectedProjectDetail" class="panel-footer" style="padding: 0 12px 12px;">
@@ -1608,12 +1632,20 @@ const scrollToSection = (id: string) => {
               :class="{ 'active': selectedProjectDetail?.id === p.id }"
               @click="abrirPanelDetalle(p)"
             >
-              <div class="nearby-card-img" style="position:relative;">
-                <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/logo-app.webp'">
+              <div class="nearby-card-img" style="position:relative; width: 100%; height: 100px; overflow: hidden; border-radius: 12px;">
+                <!-- Actor badge at top left -->
+                <span v-if="p.actor_nombre" class="nearby-card-actor-badge" style="position: absolute; top: 6px; left: 6px; background: rgba(15,20,25,0.85); color: var(--color-eco); font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(114,176,77,0.3); z-index: 2; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <i class="fa-solid fa-circle-user"></i> {{ p.actor_nombre }}
+                </span>
+                <!-- Date badge at top right -->
+                <span v-if="p.fecha" class="nearby-card-date-badge" style="position: absolute; top: 6px; right: 6px; background: rgba(15,20,25,0.85); color: #0ea5e9; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(14,165,233,0.3); z-index: 2;">
+                  <i class="fa-regular fa-calendar"></i> {{ formatFechaShort(p.fecha) }}
+                </span>
+                <img :src="p.imagen" :alt="p.nombre" onerror="this.src='/assets/img/logo-app.webp'" style="width: 100%; height: 100%; object-fit: cover;">
               </div>
-              <div class="nearby-card-info">
-                <div class="nearby-card-title" style="font-weight:700; line-height:1.1;">{{ p.nombre }}</div>
-                <div v-if="p.distancia_calculada && p.distancia_calculada !== Infinity" class="nearby-card-dist" style="color:#fde047; font-size:0.75rem; font-weight:700; margin-top:2px;">
+              <div class="nearby-card-info" style="padding: 8px 0 0 0;">
+                <div class="nearby-card-title" style="font-weight:700; line-height:1.1; font-size: 0.85rem; color: white;">{{ p.nombre }}</div>
+                <div v-if="authStore.user && p.distancia_calculada && p.distancia_calculada !== Infinity" class="nearby-card-dist" style="color:#fde047; font-size:0.75rem; font-weight:700; margin-top:2px;">
                   <i class="fa-solid fa-route"></i> a {{ p.distancia_calculada.toFixed(1) }} km
                 </div>
               </div>
