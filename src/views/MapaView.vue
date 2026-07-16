@@ -1329,7 +1329,7 @@ onUnmounted(() => {
 }
 
 .map-event-dist {
-  color: #72b04d !important;
+  color: #ffd700 !important;
   font-weight: 700;
   font-size: 0.75rem !important;
 }
