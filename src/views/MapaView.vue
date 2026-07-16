@@ -875,7 +875,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="territory-filters">
+        <div class="territory-filters" :class="{ 'adv-search-open': isAdvancedSearchOpen }">
           <select v-model="selectedEstado" class="custom-select">
             <option value="">Todo México</option>
             <option v-for="est in estadosList" :key="est.code" :value="est.code">
@@ -2099,6 +2099,16 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .maplibregl-ctrl-top-right {
     top: 160px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .territory-filters.adv-search-open {
+    position: absolute;
+    top: 75px;
+    left: 70px;
+    z-index: 5;
+    transition: all 0.3s ease;
   }
 }
 </style>
