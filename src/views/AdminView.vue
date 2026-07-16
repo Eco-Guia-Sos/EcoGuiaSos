@@ -5502,6 +5502,21 @@ select option {
 .social-btn.x-twitter.active { background: #000000; border-color: #333; }
 .social-btn.youtube.active { background: #FF0000; border-color: #FF0000; }
 .social-btn.web.active { background: #10b981; border-color: #10b981; }
+.social-btn.tiktok.active { background: #01f2fe; border-color: #01f2fe; color: black; }
+.social-btn.linkedin.active { background: #0077b5; border-color: #0077b5; }
+.social-btn.email.active { background: #f1c40f; border-color: #f1c40f; color: black; }
+.social-btn.email-alt.active { background: #ff3f6c; border-color: #ff3f6c; }
+
+.social-btn.facebook:hover { box-shadow: 0 0 15px rgba(24, 119, 242, 0.5); }
+.social-btn.instagram:hover { box-shadow: 0 0 15px rgba(225, 48, 108, 0.5); }
+.social-btn.whatsapp:hover { box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
+.social-btn.x-twitter:hover { box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+.social-btn.youtube:hover { box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+.social-btn.web:hover { box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+.social-btn.tiktok:hover { box-shadow: 0 0 15px rgba(1, 242, 254, 0.5); }
+.social-btn.linkedin:hover { box-shadow: 0 0 15px rgba(0, 119, 182, 0.5); }
+.social-btn.email:hover { box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
+.social-btn.email-alt:hover { box-shadow: 0 0 15px rgba(255, 63, 108, 0.5); }
 
 .social-inputs-container {
   display: flex;
