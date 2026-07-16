@@ -153,7 +153,8 @@ const router = createRouter({
     {
       path: '/mapa',
       name: 'mapa',
-      component: () => import('../views/MapaView.vue')
+      component: () => import('../views/MapaView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/favoritos',

@@ -1566,6 +1566,7 @@ const scrollToSection = (id: string) => {
 
       <!-- Mini-Map Section (Desplegable) -->
       <section 
+        v-if="authStore.user"
         class="home-map-section" 
         :class="{ 'hidden-map': !isMapVisible }"
         id="mapa-home-wrapper"
