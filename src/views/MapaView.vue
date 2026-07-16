@@ -1208,6 +1208,7 @@ onUnmounted(() => {
   display: flex;
   gap: 10px;
   pointer-events: auto;
+  width: 380px;
 }
 
 .custom-select {
@@ -1227,7 +1228,9 @@ onUnmounted(() => {
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   appearance: none;
   -webkit-appearance: none;
-  min-width: 150px;
+  flex: 1;
+  width: 0;
+  min-width: 0;
 }
 
 .custom-select:hover {
@@ -1421,10 +1424,9 @@ onUnmounted(() => {
 }
 
 
-/* --- DETALLE DE EVENTO (SIDE PANEL) --- */
 .map-side-panel {
   position: absolute;
-  top: 350px;
+  top: 180px;
   left: 20px;
   width: 380px;
   background: rgba(15, 23, 42, 0.95);
@@ -1435,6 +1437,12 @@ onUnmounted(() => {
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.2);
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.4s;
+}
+
+@media (max-width: 1100px) and (min-width: 769px) {
+  .map-side-panel {
+    top: 330px !important;
+  }
 }
 
 .map-side-panel.hidden {
@@ -1940,23 +1948,6 @@ onUnmounted(() => {
     box-sizing: border-box;
   }
 
-  .map-side-panel {
-    top: auto !important;
-    bottom: 20px !important;
-    left: 50% !important;
-    width: calc(100vw - 30px) !important;
-    max-width: 420px !important;
-    transform: translateX(-50%) translateY(0) !important;
-    box-sizing: border-box;
-    z-index: 5000 !important;
-  }
-
-  .map-side-panel.hidden {
-    transform: translateX(-50%) translateY(150%) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
   .map-event-card {
     min-width: 140px;
     max-width: 140px;
@@ -2078,7 +2069,7 @@ onUnmounted(() => {
   gap: 12px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .advanced-search-panel {
     position: absolute;
     top: 0;
@@ -2100,9 +2091,26 @@ onUnmounted(() => {
   .maplibregl-ctrl-top-right {
     top: 160px !important;
   }
+
+  .map-side-panel {
+    top: auto !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    width: calc(100vw - 30px) !important;
+    max-width: 420px !important;
+    transform: translateX(-50%) translateY(0) !important;
+    box-sizing: border-box;
+    z-index: 5000 !important;
+  }
+
+  .map-side-panel.hidden {
+    transform: translateX(-50%) translateY(150%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .territory-filters.adv-search-open {
     position: absolute;
     top: 75px;
