@@ -784,7 +784,7 @@ onUnmounted(() => {
           </div>
         </div>
         <!-- BÚSQUEDA AVANZADA PANEL -->
-        <div v-if="isAdvancedSearchOpen" class="advanced-search-panel glass-effect" style="margin-bottom: 12px; padding: 15px; border-radius: 12px; border: 1px solid rgba(114, 176, 77, 0.25); box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 12px rgba(114, 176, 77, 0.05); display: flex; flex-direction: column; gap: 12px;">
+        <div v-if="isAdvancedSearchOpen" class="advanced-search-panel glass-effect">
           <!-- Tabs: Todos vs Lugares vs Eventos -->
           <div class="adv-tabs" style="display: flex; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 8px;">
             <button 
@@ -2063,6 +2063,42 @@ onUnmounted(() => {
   100% {
     transform: scale(2.8);
     opacity: 0;
+  }
+}
+
+/* Custom advanced-search-panel styling & layout */
+.advanced-search-panel {
+  margin-bottom: 12px;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(114, 176, 77, 0.25);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 12px rgba(114, 176, 77, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .advanced-search-panel {
+    position: absolute;
+    top: 0;
+    left: 490px;
+    right: 480px;
+    width: auto;
+    margin-bottom: 0;
+    z-index: 10;
+  }
+}
+
+/* Position zoom controls lower to prevent overlap */
+.maplibregl-ctrl-top-right {
+  top: 110px !important;
+  transition: top 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .maplibregl-ctrl-top-right {
+    top: 160px !important;
   }
 }
 </style>
