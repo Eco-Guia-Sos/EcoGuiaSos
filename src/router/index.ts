@@ -157,6 +157,11 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/tarjeta-digital',
+      name: 'tarjeta-digital',
+      component: () => import('../views/TarjetaDigitalView.vue')
+    },
+    {
       path: '/favoritos',
       name: 'favoritos',
       component: () => import('../views/FavoritosView.vue'),

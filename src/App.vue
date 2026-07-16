@@ -352,7 +352,7 @@ onErrorCaptured((err, instance, info) => {
     <!-- BARRA DE NAVEGACIÓN SUPERIOR (ESTANDARIZADA) — oculta en admin y mapa -->
     <nav v-if="!isFullLayoutHidden" class="main-nav">
       <div class="nav-container">
-        <RouterLink to="/" class="nav-brand" @click="closeMenu(); closeDropdowns()">
+        <RouterLink to="/tarjeta-digital" class="nav-brand" @click="closeMenu(); closeDropdowns()">
           <img src="/assets/img/logo-navbar.webp" alt="Logo EcoGuía SOS" class="nav-brand-logo" />
           <h1>EcoGuía SOS</h1>
         </RouterLink>

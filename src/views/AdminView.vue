@@ -2016,6 +2016,40 @@ const saveProfile = async () => {
   }
 }
 
+// Digital Card config state
+const tarjetaForm = ref({
+  nombre: 'EcoGuía SOS',
+  descripcion: 'Plataforma de Educación y Acción Ambiental.',
+  avatar_url: '/logo-app.webp',
+  qr_url: '',
+  whatsapp: '',
+  tiktok: '',
+  email: '',
+  email_alterno: '',
+  linkedin: '',
+  facebook: '',
+  instagram: '',
+  twitter: ''
+})
+const tarjetaSaving = ref(false)
+const tarjetaUploadingAvatar = ref(false)
+const tarjetaUploadingQr = ref(false)
+
+const tarjetaSocialActive = ref({
+  wa: false,
+  tiktok: false,
+  email: false,
+  email_alterno: false,
+  linkedin: false,
+  fb: false,
+  ig: false,
+  x: false
+})
+
+const toggleTarjetaSocialInput = (key: keyof typeof tarjetaSocialActive.value) => {
+  tarjetaSocialActive.value[key] = !tarjetaSocialActive.value[key]
+}
+
 // Config platform methods
 const loadConfig = async () => {
   if (!isUserAdmin.value || configLoading.value) return
@@ -2049,6 +2083,33 @@ const loadConfig = async () => {
           linkedin: data.redes_sociales?.linkedin ?? ''
         }
       }
+      
+      const t = data.redes_sociales?.tarjeta
+      if (t) {
+        tarjetaForm.value = {
+          nombre: t.nombre ?? 'EcoGuía SOS',
+          descripcion: t.descripcion ?? '',
+          avatar_url: t.avatar_url ?? '/logo-app.webp',
+          qr_url: t.qr_url ?? '',
+          whatsapp: t.whatsapp ?? '',
+          tiktok: t.tiktok ?? '',
+          email: t.email ?? '',
+          email_alterno: t.email_alterno ?? '',
+          linkedin: t.linkedin ?? '',
+          facebook: t.facebook ?? '',
+          instagram: t.instagram ?? '',
+          twitter: t.twitter ?? ''
+        }
+        
+        tarjetaSocialActive.value.wa = !!t.whatsapp
+        tarjetaSocialActive.value.tiktok = !!t.tiktok
+        tarjetaSocialActive.value.email = !!t.email
+        tarjetaSocialActive.value.email_alterno = !!t.email_alterno
+        tarjetaSocialActive.value.linkedin = !!t.linkedin
+        tarjetaSocialActive.value.fb = !!t.facebook
+        tarjetaSocialActive.value.ig = !!t.instagram
+        tarjetaSocialActive.value.x = !!t.twitter
+      }
     }
   } catch (err: any) {
     console.error('Error al cargar la configuración de la plataforma:', err)
@@ -2061,6 +2122,13 @@ const saveConfig = async () => {
   if (!isUserAdmin.value) return
   configSaving.value = true
   try {
+    // 1. Obtener la config actual para preservar el sub-objeto 'tarjeta'
+    const { data: currentData } = await supabase
+      .from('config_plataforma')
+      .select('redes_sociales')
+      .eq('id', 1)
+      .maybeSingle()
+
     const payload = {
       registro_abierto: configForm.value.registro_abierto,
       modo_mantenimiento: configForm.value.modo_mantenimiento,
@@ -2075,6 +2143,7 @@ const saveConfig = async () => {
       activar_captcha: configForm.value.activar_captcha,
       email_soporte: configForm.value.email_soporte,
       redes_sociales: {
+        ...(currentData?.redes_sociales || {}),
         facebook: configForm.value.redes_sociales.facebook,
         instagram: configForm.value.redes_sociales.instagram,
         twitter: configForm.value.redes_sociales.twitter,
@@ -2093,6 +2162,73 @@ const saveConfig = async () => {
     alert('Error al guardar la configuración: ' + err.message)
   } finally {
     configSaving.value = false
+  }
+}
+
+const saveTarjetaConfig = async () => {
+  if (!isUserAdmin.value) return
+  tarjetaSaving.value = true
+  try {
+    const { data: currentData, error: loadErr } = await supabase
+      .from('config_plataforma')
+      .select('redes_sociales')
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (loadErr) throw loadErr
+
+    const newRedes = {
+      ...(currentData?.redes_sociales || {}),
+      tarjeta: {
+        nombre: tarjetaForm.value.nombre,
+        descripcion: tarjetaForm.value.descripcion,
+        avatar_url: tarjetaForm.value.avatar_url,
+        qr_url: tarjetaForm.value.qr_url,
+        whatsapp: tarjetaForm.value.whatsapp,
+        tiktok: tarjetaForm.value.tiktok,
+        email: tarjetaForm.value.email,
+        email_alterno: tarjetaForm.value.email_alterno,
+        linkedin: tarjetaForm.value.linkedin,
+        facebook: tarjetaForm.value.facebook,
+        instagram: tarjetaForm.value.instagram,
+        twitter: tarjetaForm.value.twitter
+      }
+    }
+
+    const { error: updateErr } = await supabase
+      .from('config_plataforma')
+      .update({ redes_sociales: newRedes })
+      .eq('id', 1)
+
+    if (updateErr) throw updateErr
+    alert('Configuración de la tarjeta digital guardada correctamente.')
+  } catch (err: any) {
+    alert('Error al guardar la tarjeta digital: ' + err.message)
+  } finally {
+    tarjetaSaving.value = false
+  }
+}
+
+const handleTarjetaImageUpload = async (e: Event, type: 'avatar' | 'qr') => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  if (type === 'avatar') tarjetaUploadingAvatar.value = true
+  else tarjetaUploadingQr.value = true
+
+  try {
+    const publicUrl = await compressAndUploadFile(file)
+    if (type === 'avatar') {
+      tarjetaForm.value.avatar_url = publicUrl
+    } else {
+      tarjetaForm.value.qr_url = publicUrl
+    }
+  } catch (err: any) {
+    alert('Error al subir la imagen: ' + err.message)
+  } finally {
+    if (type === 'avatar') tarjetaUploadingAvatar.value = false
+    else tarjetaUploadingQr.value = false
   }
 }
 
@@ -2758,6 +2894,13 @@ const formatRelativeDate = (dateStr: string) => {
               <a href="#" @click.prevent="navigateTo('config')">
                 <i class="fa-solid fa-gear" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">Ajustes Plataforma</span>
+              </a>
+            </li>
+
+            <li v-if="isUserAdmin" class="menu-item-ajustes" :class="{ 'active': activeTab === 'tarjeta-digital' }">
+              <a href="#" @click.prevent="navigateTo('tarjeta-digital')">
+                <i class="fa-solid fa-address-card" style="margin-right:10px;"></i>
+                <span v-if="!isSidebarCollapsed">Tarjeta Digital</span>
               </a>
             </li>
 
@@ -3767,6 +3910,137 @@ const formatRelativeDate = (dateStr: string) => {
                   {{ configSaving ? 'Aplicando...' : 'Aplicar Ajustes' }}
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tarjeta Digital Config Tab -->
+        <div v-else-if="activeTab === 'tarjeta-digital' && isUserAdmin" class="config-view-container">
+          <div class="profile-card-large glass-effect" style="margin: 0 auto; padding: 30px; border-radius: 20px;">
+            <div class="profile-header-edit" style="display: flex; gap: 20px; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--admin-border); padding-bottom: 20px;">
+              <div class="header-icon-box" style="background: rgba(114, 176, 77, 0.15); color: #72b04d; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="fa-solid fa-address-card"></i>
+              </div>
+              <div class="profile-header-info">
+                <h2 style="color: white; margin: 0 0 4px 0; font-size: 1.5rem; font-weight: 800;">Tarjeta Digital</h2>
+                <p style="color: var(--admin-text-muted); font-size: 0.9rem; margin: 0;">Configura el contenido y redes de contacto oficiales de la Tarjeta Digital de EcoGuía SOS.</p>
+              </div>
+            </div>
+
+            <form id="form-config-tarjeta" class="modern-form" @submit.prevent="saveTarjetaConfig" style="display: flex; flex-direction: column; gap: 25px;">
+              
+              <!-- Información Básica -->
+              <div class="form-section">
+                <h3 style="color: white; font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; border-left: 3px solid var(--color-eco); padding-left: 10px;">Información Principal</h3>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                  <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: #94a3b8; font-size: 0.85rem; font-weight: 600;">Nombre de la Asociación / Tarjeta</label>
+                    <input type="text" v-model="tarjetaForm.nombre" placeholder="EcoGuía SOS" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px; outline: none;" required>
+                  </div>
+                  <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: #94a3b8; font-size: 0.85rem; font-weight: 600;">Descripción / Perfil</label>
+                    <textarea v-model="tarjetaForm.descripcion" rows="3" placeholder="Plataforma de acción y educación ambiental..." style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 12px; outline: none; font-family: inherit; resize: vertical;" required></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Imágenes de la Tarjeta -->
+              <div class="form-section">
+                <h3 style="color: white; font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; border-left: 3px solid var(--color-eco); padding-left: 10px;">Imágenes Oficiales</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                  
+                  <!-- Logo de Perfil -->
+                  <div class="form-group" style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.01); border: 1px solid var(--admin-border); padding: 20px; border-radius: 12px; text-align: center;">
+                    <label style="color: white; font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">Logo / Avatar</label>
+                    <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin-bottom: 15px; border: 2px solid var(--color-eco);">
+                      <img :src="tarjetaForm.avatar_url || '/logo-app.webp'" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <label class="btn btn-secondary" style="cursor: pointer; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+                      <i v-if="tarjetaUploadingAvatar" class="fa-solid fa-spinner fa-spin"></i>
+                      <i v-else class="fa-solid fa-cloud-arrow-up"></i>
+                      Subir Logo
+                      <input type="file" accept="image/*" style="display: none;" @change="handleTarjetaImageUpload($event, 'avatar')" :disabled="tarjetaUploadingAvatar">
+                    </label>
+                  </div>
+
+                  <!-- Código QR -->
+                  <div class="form-group" style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.01); border: 1px solid var(--admin-border); padding: 20px; border-radius: 12px; text-align: center;">
+                    <label style="color: white; font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">Imagen de Código QR (Opcional)</label>
+                    <div style="width: 100px; height: 100px; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--admin-border); background: white; display: flex; align-items: center; justify-content: center;">
+                      <img :src="tarjetaForm.qr_url || 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://ecoguiasos.com/tarjeta-digital'" style="width: 90px; height: 90px; object-fit: contain;">
+                    </div>
+                    <label class="btn btn-secondary" style="cursor: pointer; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+                      <i v-if="tarjetaUploadingQr" class="fa-solid fa-spinner fa-spin"></i>
+                      <i v-else class="fa-solid fa-cloud-arrow-up"></i>
+                      Subir QR
+                      <input type="file" accept="image/*" style="display: none;" @change="handleTarjetaImageUpload($event, 'qr')" :disabled="tarjetaUploadingQr">
+                    </label>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Enlaces y Redes -->
+              <div class="form-section">
+                <h3 style="color: white; font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; border-left: 3px solid var(--color-eco); padding-left: 10px;">Enlaces de Redes y Contacto</h3>
+                
+                <label style="color: #94a3b8; font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 8px;">Redes Sociales Activas (Haz clic en un icono para ingresar su enlace)</label>
+                <div class="social-selector" style="margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="social-btn facebook" :class="{ 'active': tarjetaSocialActive.fb }" @click="toggleTarjetaSocialInput('fb')" title="Facebook"><i class="fa-brands fa-facebook"></i></button>
+                  <button type="button" class="social-btn instagram" :class="{ 'active': tarjetaSocialActive.ig }" @click="toggleTarjetaSocialInput('ig')" title="Instagram"><i class="fa-brands fa-instagram"></i></button>
+                  <button type="button" class="social-btn whatsapp" :class="{ 'active': tarjetaSocialActive.wa }" @click="toggleTarjetaSocialInput('wa')" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                  <button type="button" class="social-btn x-twitter" :class="{ 'active': tarjetaSocialActive.x }" @click="toggleTarjetaSocialInput('x')" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                  <button type="button" class="social-btn tiktok" :class="{ 'active': tarjetaSocialActive.tiktok }" @click="toggleTarjetaSocialInput('tiktok')" title="TikTok"><i class="fa-brands fa-tiktok"></i></button>
+                  <button type="button" class="social-btn linkedin" :class="{ 'active': tarjetaSocialActive.linkedin }" @click="toggleTarjetaSocialInput('linkedin')" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></button>
+                  <button type="button" class="social-btn email" :class="{ 'active': tarjetaSocialActive.email }" @click="toggleTarjetaSocialInput('email')" title="Correo Principal"><i class="fa-regular fa-envelope"></i></button>
+                  <button type="button" class="social-btn email-alt" :class="{ 'active': tarjetaSocialActive.email_alterno }" @click="toggleTarjetaSocialInput('email_alterno')" title="Correo Alternativo"><i class="fa-solid fa-envelope-open-text"></i></button>
+                </div>
+
+                <div class="social-inputs-container" style="display: flex; flex-direction: column; gap: 12px;">
+                  <div v-if="tarjetaSocialActive.fb" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(24, 119, 242, 0.05); border: 1px solid rgba(24, 119, 242, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #1877F2; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-brands fa-facebook"></i></label>
+                    <input type="url" v-model="tarjetaForm.facebook" placeholder="Enlace de Facebook..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.ig" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(225, 48, 108, 0.05); border: 1px solid rgba(225, 48, 108, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #E1306C; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-brands fa-instagram"></i></label>
+                    <input type="url" v-model="tarjetaForm.instagram" placeholder="Enlace de Instagram..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.wa" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(37, 211, 102, 0.05); border: 1px solid rgba(37, 211, 102, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #25D366; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-brands fa-whatsapp"></i></label>
+                    <input type="text" v-model="tarjetaForm.whatsapp" placeholder="WhatsApp (Link wa.me o número completo)..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.x" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #ffffff; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-brands fa-x-twitter"></i></label>
+                    <input type="url" v-model="tarjetaForm.twitter" placeholder="Enlace de Twitter / X..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.tiktok" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #00f2fe; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-brands fa-tiktok"></i></label>
+                    <input type="url" v-model="tarjetaForm.tiktok" placeholder="Enlace de TikTok..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.linkedin" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(0, 119, 181, 0.05); border: 1px solid rgba(0, 119, 181, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #0077b5; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-brands fa-linkedin"></i></label>
+                    <input type="url" v-model="tarjetaForm.linkedin" placeholder="Enlace de LinkedIn..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.email" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px;">
+                    <label style="color: #cccccc; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-regular fa-envelope"></i></label>
+                    <input type="email" v-model="tarjetaForm.email" placeholder="Correo Principal..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                  <div v-if="tarjetaSocialActive.email_alterno" class="social-input-group" style="display: flex; align-items: center; gap: 10px; background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.15); padding: 10px; border-radius: 8px;">
+                    <label style="color: #e74c3c; width: 30px; font-size: 1.2rem; text-align: center;"><i class="fa-solid fa-envelope-open-text"></i></label>
+                    <input type="email" v-model="tarjetaForm.email_alterno" placeholder="Correo Alternativo..." style="flex: 1; background: transparent; border: none; outline: none; color: white;" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Guardar -->
+              <div class="form-actions" style="border-top: 1px solid var(--admin-border); padding-top: 20px; margin-top: 20px; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn-create-new" id="btn-save-tarjeta" :disabled="tarjetaSaving" style="width: auto; background: var(--color-eco); color: white; border: none; cursor: pointer; padding: 12px 24px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: background 0.2s;">
+                  <i v-if="tarjetaSaving" class="fa-solid fa-spinner fa-spin"></i>
+                  <i v-else class="fa-solid fa-cloud-arrow-up"></i>
+                  {{ tarjetaSaving ? 'Guardando...' : 'Guardar Configuración' }}
+                </button>
+              </div>
+
             </form>
           </div>
         </div>

@@ -76,6 +76,9 @@ self.addEventListener('fetch', event => {
     // 1. IGNORAR peticiones no-HTTP (chrome-extension, etc.)
     if (!url.startsWith('http')) return;
 
+    // 1.5. IGNORAR localhost / desarrollo local para evitar bloqueos en Vite
+    if (url.includes('localhost') || url.includes('127.0.0.1')) return;
+
     // 2. IGNORAR todas las APIs externas (Supabase, Google, CDNs)
     const isBypass = BYPASS_PATTERNS.some(pattern => url.includes(pattern));
     if (isBypass) return; // Dejar pasar directamente al navegador
