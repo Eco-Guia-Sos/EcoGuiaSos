@@ -678,7 +678,7 @@ onMounted(() => {
       >
         <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(77, 182, 232, 0.05) 0%, transparent 60%); pointer-events: none; z-index: 0;"></div>
 
-        <div class="map-header-actions" style="position: relative; z-index: 1; padding: 15px; display: flex; justify-content: center; margin-bottom: 10px;">
+        <div v-if="authStore.user" class="map-header-actions" style="position: relative; z-index: 1; padding: 15px; display: flex; justify-content: center; margin-bottom: 10px;">
           <RouterLink to="/mapa" class="btn btn-primary shimmer-extra" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center; border-radius: 12px; box-shadow: 0 10px 20px rgba(114, 176, 77, 0.3); font-weight: 700; letter-spacing: 1px;">
             <i class="fa-solid fa-expand"></i> VER ATLAS COMPLETO
           </RouterLink>
@@ -702,8 +702,11 @@ onMounted(() => {
             <div v-if="selectedLugarDetail" class="panel-content" style="padding: 12px;">
               <span class="badge lugar" style="background: rgba(77, 182, 232, 0.15); color: #4db6e8; border: 1px solid rgba(77, 182, 232, 0.3);">LUGAR</span>
               <h3 style="font-size: 16px; color: white; margin: 5px 0 2px 0;">{{ selectedLugarDetail.nombre }}</h3>
-              <p class="panel-meta" style="font-size: 12px; color: #cbd5e1; display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+              <p v-if="authStore.user" class="panel-meta" style="font-size: 12px; color: #cbd5e1; display: flex; align-items: center; gap: 8px; margin: 4px 0;">
                 <i class="fa-solid fa-location-dot"></i> <span>{{ selectedLugarDetail.ubicacion }}</span>
+              </p>
+              <p v-else class="panel-meta" style="font-size: 12px; color: rgba(255,255,255,0.4); font-style: italic; display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+                <i class="fa-solid fa-lock"></i> Inicia sesión para ver la ubicación
               </p>
             </div>
             <div v-if="selectedLugarDetail" class="panel-footer" style="padding: 0 12px 12px;">

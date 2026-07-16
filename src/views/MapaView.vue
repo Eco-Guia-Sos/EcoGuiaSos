@@ -730,10 +730,8 @@ onMounted(async () => {
       }
     })
 
-    const triggerBBoxLoad = (e?: any) => {
+    const triggerBBoxLoad = () => {
       if (!map) return
-      // Solo recargar marcadores si es movimiento manual del usuario (e.originalEvent) o carga inicial
-      if (e && !e.originalEvent) return
       const bounds = map.getBounds()
       fetchMarkersInBounds(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth())
     }

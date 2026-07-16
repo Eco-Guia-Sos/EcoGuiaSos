@@ -1566,7 +1566,6 @@ const scrollToSection = (id: string) => {
 
       <!-- Mini-Map Section (Desplegable) -->
       <section 
-        v-if="authStore.user"
         class="home-map-section" 
         :class="{ 'hidden-map': !isMapVisible }"
         id="mapa-home-wrapper"
@@ -1574,7 +1573,7 @@ const scrollToSection = (id: string) => {
       >
         <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(114, 176, 77, 0.05) 0%, transparent 60%); pointer-events: none; z-index: 0;"></div>
 
-        <div class="map-header-actions" style="position: relative; z-index: 1; padding: 15px; display: flex; justify-content: center; margin-bottom: 10px;">
+        <div v-if="authStore.user" class="map-header-actions" style="position: relative; z-index: 1; padding: 15px; display: flex; justify-content: center; margin-bottom: 10px;">
           <RouterLink to="/mapa" class="btn btn-primary shimmer-extra" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center; border-radius: 12px; box-shadow: 0 10px 20px rgba(114, 176, 77, 0.3); font-weight: 700; letter-spacing: 1px;">
             <i class="fa-solid fa-expand"></i> VER ATLAS COMPLETO
           </RouterLink>
