@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecoguiasos-v14';
+const CACHE_NAME = 'ecoguiasos-v15';
 
 // URLs que NO deben ser interceptadas por el SW (APIs dinámicas y recursos externos CDN/imágenes/fuentes/CSP)
 const BYPASS_PATTERNS = [
@@ -88,7 +88,18 @@ self.addEventListener('fetch', event => {
         fetch(event.request)
             .then(response => {
                 // Solo cachear respuestas exitosas de origen propio
-                if (response && response.status === 200 && response.type === 'basic') {
+                // Evitamos cachear dinámicamente archivos de código (.js, .css, .html)
+                // para prevenir errores de chunks viejos o quedarse atrapado en versiones viejas
+                const isCodeAsset = url.endsWith('.js') || 
+                                    url.endsWith('.css') || 
+                                    url.endsWith('.html') || 
+                                    url.endsWith('/') ||
+                                    url.includes('/@vite/') || // desarrollo local
+                                    event.request.destination === 'document' || 
+                                    event.request.destination === 'script' || 
+                                    event.request.destination === 'style';
+
+                if (response && response.status === 200 && response.type === 'basic' && !isCodeAsset) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => {
                         cache.put(event.request, clone).catch(() => {});
