@@ -33,11 +33,17 @@ const formatCategory = (cat: string) => {
   return CATEGORY_LABELS[key] || cat
 }
 
+const getItemDetailPath = (item: any) => {
+  if (!item) return ''
+  return item.tipo === 'lugar' ? `/lugares/${item.id}` : `/eventos/${item.id}`
+}
+
 
 // Map references
 let map: maplibregl.Map | null = null
 let currentMarkers: maplibregl.Marker[] = []
 let userMarker: maplibregl.Marker | null = null
+let municipalityMarker: maplibregl.Marker | null = null
 const defaultLocation: [number, number] = [-102.5528, 23.6345] // Center of Mexico [lng, lat]
 
 // Reactive state
@@ -56,6 +62,16 @@ const allItems = ref<any[]>([])
 const filteredItems = ref<any[]>([])
 const activeItem = ref<any | null>(null)
 const userCoords = ref<{ lat: number; lng: number } | null>(null)
+
+// Advanced search state
+const isAdvancedSearchOpen = ref(false)
+const searchType = ref<'todos' | 'evento' | 'lugar'>('todos')
+const filterCategory = ref('')
+const filterFree = ref(false)
+const filterPetFriendly = ref(false)
+const filterKidsFriendly = ref(false)
+const eventsInActivePlace = ref<any[]>([])
+const profilesMap = ref<Record<string, any>>({})
 
 // Carousel scrolling ref
 const carouselRef = ref<HTMLElement | null>(null)
@@ -100,6 +116,11 @@ watch(selectedEstado, async (newVal) => {
 })
 
 watch(selectedMunicipio, async (newVal) => {
+  if (municipalityMarker) {
+    municipalityMarker.remove()
+    municipalityMarker = null
+  }
+
   if (!newVal) {
     // Fallback to state center
     if (selectedEstado.value) {
@@ -119,27 +140,79 @@ watch(selectedMunicipio, async (newVal) => {
   const matched = municipiosList.value.find(m => m.code === newVal)
   
   if (matched && map) {
+    let coords: [number, number] | null = null
     if (matched.centroid?.coordinates) {
-      map.flyTo({ center: matched.centroid.coordinates, zoom: 11 })
-      highlightTerritory(matched.id, matched.name)
+      coords = matched.centroid.coordinates
     } else if (matched.id) {
       // Lazy fetch geometry if missing centroid
       try {
         const geoData = await TerritoryService.getGeometry(matched.id)
         if (geoData?.geometry?.coordinates?.[0]?.[0]) {
-          const coords = geoData.geometry.coordinates[0][0]
-          if (Array.isArray(coords) && coords.length >= 2) {
-            map.flyTo({ center: coords as [number, number], zoom: 11 })
+          const firstCoord = geoData.geometry.coordinates[0][0]
+          if (Array.isArray(firstCoord) && firstCoord.length >= 2) {
+            coords = firstCoord as [number, number]
           }
         }
       } catch (err) {
         console.warn('Sin geometría de municipio, haciendo zoom de fallback.')
-        if (stateObj?.centroid?.coordinates) map.flyTo({ center: stateObj.centroid.coordinates, zoom: 10 })
       }
-      highlightTerritory(matched.id, matched.name)
+    }
+
+    if (coords) {
+      map.flyTo({ center: coords, zoom: 11 })
+      
+      // Create custom glowing marker
+      const el = document.createElement('div')
+      el.className = 'municipality-highlight-marker'
+      el.innerHTML = '<div class="pulse-ring"></div><div class="dot"></div>'
+      
+      municipalityMarker = new maplibregl.Marker({ element: el })
+        .setLngLat(coords)
+        .addTo(map)
+      
+      highlightTerritory(null) // clear state polygon
+    } else {
+      if (stateObj?.centroid?.coordinates) map.flyTo({ center: stateObj.centroid.coordinates, zoom: 10 })
     }
   }
 
+  applyFilters()
+})
+
+watch(activeItem, async (newItem) => {
+  eventsInActivePlace.value = []
+  if (newItem && newItem.tipo === 'lugar') {
+    try {
+      const today = new Date()
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+      
+      const { data, error } = await supabase
+        .from('eventos')
+        .select('id, nombre, fecha_inicio, categoria, imagen_url')
+        .eq('lugar_id', newItem.id)
+        .eq('estado', 'approved')
+        .gte('fecha_fin', startOfMonth)
+        .order('fecha_inicio', { ascending: true })
+        
+      if (!error && data) {
+        eventsInActivePlace.value = data
+      }
+    } catch (e) {
+      console.error('Error fetching events for place:', e)
+    }
+  }
+})
+
+const selectEventFromPlace = (ev: any) => {
+  activeItem.value = {
+    ...ev,
+    tipo: 'evento',
+    lat: activeItem.value.lat,
+    lng: activeItem.value.lng
+  }
+}
+
+watch([isAdvancedSearchOpen, searchType, filterCategory, filterFree, filterPetFriendly, filterKidsFriendly], () => {
   applyFilters()
 })
 
@@ -147,6 +220,11 @@ watch(selectedMunicipio, async (newVal) => {
 let mexicoGeoJSON: any = null
 const highlightTerritory = async (territoryId: string | null, territoryName: string | null = null) => {
   if (!map || !map.getSource('selected-territory')) return
+
+  if (municipalityMarker) {
+    municipalityMarker.remove()
+    municipalityMarker = null
+  }
 
   if (!territoryName && !territoryId) {
     ;(map.getSource('selected-territory') as maplibregl.GeoJSONSource).setData({
@@ -167,10 +245,16 @@ const highlightTerritory = async (territoryId: string | null, territoryName: str
       }
 
       if (mexicoGeoJSON?.features) {
-        const normalizedName = territoryName.toLowerCase().trim()
+        const normalizeStr = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+        const normalizedName = normalizeStr(territoryName)
         const feature = mexicoGeoJSON.features.find((f: any) => {
-          const propName = (f.properties.name || f.properties.nomgeo || '').toLowerCase()
-          return propName === normalizedName || normalizedName.includes(propName) || propName.includes(normalizedName)
+          const propName = normalizeStr(f.properties.name || f.properties.nomgeo || '')
+          if (propName === normalizedName) return true
+          if (normalizedName === 'ciudad de mexico' && propName === 'distrito federal') return true
+          if (normalizedName === 'ciudad de mexico' && propName === 'df') return true
+          if (normalizedName === 'estado de mexico' && propName === 'mexico') return true
+          if (normalizedName === 'mexico' && propName === 'mexico') return true
+          return false
         })
 
         if (feature) {
@@ -202,6 +286,28 @@ const highlightTerritory = async (territoryId: string | null, territoryName: str
   }
 }
 
+// Fetch profiles for actors that published events/places
+const fetchActorsForItems = async (items: any[]) => {
+  const actorIds = [...new Set(items.map(item => item.owner_id).filter(Boolean))]
+  if (actorIds.length === 0) return
+  
+  try {
+    const { data, error } = await supabase
+      .from('perfiles')
+      .select('id, nombre_completo, avatar_url')
+      .in('id', actorIds)
+    if (!error && data) {
+      const newMap = { ...profilesMap.value }
+      data.forEach(p => {
+        newMap[p.id] = p
+      })
+      profilesMap.value = newMap
+    }
+  } catch (err) {
+    console.error('Error fetching actors:', err)
+  }
+}
+
 // Fetch markers within visible bounding box
 const fetchMarkersInBounds = async (minLng: number, minLat: number, maxLng: number, maxLat: number) => {
   try {
@@ -210,14 +316,14 @@ const fetchMarkersInBounds = async (minLng: number, minLat: number, maxLng: numb
 
     const [lugaresRes, eventosRes] = await Promise.all([
       supabase.from('lugares')
-        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion')
+        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, owner_id')
         .eq('estado', 'approved')
         .gte('lat', minLat)
         .lte('lat', maxLat)
         .gte('lng', minLng)
         .lte('lng', maxLng),
       supabase.from('eventos')
-        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin')
+        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id')
         .eq('estado', 'approved')
         .gte('fecha_fin', startOfMonth)
         .gte('lat', minLat)
@@ -230,6 +336,7 @@ const fetchMarkersInBounds = async (minLng: number, minLat: number, maxLng: numb
     const events = (eventosRes.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
 
     allItems.value = [...places, ...events]
+    await fetchActorsForItems(allItems.value)
     applyFilters()
   } catch (err) {
     console.error('Error al cargar marcadores en coordenadas:', err)
@@ -254,15 +361,21 @@ const applyFilters = async () => {
   if (selectedRegion.value) {
     const regionObj = TerritoryService.getRegions().find(r => r.id === selectedRegion.value)
     if (regionObj) {
-      result = result.filter(item => {
-        // Simple heuristic: match against state codes or coordinates
-        return true // Fallback
-      })
-      // If we select a region, query database or fallback
       try {
         const spatialData = await TerritoryService.fetchEventsByRegion(selectedRegion.value)
         if (spatialData && spatialData.length > 0) {
-          result = spatialData.map((d: any) => ({ ...d, lat: Number(d.lat), lng: Number(d.lng) }))
+          const eventIds = spatialData.filter((d: any) => d.tipo === 'evento').map((d: any) => d.id)
+          const placeIds = spatialData.filter((d: any) => d.tipo === 'lugar').map((d: any) => d.id)
+          
+          const [fullEvents, fullPlaces] = await Promise.all([
+            eventIds.length > 0 ? supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id').in('id', eventIds).eq('estado', 'approved') : Promise.resolve({ data: [] }),
+            placeIds.length > 0 ? supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, owner_id').in('id', placeIds).eq('estado', 'approved') : Promise.resolve({ data: [] })
+          ])
+          
+          result = [
+            ...(fullPlaces.data || []).map(l => ({ ...l, tipo: 'lugar', lat: Number(l.lat), lng: Number(l.lng) })),
+            ...(fullEvents.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
+          ]
         }
       } catch (_) {}
     }
@@ -275,7 +388,18 @@ const applyFilters = async () => {
       try {
         const spatialData = await TerritoryService.fetchEventsByTerritory(matchedMun.id)
         if (spatialData && spatialData.length > 0) {
-          result = spatialData.map((d: any) => ({ ...d, lat: Number(d.lat), lng: Number(d.lng) }))
+          const eventIds = spatialData.filter((d: any) => d.tipo === 'evento').map((d: any) => d.id)
+          const placeIds = spatialData.filter((d: any) => d.tipo === 'lugar').map((d: any) => d.id)
+          
+          const [fullEvents, fullPlaces] = await Promise.all([
+            eventIds.length > 0 ? supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id').in('id', eventIds).eq('estado', 'approved') : Promise.resolve({ data: [] }),
+            placeIds.length > 0 ? supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, owner_id').in('id', placeIds).eq('estado', 'approved') : Promise.resolve({ data: [] })
+          ])
+          
+          result = [
+            ...(fullPlaces.data || []).map(l => ({ ...l, tipo: 'lugar', lat: Number(l.lat), lng: Number(l.lng) })),
+            ...(fullEvents.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
+          ]
         }
       } catch (_) {}
     }
@@ -285,9 +409,58 @@ const applyFilters = async () => {
       try {
         const spatialData = await TerritoryService.fetchEventsByTerritory(matchedState.id)
         if (spatialData && spatialData.length > 0) {
-          result = spatialData.map((d: any) => ({ ...d, lat: Number(d.lat), lng: Number(d.lng) }))
+          const eventIds = spatialData.filter((d: any) => d.tipo === 'evento').map((d: any) => d.id)
+          const placeIds = spatialData.filter((d: any) => d.tipo === 'lugar').map((d: any) => d.id)
+          
+          const [fullEvents, fullPlaces] = await Promise.all([
+            eventIds.length > 0 ? supabase.from('eventos').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id').in('id', eventIds).eq('estado', 'approved') : Promise.resolve({ data: [] }),
+            placeIds.length > 0 ? supabase.from('lugares').select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, owner_id').in('id', placeIds).eq('estado', 'approved') : Promise.resolve({ data: [] })
+          ])
+          
+          result = [
+            ...(fullPlaces.data || []).map(l => ({ ...l, tipo: 'lugar', lat: Number(l.lat), lng: Number(l.lng) })),
+            ...(fullEvents.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
+          ]
         }
       } catch (_) {}
+    }
+  }
+
+  if (selectedRegion.value || selectedMunicipio.value || selectedEstado.value) {
+    await fetchActorsForItems(result)
+  }
+
+  // 1. Filter events from current month onwards
+  const today = new Date()
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  result = result.filter(item => {
+    if (item.tipo !== 'evento') return true
+    if (!item.fecha_fin && !item.fecha_inicio) return false
+    const dateToCompare = item.fecha_fin ? new Date(item.fecha_fin) : new Date(item.fecha_inicio)
+    return dateToCompare >= startOfMonth
+  })
+
+  // 2. Advanced Search Filters
+  // Filter by type
+  if (searchType.value !== 'todos') {
+    result = result.filter(item => item.tipo === searchType.value)
+  }
+
+  // Filter by category
+  if (filterCategory.value) {
+    result = result.filter(item => item.categoria && item.categoria.toLowerCase() === filterCategory.value.toLowerCase())
+  }
+
+  // Filter specific event attributes
+  if (searchType.value === 'evento' || searchType.value === 'todos') {
+    if (filterFree.value) {
+      result = result.filter(item => item.es_gratuito === true)
+    }
+    if (filterPetFriendly.value) {
+      result = result.filter(item => item.pet_friendly === true)
+    }
+    if (filterKidsFriendly.value) {
+      result = result.filter(item => item.apto_ninos === true)
     }
   }
 
@@ -596,8 +769,109 @@ onUnmounted(() => {
             <input 
               type="text" 
               v-model="filterText" 
-              placeholder="Buscar iniciativas ecológicas..." 
+              placeholder="Buscar iniciativas..." 
+              style="width: 100%;"
             />
+            <button 
+              class="advanced-search-toggle" 
+              :class="{ 'active': isAdvancedSearchOpen }"
+              @click="isAdvancedSearchOpen = !isAdvancedSearchOpen"
+              title="Búsqueda Avanzada"
+              style="background:none; border:none; color:rgba(255,255,255,0.6); cursor:pointer; font-size:1.1rem; padding: 0 8px; display:flex; align-items:center;"
+            >
+              <i class="fa-solid fa-sliders"></i>
+            </button>
+          </div>
+        </div>
+        <!-- BÚSQUEDA AVANZADA PANEL -->
+        <div v-if="isAdvancedSearchOpen" class="advanced-search-panel glass-effect" style="margin-bottom: 12px; padding: 15px; border-radius: 12px; border: 1px solid rgba(114, 176, 77, 0.25); box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 12px rgba(114, 176, 77, 0.05); display: flex; flex-direction: column; gap: 12px;">
+          <!-- Tabs: Todos vs Lugares vs Eventos -->
+          <div class="adv-tabs" style="display: flex; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 8px;">
+            <button 
+              class="adv-tab-btn" 
+              :class="{ 'active': searchType === 'todos' }"
+              @click="searchType = 'todos'"
+              style="flex: 1; padding: 8px 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; font-size: 0.8rem;"
+            >
+              <i class="fa-solid fa-list" style="margin-right: 4px;"></i> Todos
+            </button>
+            <button 
+              class="adv-tab-btn" 
+              :class="{ 'active': searchType === 'evento' }"
+              @click="searchType = 'evento'"
+              style="flex: 1; padding: 8px 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; font-size: 0.8rem;"
+            >
+              <i class="fa-solid fa-calendar-days" style="margin-right: 4px;"></i> Eventos
+            </button>
+            <button 
+              class="adv-tab-btn" 
+              :class="{ 'active': searchType === 'lugar' }"
+              @click="searchType = 'lugar'"
+              style="flex: 1; padding: 8px 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; font-size: 0.8rem;"
+            >
+              <i class="fa-solid fa-location-dot" style="margin-right: 4px;"></i> Lugares
+            </button>
+          </div>
+
+          <!-- Filters Form -->
+          <div class="adv-filters-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Category Filter -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Categoría</label>
+              <select v-model="filterCategory" class="custom-select adv-select" style="width: 100%; background: rgba(10,15,20,0.6); border: 1px solid rgba(114, 176, 77, 0.25); color: white; padding: 8px 12px; border-radius: 8px; outline: none; font-size: 0.85rem; transition: border-color 0.20s;">
+                <option value="" style="background:#0b0f14; color:#ffffff;">✨ Todas las categorías</option>
+                <template v-if="searchType === 'evento'">
+                  <option value="taller" style="background:#0b0f14; color:#0ea5e9;">🛠️ Taller</option>
+                  <option value="voluntariado" style="background:#0b0f14; color:#0ea5e9;">🤝 Voluntariado</option>
+                  <option value="conferencia" style="background:#0b0f14; color:#0ea5e9;">🎤 Conferencia / Charla</option>
+                  <option value="limpieza" style="background:#0b0f14; color:#0ea5e9;">🧹 Limpieza de Áreas</option>
+                  <option value="reforestacion" style="background:#0b0f14; color:#0ea5e9;">🌳 Reforestación</option>
+                  <option value="otro" style="background:#0b0f14; color:#0ea5e9;">✨ Otro</option>
+                </template>
+                <template v-else-if="searchType === 'lugar'">
+                  <option value="sede" style="background:#0b0f14; color:#72b04d;">🏢 Sede de Eventos</option>
+                  <option value="reciclaje" style="background:#0b0f14; color:#72b04d;">♻️ Centro de Reciclaje</option>
+                  <option value="asociacion" style="background:#0b0f14; color:#72b04d;">🌿 Asociación / ONG</option>
+                  <option value="granel" style="background:#0b0f14; color:#72b04d;">🛍️ Tienda a Granel</option>
+                  <option value="restaurante" style="background:#0b0f14; color:#72b04d;">🥗 Restaurante Vegano</option>
+                  <option value="huerto" style="background:#0b0f14; color:#72b04d;">🚜 Huerto de Cultivo</option>
+                  <option value="ecoturismo" style="background:#0b0f14; color:#72b04d;">🏔️ Ecoturismo / Natural</option>
+                </template>
+                <template v-else>
+                  <!-- All Categories Combined -->
+                  <optgroup label="📅 Eventos" style="background:#0b0f14; color:#0ea5e9;">
+                    <option value="taller" style="background:#0b0f14; color:#0ea5e9;">🛠️ Taller</option>
+                    <option value="voluntariado" style="background:#0b0f14; color:#0ea5e9;">🤝 Voluntariado</option>
+                    <option value="conferencia" style="background:#0b0f14; color:#0ea5e9;">🎤 Conferencia / Charla</option>
+                    <option value="limpieza" style="background:#0b0f14; color:#0ea5e9;">🧹 Limpieza de Áreas</option>
+                    <option value="reforestacion" style="background:#0b0f14; color:#0ea5e9;">🌳 Reforestación</option>
+                    <option value="otro" style="background:#0b0f14; color:#0ea5e9;">✨ Otro</option>
+                  </optgroup>
+                  <optgroup label="📍 Lugares" style="background:#0b0f14; color:#72b04d;">
+                    <option value="sede" style="background:#0b0f14; color:#72b04d;">🏢 Sede de Eventos</option>
+                    <option value="reciclaje" style="background:#0b0f14; color:#72b04d;">♻️ Centro de Reciclaje</option>
+                    <option value="asociacion" style="background:#0b0f14; color:#72b04d;">🌿 Asociación / ONG</option>
+                    <option value="granel" style="background:#0b0f14; color:#72b04d;">🛍️ Tienda a Granel</option>
+                    <option value="restaurante" style="background:#0b0f14; color:#72b04d;">🥗 Restaurante Vegano</option>
+                    <option value="huerto" style="background:#0b0f14; color:#72b04d;">🚜 Huerto de Cultivo</option>
+                    <option value="ecoturismo" style="background:#0b0f14; color:#72b04d;">🏔️ Ecoturismo / Natural</option>
+                  </optgroup>
+                </template>
+              </select>
+            </div>
+
+            <!-- Specific Event filters: Free/Paid, Pet Friendly, Kids Friendly -->
+            <div v-if="searchType === 'evento'" style="display: flex; flex-wrap: wrap; gap: 10px; align-content: center; padding-top: 20px;">
+              <label class="adv-checkbox-label">
+                <input type="checkbox" v-model="filterFree" class="adv-checkbox" /> Gratis
+              </label>
+              <label class="adv-checkbox-label">
+                <input type="checkbox" v-model="filterPetFriendly" class="adv-checkbox" /> Pet Friendly
+              </label>
+              <label class="adv-checkbox-label">
+                <input type="checkbox" v-model="filterKidsFriendly" class="adv-checkbox" /> Apto Niños
+              </label>
+            </div>
           </div>
         </div>
 
@@ -726,6 +1000,9 @@ onUnmounted(() => {
           <div class="map-event-info">
             <h4>{{ item.nombre }}</h4>
             <p><i class="fa-solid fa-layer-group"></i> {{ formatCategory(item.categoria) }}</p>
+            <p v-if="item.owner_id && profilesMap[item.owner_id]" style="font-size: 0.72rem; color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 5px; margin: 4px 0 0 0; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+              <i class="fa-solid fa-circle-user" style="color: var(--color-eco); font-size: 0.8rem;"></i> {{ profilesMap[item.owner_id].nombre_completo }}
+            </p>
             <p v-if="userCoords" class="map-event-dist">
               <i class="fa-solid fa-person-walking"></i> {{ getDistanceText(item) }}
             </p>
@@ -757,9 +1034,48 @@ onUnmounted(() => {
           <p class="panel-meta">
             <i class="fa-solid fa-location-dot"></i> {{ activeItem.ubicacion || 'Ubicación registrada' }}
           </p>
+          
+          <!-- Publisher Actor Info -->
+          <p v-if="activeItem.owner_id && profilesMap[activeItem.owner_id]" class="panel-meta" style="margin-top: 12px; padding: 10px; background: rgba(114, 176, 77, 0.08); border: 1px solid rgba(114, 176, 77, 0.15); border-radius: 12px; display: flex; align-items: center; gap: 10px;">
+            <img 
+              :src="profilesMap[activeItem.owner_id].avatar_url || '/assets/img/logo-app.webp'" 
+              alt="Actor avatar" 
+              style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--color-eco); object-fit: cover;"
+              onerror="this.src='/assets/img/logo-app.webp'"
+            />
+            <span style="font-size: 0.8rem; color: #ffffff;">
+              Publicado por: <strong style="color: var(--color-eco);">{{ profilesMap[activeItem.owner_id].nombre_completo }}</strong>
+            </span>
+          </p>
+
+          <!-- Events in this Place (Only if it's a place and has events) -->
+          <div v-if="activeItem.tipo === 'lugar' && eventsInActivePlace.length > 0" class="related-events-section" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+            <h4 style="color:var(--color-eco); font-size:0.95rem; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-calendar-days"></i> Eventos en esta ubicación
+            </h4>
+            <div class="related-events-list" style="display:flex; flex-direction:column; gap:8px; max-height: 200px; overflow-y: auto;">
+              <div 
+                v-for="ev in eventsInActivePlace" 
+                :key="ev.id" 
+                class="related-event-card"
+                style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:8px; border-radius:8px; cursor:pointer; transition:all 0.2s;"
+                @click="selectEventFromPlace(ev)"
+              >
+                <img 
+                  :src="ev.imagen_url || '/assets/img/ajolote.webp'" 
+                  alt="Evento" 
+                  style="width:40px; height:40px; border-radius:6px; object-fit:cover;"
+                />
+                <div style="flex:1; min-width:0;">
+                  <h5 style="color:white; font-size:0.85rem; font-weight:600; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ ev.nombre }}</h5>
+                  <span style="color:var(--color-texto-secundario); font-size:0.75rem;">{{ ev.fecha_inicio ? new Date(ev.fecha_inicio).toLocaleDateString() : 'Próximamente' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="panel-footer">
-          <RouterLink :to="`/${activeItem.tipo}s/${activeItem.id}`" class="btn-full">
+          <RouterLink :to="getItemDetailPath(activeItem)" class="btn-full">
             Ver todos los detalles
           </RouterLink>
         </div>
@@ -1108,7 +1424,7 @@ onUnmounted(() => {
 /* --- DETALLE DE EVENTO (SIDE PANEL) --- */
 .map-side-panel {
   position: absolute;
-  top: 95px;
+  top: 350px;
   left: 20px;
   width: 380px;
   background: rgba(15, 23, 42, 0.95);
@@ -1603,8 +1919,18 @@ onUnmounted(() => {
   }
 
   .map-right-controls {
-    top: 180px;
+    top: auto !important;
+    bottom: 180px !important;
     right: 15px;
+  }
+
+  .adv-filters-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .adv-tabs {
+    gap: 6px !important;
   }
 
   .filter-panel-drawer {
@@ -1655,6 +1981,88 @@ onUnmounted(() => {
   .map-event-info p {
     font-size: 0.75rem;
     margin: 2px 0;
+  }
+}
+
+.adv-tab-btn {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.adv-tab-btn.active {
+  background: var(--color-eco) !important;
+  color: white !important;
+  border-color: var(--color-eco) !important;
+  box-shadow: 0 0 10px rgba(114, 176, 77, 0.3);
+}
+.advanced-search-toggle.active {
+  color: var(--color-eco) !important;
+}
+.related-event-card:hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+  transform: translateY(-1px);
+}
+.adv-select:focus {
+  border-color: var(--color-eco) !important;
+  box-shadow: 0 0 8px rgba(114, 176, 77, 0.2);
+}
+.adv-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+.adv-checkbox-label:hover {
+  color: white;
+}
+.adv-checkbox {
+  accent-color: var(--color-eco);
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+/* Municipality Glowing Highlight Marker */
+.municipality-highlight-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.municipality-highlight-marker .dot {
+  width: 10px;
+  height: 10px;
+  background: #72b04d;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #72b04d, 0 0 20px #72b04d;
+  z-index: 2;
+}
+.municipality-highlight-marker .pulse-ring {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #72b04d;
+  border-radius: 50%;
+  animation: mun-pulse 2s infinite ease-out;
+  opacity: 0;
+  z-index: 1;
+}
+@keyframes mun-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
   }
 }
 </style>

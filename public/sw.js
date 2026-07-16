@@ -91,7 +91,7 @@ self.addEventListener('fetch', event => {
                 if (response && response.status === 200 && response.type === 'basic') {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, clone);
+                        cache.put(event.request, clone).catch(() => {});
                     });
                 }
                 return response;
