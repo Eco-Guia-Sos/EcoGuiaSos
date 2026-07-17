@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
 import { useAuthStore } from '../stores/authStore'
+import { compressImage } from '../utils/imageCompressor'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,6 +85,72 @@ const tableName = computed(() => {
 
 // Cover propagation from section
 const sectionCoverUrl = ref('')
+const uploadingCover = ref(false)
+
+const isAdmin = computed(() => {
+  return authStore.profile?.rol === 'admin'
+})
+
+const triggerFileInput = () => {
+  const input = document.getElementById('detail-cover-file-input') as HTMLInputElement
+  if (input) input.click()
+}
+
+const handleCoverUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  uploadingCover.value = true
+  try {
+    // 1. Compress image natively
+    const compressedBlob = await compressImage(file, 1200, 0.8)
+    const compressedFile = new File([compressedBlob], `item_${itemId.value}_${Date.now()}.jpg`, {
+      type: 'image/jpeg'
+    })
+
+    // 2. Upload to Supabase Storage bucket 'imagenes-plataforma'
+    const fileName = `portadas/detail_${itemId.value}_${Date.now()}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from('imagenes-plataforma')
+      .upload(fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: true
+      })
+
+    if (uploadError) throw uploadError
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('imagenes-plataforma')
+      .getPublicUrl(fileName)
+
+    const publicUrl = publicUrlData.publicUrl
+
+    // 3. Update the item's image/cover URL in the DB
+    const { error: dbError } = await supabase
+      .from(tableName.value)
+      .update({
+        imagen_url: publicUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', itemId.value)
+
+    if (dbError) throw dbError
+
+    if (item.value) {
+      item.value.imagen_url = publicUrl
+      item.value.imagen = publicUrl
+    }
+    alert('¡Portada del elemento actualizada correctamente!')
+  } catch (err: any) {
+    console.error('Error uploading cover:', err)
+    alert('No se pudo subir la portada: ' + (err.message || err))
+  } finally {
+    uploadingCover.value = false
+    target.value = ''
+  }
+}
 
 const fetchSectionCover = async () => {
   sectionCoverUrl.value = ''
@@ -94,8 +161,23 @@ const fetchSectionCover = async () => {
   } else if (isEcoTecType.value) {
     targetSection = 'eco-tecnologia'
   } else if (isEventType.value) {
-    // If it's a subevent of a superevento, it has its own logic, otherwise default to a fallback section or general 'eventos'
-    targetSection = item.value?.seccion_id || 'super-eventos'
+    // If it has a parent super_evento, we should grab the cover of that super_evento
+    if (item.value?.super_evento_id) {
+      try {
+        const { data, error } = await supabase
+          .from('super_eventos')
+          .select('imagen_url')
+          .eq('id', item.value.super_evento_id)
+          .maybeSingle()
+        if (!error && data && data.imagen_url) {
+          sectionCoverUrl.value = data.imagen_url
+          return
+        }
+      } catch (err) {
+        console.warn('Error fetching parent super event cover:', err)
+      }
+    }
+    targetSection = 'super-eventos'
   } else {
     // Places / Lugares
     targetSection = 'lugares'
@@ -1004,6 +1086,28 @@ watch(() => route.path, () => {
         <!-- Col 2: Flyer / Imagen Central -->
         <div class="flyer-content">
           <div class="flyer-wrapper" id="slider-container" style="position: relative; overflow: visible; border-radius: 20px; background: rgba(0,0,0,0.2);">
+            <!-- Admin Cover Changer Floating Widget -->
+            <div v-if="isAdmin" class="admin-cover-widget" style="position: absolute; top: 15px; right: 15px; z-index: 100;">
+              <button 
+                @click="triggerFileInput" 
+                class="admin-cover-btn" 
+                :disabled="uploadingCover"
+                title="Cambiar imagen de portada del elemento"
+                style="padding: 8px 14px; font-size: 0.75rem;"
+              >
+                <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
+                <i v-else class="fa-solid fa-camera"></i>
+                <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
+              </button>
+              <input 
+                type="file" 
+                id="detail-cover-file-input" 
+                @change="handleCoverUpload" 
+                accept="image/*" 
+                style="display: none;" 
+              />
+            </div>
+
             <!-- Inner container to handle image slideshow clipping -->
             <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 12px;">
               <!-- Slider Track -->
@@ -1930,5 +2034,47 @@ watch(() => route.path, () => {
   margin-left: auto !important;
   margin-right: auto !important;
   box-sizing: border-box;
+}
+
+/* Admin Cover Photo Widget */
+.admin-cover-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(114, 176, 77, 0.4);
+  color: #72B04D;
+  padding: 10px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.admin-cover-btn:hover:not(:disabled) {
+  background: #72B04D;
+  color: #0b1329;
+  border-color: #72B04D;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.6);
+  transform: scale(1.05);
+}
+.admin-cover-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .admin-cover-widget {
+    top: 10px !important;
+    right: 10px !important;
+  }
+  .admin-cover-btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+  }
 }
 </style>

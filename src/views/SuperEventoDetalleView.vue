@@ -2,11 +2,14 @@
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
+import { useAuthStore } from '../stores/authStore'
+import { compressImage } from '../utils/imageCompressor'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const superEventoId = route.params.id as string
 
@@ -16,6 +19,11 @@ const loading = ref(true)
 const errorMsg = ref('')
 
 const sectionCoverUrl = ref('')
+const uploadingCover = ref(false)
+
+const isAdmin = computed(() => {
+  return authStore.profile?.rol === 'admin'
+})
 
 const fetchSectionCover = async () => {
   try {
@@ -29,6 +37,66 @@ const fetchSectionCover = async () => {
     }
   } catch (err) {
     console.warn('Error fetching super-event cover fallback:', err)
+  }
+}
+
+const triggerFileInput = () => {
+  const input = document.getElementById('superevento-cover-file-input') as HTMLInputElement
+  if (input) input.click()
+}
+
+const handleCoverUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  uploadingCover.value = true
+  try {
+    // 1. Compress image natively
+    const compressedBlob = await compressImage(file, 1200, 0.8)
+    const compressedFile = new File([compressedBlob], `superevento_${superEventoId}_${Date.now()}.jpg`, {
+      type: 'image/jpeg'
+    })
+
+    // 2. Upload to Supabase Storage bucket 'imagenes-plataforma'
+    const fileName = `supereventos/${superEventoId}_${Date.now()}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from('imagenes-plataforma')
+      .upload(fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: true
+      })
+
+    if (uploadError) throw uploadError
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('imagenes-plataforma')
+      .getPublicUrl(fileName)
+
+    const publicUrl = publicUrlData.publicUrl
+
+    // 3. Update the specific super_evento's imagen_url in the DB
+    const { error: dbError } = await supabase
+      .from('super_eventos')
+      .update({
+        imagen_url: publicUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', superEventoId)
+
+    if (dbError) throw dbError
+
+    if (superEvento.value) {
+      superEvento.value.imagen_url = publicUrl
+    }
+    alert('¡Portada del Súper Evento actualizada correctamente!')
+  } catch (err: any) {
+    console.error('Error uploading cover:', err)
+    alert('No se pudo subir la portada: ' + (err.message || err))
+  } finally {
+    uploadingCover.value = false
+    target.value = ''
   }
 }
 
@@ -365,6 +433,27 @@ watch(selectedEventDetail, (newVal, oldVal) => {
         class="hero-bg-blur"
         :style="{ backgroundImage: `url(${superEvento?.imagen_url || sectionCoverUrl || '/assets/img/logo-app.webp'})`, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(30px) brightness(0.3)', opacity: 0.8 }"
       ></div>
+
+      <!-- Admin Cover Changer Floating Widget -->
+      <div v-if="isAdmin" class="admin-cover-widget" style="position: absolute; top: 25px; right: 25px; z-index: 100;">
+        <button 
+          @click="triggerFileInput" 
+          class="admin-cover-btn" 
+          :disabled="uploadingCover"
+          title="Cambiar imagen de portada del Súper Evento"
+        >
+          <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
+          <i v-else class="fa-solid fa-camera"></i>
+          <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
+        </button>
+        <input 
+          type="file" 
+          id="superevento-cover-file-input" 
+          @change="handleCoverUpload" 
+          accept="image/*" 
+          style="display: none;" 
+        />
+      </div>
       
       <div class="hero-glass-panel" style="position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -779,5 +868,47 @@ watch(selectedEventDetail, (newVal, oldVal) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Admin Cover Photo Widget */
+.admin-cover-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(114, 176, 77, 0.4);
+  color: #72B04D;
+  padding: 10px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.admin-cover-btn:hover:not(:disabled) {
+  background: #72B04D;
+  color: #0b1329;
+  border-color: #72B04D;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.6);
+  transform: scale(1.05);
+}
+.admin-cover-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .admin-cover-widget {
+    top: 15px !important;
+    right: 15px !important;
+  }
+  .admin-cover-btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+  }
 }
 </style>
