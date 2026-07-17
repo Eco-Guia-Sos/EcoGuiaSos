@@ -260,6 +260,14 @@ const profileAdminForm = ref({
   zonas_impacto: [] as string[]
 })
 
+const searchStaffQuery = ref('')
+const searchVolunteerQuery = ref('')
+
+const adminPasswordForm = ref({
+  actorNewPassword: '',
+  volunteerNewPassword: ''
+})
+
 const SOCIAL_NETWORKS = [
   { id: 'facebook', name: 'Facebook', icon: 'fa-brands fa-facebook', placeholder: 'https://facebook.com/tu-usuario' },
   { id: 'instagram', name: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'https://instagram.com/tu-usuario' },
@@ -419,6 +427,60 @@ const sendResetPasswordEmail = async () => {
     alert('Se ha enviado un enlace de recuperación al correo: ' + profileAdminForm.value.email)
   } catch (err: any) {
     alert('Error al enviar enlace: ' + err.message)
+  }
+}
+
+const changePasswordForActor = async () => {
+  const newPass = adminPasswordForm.value.actorNewPassword.trim()
+  if (!newPass) {
+    alert('Por favor escribe una contraseña válida.')
+    return
+  }
+  if (newPass.length < 6) {
+    alert('La contraseña debe tener al menos 6 caracteres.')
+    return
+  }
+  if (!selectedActorForProfile.value?.id) {
+    alert('No se pudo identificar al actor.')
+    return
+  }
+  try {
+    const { error } = await supabase.rpc('admin_update_user_password', {
+      user_id: selectedActorForProfile.value.id,
+      new_pass: newPass
+    })
+    if (error) throw error
+    alert('Contraseña del actor actualizada correctamente.')
+    adminPasswordForm.value.actorNewPassword = ''
+  } catch (err: any) {
+    alert('Error al actualizar contraseña: ' + err.message)
+  }
+}
+
+const changePasswordForVolunteer = async () => {
+  const newPass = adminPasswordForm.value.volunteerNewPassword.trim()
+  if (!newPass) {
+    alert('Por favor escribe una contraseña válida.')
+    return
+  }
+  if (newPass.length < 6) {
+    alert('La contraseña debe tener al menos 6 caracteres.')
+    return
+  }
+  if (!selectedVolunteer.value?.id) {
+    alert('No se pudo identificar al voluntario.')
+    return
+  }
+  try {
+    const { error } = await supabase.rpc('admin_update_user_password', {
+      user_id: selectedVolunteer.value.id,
+      new_pass: newPass
+    })
+    if (error) throw error
+    alert('Contraseña del voluntario actualizada correctamente.')
+    adminPasswordForm.value.volunteerNewPassword = ''
+  } catch (err: any) {
+    alert('Error al actualizar contraseña: ' + err.message)
   }
 }
 
@@ -1053,7 +1115,25 @@ const filteredListItems = computed(() => {
   })
 })
 
-const filteredStaffList = computed(() => staffList.value)
+const filteredStaffList = computed(() => {
+  const query = searchStaffQuery.value.trim().toLowerCase()
+  if (!query) return staffList.value
+  return staffList.value.filter(actor => {
+    const name = (actor.nombre_completo || '').toLowerCase()
+    const email = (actor.email || '').toLowerCase()
+    return name.includes(query) || email.includes(query)
+  })
+})
+
+const filteredVoluntariosList = computed(() => {
+  const query = searchVolunteerQuery.value.trim().toLowerCase()
+  if (!query) return voluntariosList.value
+  return voluntariosList.value.filter(vol => {
+    const name = (vol.nombre_completo || '').toLowerCase()
+    const email = (vol.email || '').toLowerCase()
+    return name.includes(query) || email.includes(query)
+  })
+})
 
 const filteredSeguidoresList = computed(() => {
   if (selectedSection.value !== 'seguidores') return []
@@ -3272,10 +3352,22 @@ const formatRelativeDate = (dateStr: string) => {
           </div>
 
           <!-- Pestañas de Moderación de Actores -->
-          <div class="moderation-tabs-row" style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <button class="tab-btn" :class="{ 'active': actorModerationFilter === 'approved' }" @click="actorModerationFilter = 'approved'">Publicados</button>
-            <button class="tab-btn" :class="{ 'active': actorModerationFilter === 'pending' }" @click="actorModerationFilter = 'pending'">En Revisión <span class="tab-counter" v-if="pendingActoresCount > 0" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; margin-left: 5px;">{{ pendingActoresCount }}</span></button>
-            <button class="tab-btn" :class="{ 'active': actorModerationFilter === 'rejected' }" @click="actorModerationFilter = 'rejected'">Rechazados</button>
+          <div class="moderation-tabs-row" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 10px;">
+              <button class="tab-btn" :class="{ 'active': actorModerationFilter === 'approved' }" @click="actorModerationFilter = 'approved'">Publicados</button>
+              <button class="tab-btn" :class="{ 'active': actorModerationFilter === 'pending' }" @click="actorModerationFilter = 'pending'">En Revisión <span class="tab-counter" v-if="pendingActoresCount > 0" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; margin-left: 5px;">{{ pendingActoresCount }}</span></button>
+              <button class="tab-btn" :class="{ 'active': actorModerationFilter === 'rejected' }" @click="actorModerationFilter = 'rejected'">Rechazados</button>
+            </div>
+            <!-- Search staff bar -->
+            <div class="search-box-container" style="position: relative; width: 100%; max-width: 320px;">
+              <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--admin-text-muted); pointer-events: none;"></i>
+              <input 
+                type="text" 
+                v-model="searchStaffQuery" 
+                placeholder="Buscar actores por nombre o correo..." 
+                style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 50px; color: white; padding: 10px 15px 10px 42px; font-size: 0.85rem; outline: none; transition: border-color 0.3s;"
+              />
+            </div>
           </div>
 
           <div class="table-responsive glass-effect" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); overflow: visible;">
@@ -3350,8 +3442,18 @@ const formatRelativeDate = (dateStr: string) => {
 
         <!-- 4.5 VOLUNTARIOS VIEW (Admin only) -->
         <div v-else-if="activeTab === 'voluntarios'" class="staff-view-container">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h2 style="color: white; font-weight: 800; font-size: 1.4rem; margin: 0;">Gestión de Voluntarios</h2>
+            <!-- Search volunteer bar -->
+            <div class="search-box-container" style="position: relative; width: 100%; max-width: 320px;">
+              <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--admin-text-muted); pointer-events: none;"></i>
+              <input 
+                type="text" 
+                v-model="searchVolunteerQuery" 
+                placeholder="Buscar voluntarios por nombre o correo..." 
+                style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 50px; color: white; padding: 10px 15px 10px 42px; font-size: 0.85rem; outline: none; transition: border-color 0.3s;"
+              />
+            </div>
           </div>
           <div class="table-responsive glass-effect" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); overflow: visible;">
             <table class="admin-data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -3365,7 +3467,7 @@ const formatRelativeDate = (dateStr: string) => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="actor in voluntariosList" :key="actor.id" style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <tr v-for="actor in filteredVoluntariosList" :key="actor.id" style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                   <td style="padding: 15px 20px; color: white; font-weight:600;">{{ actor.nombre_completo || 'Sin nombre' }}</td>
                   <td style="padding: 15px 20px; color: #94a3b8;">{{ actor.email || 'N/A' }}</td>
                   <td style="padding: 15px 20px;">
@@ -3391,7 +3493,7 @@ const formatRelativeDate = (dateStr: string) => {
                     </div>
                   </td>
                 </tr>
-                <tr v-if="voluntariosList.length === 0">
+                <tr v-if="filteredVoluntariosList.length === 0">
                   <td colspan="5" style="padding: 30px; text-align: center; color: #94a3b8;">No hay voluntarios registrados.</td>
                 </tr>
               </tbody>
@@ -5031,19 +5133,33 @@ const formatRelativeDate = (dateStr: string) => {
                         </div>
 
                         <!-- Controles para el Admin editando a otro -->
-                        <div id="security-controls-other" style="display: block; background: rgba(114, 176, 77, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed var(--admin-accent);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <p style="color: white; font-weight: 500; margin-bottom: 4px;">Asistencia de Acceso</p>
-                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted);">El usuario recibirá un correo para restablecer su propia contraseña.</p>
+                        <div id="security-controls-other" style="display: block;">
+                            <div class="security-split-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                                <!-- Columna Email -->
+                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border); display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div>
+                                        <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asistencia de Correo</h4>
+                                        <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin-bottom: 15px;">Enviar un enlace de recuperación de contraseña al correo del usuario.</p>
+                                    </div>
+                                    <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmail" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                        <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                    </button>
                                 </div>
-                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmail" style="background: var(--admin-accent); color: black; border: none; font-weight: 600; padding: 10px 20px;">
-                                    <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
-                                </button>
+
+                                <!-- Columna Contraseña -->
+                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border);">
+                                    <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asignar Nueva Contraseña</h4>
+                                    <div class="form-group" style="margin-bottom: 12px;">
+                                        <input type="password" v-model="adminPasswordForm.actorNewPassword" placeholder="Mínimo 6 caracteres" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                                    </div>
+                                    <button type="button" @click.prevent="changePasswordForActor" class="btn-admin" style="width: 100%; background: var(--admin-accent); color: black; border: none; cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                        <i class="fa-solid fa-lock"></i> Cambiar Contraseña
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;" id="security-note-admin">Nota: Por seguridad, como administrador solo puedes enviar un enlace de recuperación.</p>
+                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;" id="security-note-admin">Nota: Por seguridad, las contraseñas asignadas manualmente por el administrador deben constar de al menos 6 caracteres.</p>
                     </div>
 
                     <div style="display:flex; justify-content:flex-end; gap:10px; border-top: 1px solid var(--admin-border); padding-top: 20px;">
@@ -5256,18 +5372,30 @@ const formatRelativeDate = (dateStr: string) => {
                             <i class="fa-solid fa-shield-halved" style="color: #72B04D;"></i> Seguridad de la Cuenta
                         </h3>
                         
-                        <div style="background: rgba(114, 176, 77, 0.05); padding: 15px; border-radius: 12px; border: 1px dashed var(--admin-accent);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <div class="security-split-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                            <!-- Columna Email -->
+                            <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border); display: flex; flex-direction: column; justify-content: space-between;">
                                 <div>
-                                    <p style="color: white; font-weight: 500; margin: 0 0 4px 0; font-size: 0.9rem;">Asistencia de Acceso</p>
-                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin: 0;">El voluntario recibirá un correo para restablecer su propia contraseña.</p>
+                                    <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asistencia de Correo</h4>
+                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin-bottom: 15px;">Enviar un enlace de recuperación de contraseña al correo del voluntario.</p>
                                 </div>
-                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmailForVolunteer" style="background: #72B04D; color: white; border: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmailForVolunteer" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
                                     <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
                                 </button>
                             </div>
+
+                            <!-- Columna Contraseña -->
+                            <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border);">
+                                <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asignar Nueva Contraseña</h4>
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <input type="password" v-model="adminPasswordForm.volunteerNewPassword" placeholder="Mínimo 6 caracteres" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
+                                </div>
+                                <button type="button" @click.prevent="changePasswordForVolunteer" class="btn-admin" style="width: 100%; background: #72B04D; color: white; border: none; cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <i class="fa-solid fa-lock"></i> Cambiar Contraseña
+                                </button>
+                            </div>
                         </div>
-                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;">Nota: Por seguridad, como administrador solo puedes enviar un enlace de recuperación de contraseña.</p>
+                        <p style="font-size: 0.75rem; color: var(--admin-text-muted); margin-top: 12px; font-style: italic;">Nota: Por seguridad, las contraseñas asignadas manualmente por el administrador deben constar de al menos 6 caracteres.</p>
                     </div>
 
                     <!-- Actions -->
