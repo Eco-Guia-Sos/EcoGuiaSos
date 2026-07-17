@@ -82,6 +82,45 @@ const tableName = computed(() => {
   return 'lugares'
 })
 
+// Cover propagation from section
+const sectionCoverUrl = ref('')
+
+const fetchSectionCover = async () => {
+  sectionCoverUrl.value = ''
+  let targetSection = ''
+  
+  if (isCausaType.value) {
+    targetSection = 'causas'
+  } else if (isEcoTecType.value) {
+    targetSection = 'eco-tecnologia'
+  } else if (isEventType.value) {
+    // If it's a subevent of a superevento, it has its own logic, otherwise default to a fallback section or general 'eventos'
+    targetSection = item.value?.seccion_id || 'super-eventos'
+  } else {
+    // Places / Lugares
+    targetSection = 'lugares'
+  }
+
+  if (!targetSection && item.value?.seccion_id) {
+    targetSection = item.value.seccion_id
+  }
+
+  if (!targetSection) return
+
+  try {
+    const { data, error } = await supabase
+      .from('portadas_secciones')
+      .select('imagen_url')
+      .eq('seccion_id', targetSection)
+      .maybeSingle()
+    if (!error && data && data.imagen_url) {
+      sectionCoverUrl.value = data.imagen_url
+    }
+  } catch (err) {
+    console.warn('Error fetching fallback cover:', err)
+  }
+}
+
 // Slide images helper
 const images = computed(() => {
   if (!item.value) return ['/assets/img/logo-app.webp']
@@ -119,6 +158,11 @@ const images = computed(() => {
     if (singleImg && typeof singleImg === 'string' && singleImg.trim()) {
       imgs.push(singleImg.trim())
     }
+  }
+
+  // Fallback to section cover photo if configured before using logo-app.webp
+  if (imgs.length === 0 && sectionCoverUrl.value) {
+    imgs.push(sectionCoverUrl.value)
   }
 
   if (imgs.length === 0) {
@@ -356,6 +400,9 @@ const loadDetailData = async () => {
 
     item.value = parsedData
     document.title = `${parsedData.nombre} - EcoGuía SOS`
+
+    // Load section cover fallback photo
+    await fetchSectionCover()
 
     // Load parent super event if it's an event type
     if (isEventType.value && parsedData.super_evento_id) {

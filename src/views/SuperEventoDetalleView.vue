@@ -15,6 +15,23 @@ const subEventos = ref<any[]>([])
 const loading = ref(true)
 const errorMsg = ref('')
 
+const sectionCoverUrl = ref('')
+
+const fetchSectionCover = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('portadas_secciones')
+      .select('imagen_url')
+      .eq('seccion_id', 'super-eventos')
+      .maybeSingle()
+    if (!error && data && data.imagen_url) {
+      sectionCoverUrl.value = data.imagen_url
+    }
+  } catch (err) {
+    console.warn('Error fetching super-event cover fallback:', err)
+  }
+}
+
 const hasSocialLinks = computed(() => {
   if (!superEvento.value) return false
   return !!(
@@ -113,6 +130,9 @@ const fetchData = async () => {
 
     // Request GPS permission to calculate distances
     requestUserLocation()
+
+    // Fetch section cover fallback
+    await fetchSectionCover()
 
   } catch (err: any) {
     console.error('Error fetching details:', err)
@@ -343,7 +363,7 @@ watch(selectedEventDetail, (newVal, oldVal) => {
     <header class="interior-hero" style="position: relative; overflow: hidden; padding-bottom: 2rem;">
       <div 
         class="hero-bg-blur"
-        :style="{ backgroundImage: `url(${superEvento?.imagen_url || '/assets/img/logo-app.webp'})`, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(30px) brightness(0.3)', opacity: 0.8 }"
+        :style="{ backgroundImage: `url(${superEvento?.imagen_url || sectionCoverUrl || '/assets/img/logo-app.webp'})`, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(30px) brightness(0.3)', opacity: 0.8 }"
       ></div>
       
       <div class="hero-glass-panel" style="position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;">
