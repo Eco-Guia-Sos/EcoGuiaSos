@@ -427,12 +427,11 @@ watch(selectedEventDetail, (newVal, oldVal) => {
 <template>
   <div class="theme-ajolote" style="min-height: 100vh; background: #0b1329;">
     <!-- HEADER HERO BANNER -->
-    <header class="interior-hero" style="position: relative; overflow: hidden; padding-bottom: 2rem;">
-      <div 
-        class="hero-bg-blur"
-        :style="{ backgroundImage: `url(${superEvento?.imagen_url || sectionCoverUrl || '/assets/img/logo-app.webp'})`, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(30px) brightness(0.3)', opacity: 0.8 }"
-      ></div>
-
+    <header 
+      class="interior-hero" 
+      :style="{ backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.65)), url(${superEvento?.imagen_url || sectionCoverUrl || '/assets/img/logo-app.webp'})` }"
+      style="position: relative; overflow: hidden; padding-bottom: 2rem; background-size: cover; background-position: center; display: flex; align-items: center; min-height: 320px;"
+    >
       <!-- Admin Cover Changer Floating Widget -->
       <div v-if="isAdmin" class="admin-cover-widget" style="position: absolute; top: 25px; right: 25px; z-index: 100;">
         <button 
@@ -454,15 +453,15 @@ watch(selectedEventDetail, (newVal, oldVal) => {
         />
       </div>
       
-      <div class="hero-glass-panel" style="position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;">
+      <div class="hero-glass-panel" style="position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <span class="category-badge" style="background: rgba(114, 176, 77, 0.2); border-color: rgba(114, 176, 77, 0.4); color: #72b04d;">🏆 Super Evento Colectivo</span>
+          <span class="category-badge" style="background: rgba(114, 176, 77, 0.2); border-color: rgba(114, 176, 77, 0.4); color: #8ce167; font-weight: 700;">🏆 Super Evento Colectivo</span>
           <button @click="router.push('/super-eventos')" class="back-btn-classic">
             <i class="fa-solid fa-arrow-left"></i> Volver a Super Eventos
           </button>
         </div>
         
-        <h2 style="font-size: 2.2rem; font-weight: 800; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">{{ superEvento?.nombre }}</h2>
+        <h2 style="font-size: 2.2rem; font-weight: 800; text-shadow: 0 4px 10px rgba(0,0,0,0.5); color: white; margin: 5px 0;">{{ superEvento?.nombre }}</h2>
         <p style="font-size: 1.1rem; color: #cbd5e1; max-width: 800px; margin: 0; line-height: 1.6;">{{ superEvento?.descripcion_corta }}</p>
       </div>
     </header>
