@@ -889,7 +889,29 @@ watch(() => route.path, () => {
     <!-- MAIN DETAIL CONTENT -->
     <main v-else-if="item" id="detail-main-content">
       <!-- 1. HERO SECTION -->
-      <header class="detail-hero">
+      <header class="detail-hero" style="position: relative;">
+        <!-- Admin Cover Changer Floating Widget for page header banner -->
+        <div v-if="isAdmin" class="admin-cover-widget" style="position: absolute; top: 20px; right: 20px; z-index: 100;">
+          <button 
+            @click="triggerFileInput" 
+            class="admin-cover-btn" 
+            :disabled="uploadingCover"
+            title="Cambiar imagen de portada del elemento"
+            style="padding: 8px 14px; font-size: 0.75rem;"
+          >
+            <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
+            <i v-else class="fa-solid fa-camera"></i>
+            <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
+          </button>
+          <input 
+            type="file" 
+            id="detail-cover-file-input" 
+            @change="handleCoverUpload" 
+            accept="image/*" 
+            style="display: none;" 
+          />
+        </div>
+
         <div class="hero-bg-blur" id="hero-bg-blur" :style="`background-image: url(${images[0]});`"></div>
         <div class="hero-container container">
           <div class="hero-info no-poster">
@@ -1085,27 +1107,6 @@ watch(() => route.path, () => {
         <!-- Col 2: Flyer / Imagen Central -->
         <div class="flyer-content">
           <div class="flyer-wrapper" id="slider-container" style="position: relative; overflow: visible; border-radius: 20px; background: rgba(0,0,0,0.2);">
-            <!-- Admin Cover Changer Floating Widget -->
-            <div v-if="isAdmin" class="admin-cover-widget" style="position: absolute; top: 15px; right: 15px; z-index: 100;">
-              <button 
-                @click="triggerFileInput" 
-                class="admin-cover-btn" 
-                :disabled="uploadingCover"
-                title="Cambiar imagen de portada del elemento"
-                style="padding: 8px 14px; font-size: 0.75rem;"
-              >
-                <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
-                <i v-else class="fa-solid fa-camera"></i>
-                <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
-              </button>
-              <input 
-                type="file" 
-                id="detail-cover-file-input" 
-                @change="handleCoverUpload" 
-                accept="image/*" 
-                style="display: none;" 
-              />
-            </div>
 
             <!-- Inner container to handle image slideshow clipping -->
             <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 12px;">
