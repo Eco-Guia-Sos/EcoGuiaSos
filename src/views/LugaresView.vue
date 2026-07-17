@@ -9,6 +9,92 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 const router = useRouter()
 const authStore = useAuthStore()
 
+// Cover Management
+const coverUrl = ref('')
+const uploadingCover = ref(false)
+const compressImageHelper = ref<any>(null)
+
+const isAdmin = computed(() => {
+  return authStore.profile?.rol === 'admin'
+})
+
+const fetchCover = async () => {
+  coverUrl.value = ''
+  try {
+    const { data, error } = await supabase
+      .from('portadas_secciones')
+      .select('imagen_url')
+      .eq('seccion_id', 'lugares')
+      .maybeSingle()
+    if (error) throw error
+    if (data && data.imagen_url) {
+      coverUrl.value = data.imagen_url
+    }
+  } catch (err) {
+    console.warn('Error fetching cover photo for places:', err)
+  }
+}
+
+const triggerFileInput = () => {
+  const input = document.getElementById('places-cover-file-input') as HTMLInputElement
+  if (input) input.click()
+}
+
+const handleCoverUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  uploadingCover.value = true
+  try {
+    if (!compressImageHelper.value) {
+      const mod = await import('../utils/imageCompressor')
+      compressImageHelper.value = mod.compressImage
+    }
+    
+    const compressedBlob = await compressImageHelper.value(file, 1200, 0.8)
+    const compressedFile = new File([compressedBlob], `cover_lugares_${Date.now()}.jpg`, {
+      type: 'image/jpeg'
+    })
+
+    const fileName = `portadas/lugares_${Date.now()}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from('imagenes-plataforma')
+      .upload(fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: true
+      })
+
+    if (uploadError) throw uploadError
+
+    const { data: publicUrlData } = supabase.storage
+      .from('imagenes-plataforma')
+      .getPublicUrl(fileName)
+
+    const publicUrl = publicUrlData.publicUrl
+
+    const { error: dbError } = await supabase
+      .from('portadas_secciones')
+      .upsert({
+        seccion_id: 'lugares',
+        imagen_url: publicUrl,
+        updated_at: new Date().toISOString(),
+        updated_by: authStore.user?.id
+      })
+
+    if (dbError) throw dbError
+
+    coverUrl.value = publicUrl
+    alert('¡Portada de lugares actualizada correctamente!')
+  } catch (err: any) {
+    console.error('Error uploading cover:', err)
+    alert('No se pudo subir la portada: ' + (err.message || err))
+  } finally {
+    uploadingCover.value = false
+    target.value = ''
+  }
+}
+
 // State
 const todosLosLugares = ref<any[]>([])
 const loading = ref(true)
@@ -457,6 +543,7 @@ onMounted(() => {
 
   fetchLugares()
   checkPermissions()
+  fetchCover()
   if (typeof lucide !== 'undefined') {
     lucide.createIcons()
   }
@@ -466,7 +553,31 @@ onMounted(() => {
 <template>
   <div class="theme-ajolote">
     <!-- Hero / Header -->
-    <header class="interior-hero">
+    <header 
+      class="interior-hero"
+      :style="coverUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(${coverUrl})` } : {}"
+    >
+      <!-- Admin Cover Changer Floating Widget -->
+      <div v-if="isAdmin" class="admin-cover-widget">
+        <button 
+          @click="triggerFileInput" 
+          class="admin-cover-btn" 
+          :disabled="uploadingCover"
+          title="Cambiar imagen de portada de lugares"
+        >
+          <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
+          <i v-else class="fa-solid fa-camera"></i>
+          <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
+        </button>
+        <input 
+          type="file" 
+          id="places-cover-file-input" 
+          @change="handleCoverUpload" 
+          accept="image/*" 
+          style="display: none;" 
+        />
+      </div>
+
       <div class="hero-glass-panel">
         <span class="category-badge">🦎 Hub Ajolote</span>
         <h2>Lugares Sustentables</h2>
@@ -982,6 +1093,54 @@ onMounted(() => {
     padding: 1rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
+  }
+}
+
+/* Admin Cover Photo Widget */
+.admin-cover-widget {
+  position: absolute;
+  top: 90px;
+  right: 25px;
+  z-index: 100;
+}
+.admin-cover-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(114, 176, 77, 0.4);
+  color: #72B04D;
+  padding: 10px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.admin-cover-btn:hover:not(:disabled) {
+  background: #72B04D;
+  color: #0b1329;
+  border-color: #72B04D;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.6);
+  transform: scale(1.05);
+}
+.admin-cover-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .admin-cover-widget {
+    top: 85px;
+    right: 15px;
+  }
+  .admin-cover-btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
   }
 }
 </style>
