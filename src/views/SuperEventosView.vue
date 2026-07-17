@@ -1,12 +1,100 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../services/supabase.service'
+import { useAuthStore } from '../stores/authStore'
+import { compressImage } from '../utils/imageCompressor'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
 const superEventos = ref<any[]>([])
 const loading = ref(true)
 const errorMsg = ref('')
+
+// Cover State
+const coverUrl = ref('')
+const uploadingCover = ref(false)
+
+const isAdmin = computed(() => {
+  return authStore.profile?.rol === 'admin'
+})
+
+const fetchCover = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('portadas_secciones')
+      .select('imagen_url')
+      .eq('seccion_id', 'super-eventos')
+      .maybeSingle()
+    if (error) throw error
+    if (data && data.imagen_url) {
+      coverUrl.value = data.imagen_url
+    }
+  } catch (err) {
+    console.warn('Error fetching cover photo:', err)
+  }
+}
+
+const triggerFileInput = () => {
+  const input = document.getElementById('cover-file-input') as HTMLInputElement
+  if (input) input.click()
+}
+
+const handleCoverUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  uploadingCover.value = true
+  try {
+    // 1. Compress image natively using canvas helper
+    const compressedBlob = await compressImage(file, 1200, 0.8)
+    const compressedFile = new File([compressedBlob], `cover_super_eventos_${Date.now()}.jpg`, {
+      type: 'image/jpeg'
+    })
+
+    // 2. Upload to Supabase Storage bucket 'imagenes-plataforma'
+    const fileName = `portadas/super_eventos_${Date.now()}.jpg`
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('imagenes-plataforma')
+      .upload(fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: true
+      })
+
+    if (uploadError) throw uploadError
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('imagenes-plataforma')
+      .getPublicUrl(fileName)
+
+    const publicUrl = publicUrlData.publicUrl
+
+    // 3. Save reference in DB
+    const { error: dbError } = await supabase
+      .from('portadas_secciones')
+      .upsert({
+        seccion_id: 'super-eventos',
+        imagen_url: publicUrl,
+        updated_at: new Date().toISOString(),
+        updated_by: authStore.user?.id
+      })
+
+    if (dbError) throw dbError
+
+    coverUrl.value = publicUrl
+    alert('¡Portada de página actualizada correctamente!')
+  } catch (err: any) {
+    console.error('Error uploading cover:', err)
+    alert('No se pudo subir la portada: ' + (err.message || err))
+  } finally {
+    uploadingCover.value = false
+    // Clear input
+    target.value = ''
+  }
+}
 
 const fetchSuperEventos = async () => {
   loading.value = true
@@ -30,12 +118,37 @@ const fetchSuperEventos = async () => {
 
 onMounted(() => {
   fetchSuperEventos()
+  fetchCover()
 })
 </script>
 
 <template>
   <div class="theme-ajolote" style="min-height: 100vh; background: #0b1329;">
-    <header class="interior-hero">
+    <header 
+      class="interior-hero" 
+      :style="coverUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(${coverUrl})` } : {}"
+    >
+      <!-- Admin Cover Changer Floating Widget -->
+      <div v-if="isAdmin" class="admin-cover-widget">
+        <button 
+          @click="triggerFileInput" 
+          class="admin-cover-btn" 
+          :disabled="uploadingCover"
+          title="Cambiar imagen de portada"
+        >
+          <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
+          <i v-else class="fa-solid fa-camera"></i>
+          <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
+        </button>
+        <input 
+          type="file" 
+          id="cover-file-input" 
+          @change="handleCoverUpload" 
+          accept="image/*" 
+          style="display: none;" 
+        />
+      </div>
+
       <div class="hero-glass-panel">
         <span class="category-badge">🏆 Macro Eventos</span>
         <h2>Super Eventos Colectivos</h2>
@@ -118,5 +231,53 @@ onMounted(() => {
 .error-msg {
   color: #ef4444;
   font-weight: 500;
+}
+
+/* Admin Cover Photo Widget */
+.admin-cover-widget {
+  position: absolute;
+  top: 90px;
+  right: 25px;
+  z-index: 100;
+}
+.admin-cover-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(114, 176, 77, 0.4);
+  color: #72B04D;
+  padding: 10px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.admin-cover-btn:hover:not(:disabled) {
+  background: #72B04D;
+  color: #0b1329;
+  border-color: #72B04D;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.6);
+  transform: scale(1.05);
+}
+.admin-cover-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .admin-cover-widget {
+    top: 85px;
+    right: 15px;
+  }
+  .admin-cover-btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+  }
 }
 </style>

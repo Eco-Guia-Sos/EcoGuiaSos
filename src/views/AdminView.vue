@@ -636,9 +636,12 @@ const hubsConfig = {
   ajolote: {
     label: 'Hub Ajolote',
     sections: [
+      { id: 'agentes', label: 'Agentes', icon: 'fa-solid fa-users' },
       { id: 'voluntariados', label: 'Voluntariados', icon: 'fa-solid fa-hands-helping' },
       { id: 'convocatoria', label: 'Convocatorias', icon: 'fa-solid fa-bullhorn' },
-      { id: 'causas', label: 'Causas / Rifas', icon: 'fa-solid fa-hand-holding-heart' }
+      { id: 'causas', label: 'Causas / Rifas', icon: 'fa-solid fa-hand-holding-heart' },
+      { id: 'lugares', label: 'Lugares', icon: 'fa-solid fa-map-pin' },
+      { id: 'super-eventos', label: 'Eventos Especiales', icon: 'fa-solid fa-trophy' }
     ]
   },
   lobo: {
@@ -2787,27 +2790,7 @@ const formatRelativeDate = (dateStr: string) => {
               </a>
             </li>
 
-            <li 
-              v-if="isUserAdmin || actorFunctions.puede_crear_super_eventos" 
-              class="menu-item-contenidos"
-              :class="{ 'active': selectedSection === 'super-eventos' }"
-            >
-              <a href="#" @click.prevent="selectSection('super-eventos')">
-                <i class="fa-solid fa-trophy" style="margin-right:10px;"></i>
-                <span v-if="!isSidebarCollapsed">Super Eventos</span>
-              </a>
-            </li>
 
-            <li 
-              v-if="isUserAdmin || actorFunctions.puede_crear_lugares || actorSections.includes('lugares')" 
-              class="menu-item-contenidos"
-              :class="{ 'active': selectedSection === 'lugares' }"
-            >
-              <a href="#" @click.prevent="selectSection('lugares')">
-                <i class="fa-solid fa-map-pin" style="margin-right:10px;"></i>
-                <span v-if="!isSidebarCollapsed">{{ isUserAdmin ? 'Lugares' : 'Mis Lugares' }}</span>
-              </a>
-            </li>
 
             <li class="menu-item-contenidos" :class="{ 'active': selectedSection === 'seguidores' }">
               <a href="#" @click.prevent="selectSection('seguidores')">
@@ -5507,16 +5490,16 @@ select option {
 .social-btn.email.active { background: #f1c40f; border-color: #f1c40f; color: black; }
 .social-btn.email-alt.active { background: #ff3f6c; border-color: #ff3f6c; }
 
-.social-btn.facebook:hover { box-shadow: 0 0 15px rgba(24, 119, 242, 0.5); }
-.social-btn.instagram:hover { box-shadow: 0 0 15px rgba(225, 48, 108, 0.5); }
-.social-btn.whatsapp:hover { box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
-.social-btn.x-twitter:hover { box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
-.social-btn.youtube:hover { box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
-.social-btn.web:hover { box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
-.social-btn.tiktok:hover { box-shadow: 0 0 15px rgba(1, 242, 254, 0.5); }
-.social-btn.linkedin:hover { box-shadow: 0 0 15px rgba(0, 119, 182, 0.5); }
-.social-btn.email:hover { box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
-.social-btn.email-alt:hover { box-shadow: 0 0 15px rgba(255, 63, 108, 0.5); }
+.social-btn.facebook:hover { background: #1877F2 !important; border-color: #1877F2 !important; color: white !important; box-shadow: 0 0 15px rgba(24, 119, 242, 0.5); }
+.social-btn.instagram:hover { background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%) !important; border-color: transparent !important; color: white !important; box-shadow: 0 0 15px rgba(225, 48, 108, 0.5); }
+.social-btn.whatsapp:hover { background: #25D366 !important; border-color: #25D366 !important; color: white !important; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
+.social-btn.x-twitter:hover { background: #000000 !important; border-color: #333 !important; color: white !important; box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+.social-btn.youtube:hover { background: #FF0000 !important; border-color: #FF0000 !important; color: white !important; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+.social-btn.web:hover { background: #10b981 !important; border-color: #10b981 !important; color: white !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+.social-btn.tiktok:hover { background: #01f2fe !important; border-color: #01f2fe !important; color: black !important; box-shadow: 0 0 15px rgba(1, 242, 254, 0.5); }
+.social-btn.linkedin:hover { background: #0077b5 !important; border-color: #0077b5 !important; color: white !important; box-shadow: 0 0 15px rgba(0, 119, 182, 0.5); }
+.social-btn.email:hover { background: #f1c40f !important; border-color: #f1c40f !important; color: black !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
+.social-btn.email-alt:hover { background: #ff3f6c !important; border-color: #ff3f6c !important; color: white !important; box-shadow: 0 0 15px rgba(255, 63, 108, 0.5); }
 
 .social-inputs-container {
   display: flex;

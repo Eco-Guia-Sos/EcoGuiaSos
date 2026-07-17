@@ -61,7 +61,8 @@ const hubsConfig = {
       voluntariados: 'Voluntariado',
       convocatoria: 'Convocatoria',
       causas: 'Causa / Rifa',
-      lugares: 'Lugar'
+      lugares: 'Lugar',
+      'super-eventos': 'Evento Especial'
     } as Record<string, string>
   },
   lobo: {
@@ -255,7 +256,7 @@ const checkPermissions = async () => {
     return
   }
 
-  if (userRole === 'actor') {
+    if (userRole === 'actor') {
     // Check specific permission
     try {
       const { data, error } = await supabase
@@ -278,15 +279,108 @@ const handleAddContent = () => {
   router.push(`/admin?action=new&section=${props.sectionId}&hub=${props.parentHub}`)
 }
 
+// Cover management logic
+const coverUrl = ref('')
+const uploadingCover = ref(false)
+const compressImageHelper = ref<any>(null)
+
+const isAdmin = computed(() => {
+  return authStore.profile?.rol === 'admin'
+})
+
+const fetchCover = async () => {
+  coverUrl.value = ''
+  try {
+    const { data, error } = await supabase
+      .from('portadas_secciones')
+      .select('imagen_url')
+      .eq('seccion_id', props.sectionId)
+      .maybeSingle()
+    if (error) throw error
+    if (data && data.imagen_url) {
+      coverUrl.value = data.imagen_url
+    }
+  } catch (err) {
+    console.warn('Error fetching cover photo for section:', props.sectionId, err)
+  }
+}
+
+const triggerFileInput = () => {
+  const input = document.getElementById('section-cover-file-input') as HTMLInputElement
+  if (input) input.click()
+}
+
+const handleCoverUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  uploadingCover.value = true
+  try {
+    // Lazy-import compression helper dynamically
+    if (!compressImageHelper.value) {
+      const mod = await import('../utils/imageCompressor')
+      compressImageHelper.value = mod.compressImage
+    }
+    
+    // 1. Compress image natively
+    const compressedBlob = await compressImageHelper.value(file, 1200, 0.8)
+    const compressedFile = new File([compressedBlob], `cover_${props.sectionId}_${Date.now()}.jpg`, {
+      type: 'image/jpeg'
+    })
+
+    // 2. Upload to Supabase Storage bucket 'imagenes-plataforma'
+    const fileName = `portadas/${props.sectionId}_${Date.now()}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from('imagenes-plataforma')
+      .upload(fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: true
+      })
+
+    if (uploadError) throw uploadError
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('imagenes-plataforma')
+      .getPublicUrl(fileName)
+
+    const publicUrl = publicUrlData.publicUrl
+
+    // 3. Save reference in DB
+    const { error: dbError } = await supabase
+      .from('portadas_secciones')
+      .upsert({
+        seccion_id: props.sectionId,
+        imagen_url: publicUrl,
+        updated_at: new Date().toISOString(),
+        updated_by: authStore.user?.id
+      })
+
+    if (dbError) throw dbError
+
+    coverUrl.value = publicUrl
+    alert('¡Portada de sección actualizada correctamente!')
+  } catch (err: any) {
+    console.error('Error uploading cover:', err)
+    alert('No se pudo subir la portada: ' + (err.message || err))
+  } finally {
+    uploadingCover.value = false
+    target.value = ''
+  }
+}
+
 onMounted(() => {
   fetchContent()
   checkPermissions()
+  fetchCover()
 })
 
-// Watch route parameter changes to fetch correct content
+// Watch route parameter changes to fetch correct content and covers
 watch(() => props.sectionId, () => {
   fetchContent()
   checkPermissions()
+  fetchCover()
 })
 
 watch(() => authStore.user, () => {
@@ -296,7 +390,31 @@ watch(() => authStore.user, () => {
 
 <template>
   <div :class="`theme-${props.parentHub}`">
-    <header class="interior-hero">
+    <header 
+      class="interior-hero" 
+      :style="coverUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(${coverUrl})` } : {}"
+    >
+      <!-- Admin Cover Changer Floating Widget -->
+      <div v-if="isAdmin" class="admin-cover-widget">
+        <button 
+          @click="triggerFileInput" 
+          class="admin-cover-btn" 
+          :disabled="uploadingCover"
+          title="Cambiar imagen de portada de la sección"
+        >
+          <i v-if="uploadingCover" class="fa-solid fa-spinner fa-spin"></i>
+          <i v-else class="fa-solid fa-camera"></i>
+          <span>{{ uploadingCover ? 'Subiendo...' : 'Cambiar portada' }}</span>
+        </button>
+        <input 
+          type="file" 
+          id="section-cover-file-input" 
+          @change="handleCoverUpload" 
+          accept="image/*" 
+          style="display: none;" 
+        />
+      </div>
+
       <div class="hero-glass-panel">
         <span class="category-badge">{{ currentHub.badge }}</span>
         <h2>{{ currentHub.heroTitle }}</h2>
@@ -698,5 +816,53 @@ watch(() => authStore.user, () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.25);
   margin-right: 8px;
   flex-shrink: 0;
+}
+
+/* Admin Cover Photo Widget */
+.admin-cover-widget {
+  position: absolute;
+  top: 90px;
+  right: 25px;
+  z-index: 100;
+}
+.admin-cover-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(114, 176, 77, 0.4);
+  color: #72B04D;
+  padding: 10px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.admin-cover-btn:hover:not(:disabled) {
+  background: #72B04D;
+  color: #0b1329;
+  border-color: #72B04D;
+  box-shadow: 0 0 15px rgba(114, 176, 77, 0.6);
+  transform: scale(1.05);
+}
+.admin-cover-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .admin-cover-widget {
+    top: 85px;
+    right: 15px;
+  }
+  .admin-cover-btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+  }
 }
 </style>
