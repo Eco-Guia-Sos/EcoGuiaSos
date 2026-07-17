@@ -80,8 +80,7 @@ const handleCoverUpload = async (event: Event) => {
     const { error: dbError } = await supabase
       .from('super_eventos')
       .update({
-        imagen_url: publicUrl,
-        updated_at: new Date().toISOString()
+        imagen_url: publicUrl
       })
       .eq('id', superEventoId)
 
