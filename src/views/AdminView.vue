@@ -265,7 +265,9 @@ const searchVolunteerQuery = ref('')
 
 const adminPasswordForm = ref({
   actorNewPassword: '',
-  volunteerNewPassword: ''
+  actorNewEmail: '',
+  volunteerNewPassword: '',
+  volunteerNewEmail: ''
 })
 
 const SOCIAL_NETWORKS = [
@@ -481,6 +483,62 @@ const changePasswordForVolunteer = async () => {
     adminPasswordForm.value.volunteerNewPassword = ''
   } catch (err: any) {
     alert('Error al actualizar contraseña: ' + err.message)
+  }
+}
+
+const changeEmailForActor = async () => {
+  const newEmail = adminPasswordForm.value.actorNewEmail.trim()
+  if (!newEmail) {
+    alert('Por favor escribe un correo electrónico válido.')
+    return
+  }
+  if (!selectedActorForProfile.value?.id) {
+    alert('No se pudo identificar al actor.')
+    return
+  }
+  try {
+    const { error } = await supabase.rpc('admin_update_user_email', {
+      user_id: selectedActorForProfile.value.id,
+      new_email: newEmail
+    })
+    if (error) throw error
+    alert('Correo del actor actualizado correctamente.')
+    profileAdminForm.value.email = newEmail
+    if (selectedActorForProfile.value) {
+      selectedActorForProfile.value.email = newEmail
+    }
+    adminPasswordForm.value.actorNewEmail = ''
+    loadStaffList()
+  } catch (err: any) {
+    alert('Error al actualizar correo: ' + err.message)
+  }
+}
+
+const changeEmailForVolunteer = async () => {
+  const newEmail = adminPasswordForm.value.volunteerNewEmail.trim()
+  if (!newEmail) {
+    alert('Por favor escribe un correo electrónico válido.')
+    return
+  }
+  if (!selectedVolunteer.value?.id) {
+    alert('No se pudo identificar al voluntario.')
+    return
+  }
+  try {
+    const { error } = await supabase.rpc('admin_update_user_email', {
+      user_id: selectedVolunteer.value.id,
+      new_email: newEmail
+    })
+    if (error) throw error
+    alert('Correo del voluntario actualizado correctamente.')
+    volunteerForm.value.email = newEmail
+    if (selectedVolunteer.value) {
+      selectedVolunteer.value.email = newEmail
+    }
+    adminPasswordForm.value.volunteerNewEmail = ''
+    loadVoluntariosList()
+  } catch (err: any) {
+    alert('Error al actualizar correo: ' + err.message)
   }
 }
 
@@ -5134,26 +5192,38 @@ const formatRelativeDate = (dateStr: string) => {
 
                         <!-- Controles para el Admin editando a otro -->
                         <div id="security-controls-other" style="display: block;">
+                            <!-- Botón superior: Enlace de recuperación por correo -->
+                            <div style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--admin-border); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                <div>
+                                    <h4 style="color: white; margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 700;">Asistencia de Correo</h4>
+                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin: 0;">Enviar un enlace de recuperación de contraseña al correo del usuario.</p>
+                                </div>
+                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmail" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                </button>
+                            </div>
+
+                            <!-- Dos columnas paralelas: Actualizar Correo y Cambiar Contraseña -->
                             <div class="security-split-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                                 <!-- Columna Email -->
-                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border); display: flex; flex-direction: column; justify-content: space-between;">
-                                    <div>
-                                        <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asistencia de Correo</h4>
-                                        <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin-bottom: 15px;">Enviar un enlace de recuperación de contraseña al correo del usuario.</p>
+                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
+                                    <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Correo Electrónico</h4>
+                                    <div class="form-group" style="margin-bottom: 12px;">
+                                        <input type="email" v-model="adminPasswordForm.actorNewEmail" placeholder="Nuevo correo electrónico" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
                                     </div>
-                                    <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmail" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                        <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                    <button type="button" @click.prevent="changeEmailForActor" class="btn-admin" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                        Actualizar Correo
                                     </button>
                                 </div>
 
                                 <!-- Columna Contraseña -->
-                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border);">
-                                    <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asignar Nueva Contraseña</h4>
+                                <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
+                                    <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Contraseña</h4>
                                     <div class="form-group" style="margin-bottom: 12px;">
                                         <input type="password" v-model="adminPasswordForm.actorNewPassword" placeholder="Mínimo 6 caracteres" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
                                     </div>
-                                    <button type="button" @click.prevent="changePasswordForActor" class="btn-admin" style="width: 100%; background: var(--admin-accent); color: black; border: none; cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                        <i class="fa-solid fa-lock"></i> Cambiar Contraseña
+                                    <button type="button" @click.prevent="changePasswordForActor" class="btn-admin" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                        Cambiar Contraseña
                                     </button>
                                 </div>
                             </div>
@@ -5372,26 +5442,38 @@ const formatRelativeDate = (dateStr: string) => {
                             <i class="fa-solid fa-shield-halved" style="color: #72B04D;"></i> Seguridad de la Cuenta
                         </h3>
                         
+                        <!-- Botón superior: Enlace de recuperación por correo -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--admin-border); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div>
+                                <h4 style="color: white; margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 700;">Asistencia de Correo</h4>
+                                <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin: 0;">Enviar un enlace de recuperación de contraseña al correo del voluntario.</p>
+                            </div>
+                            <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmailForVolunteer" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                            </button>
+                        </div>
+
+                        <!-- Dos columnas paralelas: Actualizar Correo y Cambiar Contraseña -->
                         <div class="security-split-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                             <!-- Columna Email -->
-                            <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border); display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
-                                    <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asistencia de Correo</h4>
-                                    <p style="font-size: 0.8rem; color: var(--admin-text-muted); margin-bottom: 15px;">Enviar un enlace de recuperación de contraseña al correo del voluntario.</p>
+                            <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
+                                <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Correo Electrónico</h4>
+                                <div class="form-group" style="margin-bottom: 12px;">
+                                    <input type="email" v-model="adminPasswordForm.volunteerNewEmail" placeholder="Nuevo correo electrónico" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
                                 </div>
-                                <button type="button" class="btn-admin" @click.prevent="sendResetPasswordEmailForVolunteer" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                    <i class="fa-solid fa-paper-plane"></i> Enviar Enlace
+                                <button type="button" @click.prevent="changeEmailForVolunteer" class="btn-admin" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    Actualizar Correo
                                 </button>
                             </div>
 
                             <!-- Columna Contraseña -->
-                            <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px dashed var(--admin-border);">
-                                <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Asignar Nueva Contraseña</h4>
+                            <div class="security-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--admin-border);">
+                                <h4 style="color: white; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">Contraseña</h4>
                                 <div class="form-group" style="margin-bottom: 12px;">
                                     <input type="password" v-model="adminPasswordForm.volunteerNewPassword" placeholder="Mínimo 6 caracteres" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--admin-border); border-radius: 8px; color: white; padding: 10px;">
                                 </div>
-                                <button type="button" @click.prevent="changePasswordForVolunteer" class="btn-admin" style="width: 100%; background: #72B04D; color: white; border: none; cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                    <i class="fa-solid fa-lock"></i> Cambiar Contraseña
+                                <button type="button" @click.prevent="changePasswordForVolunteer" class="btn-admin" style="width: 100%; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--admin-border); cursor: pointer; padding: 10px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    Cambiar Contraseña
                                 </button>
                             </div>
                         </div>
