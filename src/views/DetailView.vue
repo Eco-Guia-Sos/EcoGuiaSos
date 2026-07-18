@@ -1267,8 +1267,8 @@ watch(() => route.path, () => {
 
                 <!-- Google Maps redirection (Presencial / Hybrid only) -->
                 <a 
-                  v-if="!isCausaType && !isEcoTecType && item.modalidad !== 'en_linea' && item.lat && item.lng"
-                  :href="`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
+                  v-if="!isCausaType && !isEcoTecType && item.modalidad !== 'en_linea' && (item.mapa_url || (item.lat && item.lng))"
+                  :href="item.mapa_url || `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`" 
                   target="_blank" 
                   class="btn btn-secondary full-width"
                 >

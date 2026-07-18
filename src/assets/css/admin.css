@@ -477,6 +477,15 @@ body.is-admin .stat-card.only-admin {
     box-shadow: 0 0 15px rgba(148, 163, 184, 0.2);
 }
 
+/* 8. Notificaciones (Glow de alerta naranja/amarillo) */
+.admin-menu li.menu-item-notificaciones a:hover,
+.admin-menu li.menu-item-notificaciones.active a {
+    background: rgba(245, 158, 11, 0.08);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
 .menu-category {
     padding: 24px 16px 8px;
     font-size: 0.7rem;

@@ -55,6 +55,8 @@ const selectedSection = ref<string | null>(null)
 const moderationFilter = ref<'all' | 'pending' | 'approved' | 'rejected'>('all')
 const actorModerationFilter = ref<'approved' | 'pending' | 'rejected'>('approved')
 const pendingActoresCount = ref(0)
+const pendingEventosCount = ref(0)
+const pendingLugaresCount = ref(0)
 
 // Seguidores filters state
 const seguidoresTabFilter = ref<'todos' | 'mis_seguidores'>('todos')
@@ -152,7 +154,8 @@ const editingItem = ref<any>({
   social_x: '',
   social_yt: '',
   social_web: '',
-  imagenes: []
+  imagenes: [],
+  mapa_url: ''
 })
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -828,6 +831,7 @@ const selectSection = (sectionId: string) => {
   moderationFilter.value = 'all'
   seguidoresTabFilter.value = 'todos'
   searchSeguidoresQuery.value = ''
+  isMobileSidebarActive.value = false // Close mobile sidebar on select
   fetchListData()
 }
 
@@ -994,6 +998,22 @@ const fetchGlobalStats = async () => {
       .or('actor_status.eq.pending,and(rol.eq.actor,actor_status.is.null)')
 
     pendingActoresCount.value = pendingActCount || 0
+
+    // Consultar eventos pendientes de moderación
+    const { count: pendingEvCount } = await supabase
+      .from('eventos')
+      .select('*', { count: 'exact', head: true })
+      .eq('estado', 'pending')
+
+    pendingEventosCount.value = pendingEvCount || 0
+
+    // Consultar lugares pendientes de moderación
+    const { count: pendingPlCount } = await supabase
+      .from('lugares')
+      .select('*', { count: 'exact', head: true })
+      .eq('estado', 'pending')
+
+    pendingLugaresCount.value = pendingPlCount || 0
 
     stats.value = {
       actores: actCount || 0,
@@ -1389,6 +1409,58 @@ const handleEventImagesUpload = async (e: Event) => {
   }
 }
 
+const handlePasteEventImage = async (e: ClipboardEvent) => {
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  const session = authStore.session
+  if (!session) {
+    alert('Tu sesión ha expirado. Por favor vuelve a iniciar sesión.')
+    return
+  }
+
+  const filesToUpload: File[] = []
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item && item.type && item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile()
+      if (file) {
+        // Create a named file since clipboard files have generic names
+        const uniqueFile = new File([file], `copiado-${Date.now()}-${i}.png`, { type: file.type })
+        filesToUpload.push(uniqueFile)
+      }
+    }
+  }
+
+  if (filesToUpload.length === 0) return
+
+  isUploadingImages.value = true
+  const errors: string[] = []
+
+  if (!editingItem.value.imagenes) {
+    editingItem.value.imagenes = []
+  }
+
+  for (let i = 0; i < filesToUpload.length; i++) {
+    const file = filesToUpload[i]
+    if (!file) continue
+    try {
+      const url = await compressAndUploadFile(file)
+      editingItem.value.imagenes.push(url)
+      if (!editingItem.value.imagen) {
+        editingItem.value.imagen = url
+      }
+    } catch (fileErr: any) {
+      errors.push(`${file.name}: ${fileErr.message}`)
+    }
+  }
+
+  isUploadingImages.value = false
+  if (errors.length > 0) {
+    alert('No se pudo subir la imagen pegada:\n' + errors.join('\n'))
+  }
+}
+
 const removeEventImage = (index: number) => {
   if (!editingItem.value.imagenes) return
   editingItem.value.imagenes.splice(index, 1)
@@ -1529,12 +1601,27 @@ const openEditModal = (item: any) => {
     social_web: item.social_web || '',
     imagenes: imgs,
     drive_fotos_url: item.drive_fotos_url || '',
-    clave_fotos: item.clave_fotos || ''
+    clave_fotos: item.clave_fotos || '',
+    mapa_url: item.mapa_url || ''
   }
 
   if (selectedSection.value === 'eventos') {
-    editingItem.value.fecha_inicio = item.fecha_inicio ? item.fecha_inicio.substring(0, 16) : ''
-    editingItem.value.fecha_fin = item.fecha_fin ? item.fecha_fin.substring(0, 16) : ''
+    // Convert ISO string from database to local timezone yyyy-MM-ddThh:mm format
+    const toLocalDateTimeLocal = (isoStr: string) => {
+      if (!isoStr) return ''
+      const d = new Date(isoStr)
+      if (isNaN(d.getTime())) return ''
+      
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hours}:${minutes}`
+    }
+
+    editingItem.value.fecha_inicio = toLocalDateTimeLocal(item.fecha_inicio)
+    editingItem.value.fecha_fin = toLocalDateTimeLocal(item.fecha_fin)
     
     // Initialize active social inputs based on edit item
     activeSocialInputs.value = {
@@ -1675,6 +1762,7 @@ const saveItem = async () => {
         super_evento_id: editingItem.value.super_evento_id || null,
         imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
         imagenes: editingItem.value.imagenes || [],
+        mapa_url: editingItem.value.mapa_url || '',
         estado: isEditing ? editingItem.value.estado : (isUserAdmin.value ? 'approved' : 'pending')
       }
     } else if (selectedSection.value === 'lugares') {
@@ -1700,6 +1788,7 @@ const saveItem = async () => {
       dbPayload = {
         ...placeData,
         imagen_url: editingItem.value.imagen || editingItem.value.imagen_url || '',
+        mapa_url: editingItem.value.mapa_url || '',
         estado: isEditing ? editingItem.value.estado : (isUserAdmin.value ? 'approved' : 'pending')
       }
     } else if (selectedSection.value === 'super-eventos') {
@@ -2689,6 +2778,7 @@ const navigateTo = (view: string) => {
   activeTab.value = view
   selectedHub.value = null
   selectedSection.value = null
+  isMobileSidebarActive.value = false // Close mobile sidebar on navigate
 
   if (view === 'usuarios') {
     actorModerationFilter.value = 'approved'
@@ -2925,6 +3015,9 @@ const formatRelativeDate = (dateStr: string) => {
               <a href="#" @click.prevent="selectSection('eventos')">
                 <i class="fa-solid fa-calendar-days" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">{{ isUserAdmin ? 'Eventos' : 'Mis Eventos' }}</span>
+                <span class="pending-badge" v-if="isUserAdmin && pendingEventosCount > 0 && !isSidebarCollapsed" style="margin-left: 8px; background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;">
+                  {{ pendingEventosCount }}
+                </span>
               </a>
             </li>
 
@@ -2959,6 +3052,9 @@ const formatRelativeDate = (dateStr: string) => {
               <a href="#" @click.prevent="showHubMenu('ajolote')">
                 <i class="fa-solid fa-frog" style="margin-right:10px;"></i>
                 <span v-if="!isSidebarCollapsed">Hub Ajolote</span>
+                <span class="pending-badge" v-if="isUserAdmin && pendingLugaresCount > 0 && !isSidebarCollapsed" style="margin-left: 8px; background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;">
+                  {{ pendingLugaresCount }}
+                </span>
               </a>
             </li>
 
@@ -2991,7 +3087,7 @@ const formatRelativeDate = (dateStr: string) => {
 
             <li 
               v-if="isUserAdmin || actorFunctions.puede_enviar_notificaciones" 
-              class="menu-item-ajustes"
+              class="menu-item-notificaciones"
               :class="{ 'active': activeTab === 'notificaciones' }"
             >
               <a href="#" @click.prevent="navigateTo('notificaciones')">
@@ -3151,6 +3247,24 @@ const formatRelativeDate = (dateStr: string) => {
               <h2 style="color: white; font-weight: 800; font-size: 1.4rem; margin:0;">
                 Sección: {{ selectedSection?.toUpperCase() }}
               </h2>
+            </div>
+            
+            <!-- Pestañas de moderación para Administrador en Eventos o Lugares -->
+            <div v-if="isUserAdmin && selectedSection && ['eventos', 'lugares'].includes(selectedSection)" class="moderation-tabs-row" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+              <button class="tab-btn" :class="{ 'active': moderationFilter === 'all' }" @click="moderationFilter = 'all'; fetchListData()">
+                Todos
+              </button>
+              <button class="tab-btn" :class="{ 'active': moderationFilter === 'approved' }" @click="moderationFilter = 'approved'; fetchListData()">
+                Aprobados
+              </button>
+              <button class="tab-btn" :class="{ 'active': moderationFilter === 'pending' }" @click="moderationFilter = 'pending'; fetchListData()">
+                Pendientes
+                <span class="tab-counter" v-if="selectedSection === 'eventos' && pendingEventosCount > 0" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; margin-left: 5px;">{{ pendingEventosCount }}</span>
+                <span class="tab-counter" v-if="selectedSection === 'lugares' && pendingLugaresCount > 0" style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; margin-left: 5px;">{{ pendingLugaresCount }}</span>
+              </button>
+              <button class="tab-btn" :class="{ 'active': moderationFilter === 'rejected' }" @click="moderationFilter = 'rejected'; fetchListData()">
+                Rechazados
+              </button>
             </div>
           </template>
           <!-- SHARED TABLE COMPONENT (Section Table only) -->
@@ -3313,8 +3427,30 @@ const formatRelativeDate = (dateStr: string) => {
                 </thead>
                 <tbody>
                   <tr v-for="item in filteredListItems" :key="item.id" style="border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
-                    <td style="padding: 15px 20px; color: #f8fafc; font-weight: 600;">
-                      {{ item.nombre || item.titulo }}
+                    <td style="padding: 15px 20px; color: #f8fafc; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                      <!-- Redirección para Eventos (Ojo) -->
+                      <a 
+                        v-if="selectedSection === 'eventos'" 
+                        :href="`/eventos/${item.id}`" 
+                        target="_blank" 
+                        title="Ver Evento"
+                        style="color: var(--color-eco); cursor: pointer; transition: transform 0.2s;"
+                        @click.stop
+                      >
+                        <i class="fa-solid fa-eye" style="font-size: 0.95rem;"></i>
+                      </a>
+                      <!-- Redirección para Lugares (Ojo) -->
+                      <a 
+                        v-if="selectedSection === 'lugares'" 
+                        :href="`/lugares/${item.id}`" 
+                        target="_blank" 
+                        title="Ver Lugar"
+                        style="color: var(--color-eco); cursor: pointer; transition: transform 0.2s;"
+                        @click.stop
+                      >
+                        <i class="fa-solid fa-eye" style="font-size: 0.95rem;"></i>
+                      </a>
+                      <span>{{ item.nombre || item.titulo }}</span>
                     </td>
                     <td style="padding: 15px 20px; color: #94a3b8; font-weight: 600;">
                       {{ selectedSection === 'super-eventos' ? 'SÚPER EVENTO' : formatCategory(item.categoria || (item.fecha_inicio ? 'EVENTO' : 'LUGAR')).toUpperCase() }}
@@ -3387,7 +3523,11 @@ const formatRelativeDate = (dateStr: string) => {
                 @click="selectSection(sec.id)"
                 style="cursor: pointer; padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center; transition: all 0.3s ease;"
               >
-                <i :class="sec.icon" style="font-size: 2.5rem; margin-bottom: 15px; display: inline-block;"></i>
+                <i :class="sec.icon" style="font-size: 2.5rem; margin-bottom: 15px; display: inline-block; position: relative;">
+                  <span class="pending-badge" v-if="isUserAdmin && sec.id === 'lugares' && pendingLugaresCount > 0" style="position: absolute; top: -5px; right: -15px; background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">
+                    {{ pendingLugaresCount }}
+                  </span>
+                </i>
                 <h3 style="color: white; font-size: 1.25rem; font-weight:700; margin: 0;">{{ sec.label }}</h3>
               </div>
             </template>
@@ -4319,14 +4459,34 @@ const formatRelativeDate = (dateStr: string) => {
                 </div>
                 <span v-if="eventErrors.ubicacion" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ eventErrors.ubicacion }}</span>
               </div>
+              
+              <div class="form-group full-width" style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 10px; padding: 12px 15px; margin-bottom: 15px;">
+                <p style="font-size: 0.85rem; color: #38bdf8; margin: 0; line-height: 1.4;">
+                  <i class="fa-solid fa-map-location-dot"></i> <strong>Nota Importante:</strong> Las coordenadas de <strong>Latitud</strong> y <strong>Longitud</strong> son indispensables para mostrar este evento en nuestro mapa interactivo y para calcular a qué distancia se encuentra del usuario móvil. Puedes ingresarlas manualmente o extraerlas usando el extractor de abajo.
+                </p>
+              </div>
+
               <div class="form-group full-width">
-                <label>Enlace de Google Maps (Para extraer coordenadas)</label>
+                <label>Enlace Corto o Móvil de Google Maps (Ej: goo.gl/maps/... o maps.app.goo.gl/...)</label>
+                <div class="input-wrapper">
+                  <input type="text" v-model="editingItem.mapa_url" placeholder="Ej: https://goo.gl/maps/QYycz5BikDnxFcEt6 (Se usará directamente para el botón 'Cómo llegar')" />
+                </div>
+                <p style="font-size: 0.75rem; color: #94a3b8; margin: 4px 0 0 0;">
+                  * Este enlace sirve de referencia directa para los usuarios móviles al pulsar "Cómo llegar".
+                </p>
+              </div>
+
+              <div class="form-group full-width">
+                <label>Extractor de Coordenadas de Google Maps (Pega enlace completo del navegador de PC)</label>
                 <div class="input-with-button">
-                  <input type="text" v-model="gmapsLink" placeholder="Pega el enlace de Google Maps aquí y haz clic en Extraer..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 12px; outline: none;" />
+                  <input type="text" v-model="gmapsLink" placeholder="Pega un enlace completo de Google Maps con @coordenadas..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 12px; outline: none;" />
                   <button type="button" class="btn btn-primary" @click="extractCoordsFromGmaps" style="border-radius: 8px; padding: 0 18px; font-weight: 700; height: auto;">
                     Extraer
                   </button>
                 </div>
+                <p style="font-size: 0.75rem; color: #94a3b8; margin: 4px 0 0 0;">
+                  * Los enlaces móviles simplificados no contienen las coordenadas numéricas directamente en el texto. Ábrelos en una PC o navegador y copia la dirección final con @lat,lng para extraerlas automáticamente.
+                </p>
               </div>
               <div class="form-group">
                 <label>Latitud</label>
@@ -4381,8 +4541,15 @@ const formatRelativeDate = (dateStr: string) => {
             </template>
 
             <div class="form-group full-width">
-              <label>Imágenes (Flyers / Fotos)</label>
-              <div class="image-upload-wrapper">
+              <label>Imágenes (Flyers / Fotos) <span style="font-size: 0.75rem; opacity: 0.8; color: var(--color-eco); font-weight: normal;">(También puedes pegar una imagen copiada con Ctrl+V aquí)</span></label>
+              <div 
+                class="image-upload-wrapper" 
+                @paste="handlePasteEventImage" 
+                tabindex="0" 
+                style="outline: none; border: 1px dashed rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; transition: border-color 0.3s; cursor: pointer;"
+                onfocus="this.style.borderColor='var(--color-eco)'"
+                onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+              >
                 <button type="button" class="btn-admin" @click="eventImagesInput?.click()" style="width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
                   <i class="fa-solid fa-images"></i> Añadir Imágenes
                 </button>
@@ -4667,6 +4834,21 @@ const formatRelativeDate = (dateStr: string) => {
             <input type="text" v-model="editingItem.ubicacion" placeholder="Dirección completa" required />
             <span v-if="placeErrors.ubicacion" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ placeErrors.ubicacion }}</span>
           </div>
+          
+          <div class="form-group" style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 10px; padding: 12px 15px; margin-bottom: 5px;">
+            <p style="font-size: 0.85rem; color: #38bdf8; margin: 0; line-height: 1.4;">
+              <i class="fa-solid fa-map-location-dot"></i> <strong>Nota Importante:</strong> Las coordenadas de <strong>Latitud</strong> y <strong>Longitud</strong> son indispensables para mostrar este lugar en nuestro mapa interactivo y para calcular a qué distancia se encuentra del usuario móvil.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label>Enlace Corto o Móvil de Google Maps (Ej: goo.gl/maps/... o maps.app.goo.gl/...)</label>
+            <input type="text" v-model="editingItem.mapa_url" placeholder="Ej: https://goo.gl/maps/QYycz5BikDnxFcEt6 (Se usará directamente para el botón 'Cómo llegar')" />
+            <p style="font-size: 0.75rem; color: #94a3b8; margin: 4px 0 0 0;">
+              * Este enlace sirve de referencia directa para los usuarios móviles al pulsar "Cómo llegar".
+            </p>
+          </div>
+
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="form-group">
               <label>Latitud</label>
