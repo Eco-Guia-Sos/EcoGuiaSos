@@ -79,8 +79,14 @@ self.addEventListener('fetch', event => {
     // 1.5. IGNORAR localhost / desarrollo local para evitar bloqueos en Vite
     if (url.includes('localhost') || url.includes('127.0.0.1')) return;
 
-    // 2. IGNORAR todas las APIs externas (Supabase, Google, CDNs)
-    const isBypass = BYPASS_PATTERNS.some(pattern => url.includes(pattern));
+    const parsedUrl = new URL(url);
+    const SUPABASE_HOST = /\.supabase\.(co|in)$/i;
+
+    // 2. IGNORAR todas las APIs externas (Supabase, Google, CDNs) y sockets
+    const isBypass = BYPASS_PATTERNS.some(pattern => url.includes(pattern)) || 
+                     SUPABASE_HOST.test(parsedUrl.hostname) ||
+                     parsedUrl.protocol === 'wss:';
+
     if (isBypass) return; // Dejar pasar directamente al navegador
 
     // 3. IGNORAR peticiones POST/PUT/DELETE (siempre van a red)
