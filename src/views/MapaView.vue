@@ -185,14 +185,14 @@ watch(activeItem, async (newItem) => {
   if (newItem && newItem.tipo === 'lugar') {
     try {
       const today = new Date()
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0).toISOString()
       
       const { data, error } = await supabase
         .from('eventos')
-        .select('id, nombre, fecha_inicio, categoria, imagen_url')
+        .select('id, nombre, fecha_inicio, fecha_fin, categoria, imagen_url')
         .eq('lugar_id', newItem.id)
         .eq('estado', 'approved')
-        .gte('fecha_fin', startOfMonth)
+        .or(`fecha_fin.gte.${startOfToday},and(fecha_fin.is.null,fecha_inicio.gte.${startOfToday})`)
         .order('fecha_inicio', { ascending: true })
         
       if (!error && data) {
@@ -320,7 +320,7 @@ const fetchMarkersInBounds = (minLng: number, minLat: number, maxLng: number, ma
   bboxTimer = setTimeout(async () => {
     try {
       const today = new Date()
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0).toISOString()
 
       const [lugaresRes, eventosRes] = await Promise.all([
         supabase.from('lugares')
@@ -333,7 +333,7 @@ const fetchMarkersInBounds = (minLng: number, minLat: number, maxLng: number, ma
         supabase.from('eventos')
           .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id')
           .eq('estado', 'approved')
-          .or(`fecha_fin.gte.${startOfMonth},fecha_inicio.gte.${startOfMonth}`)
+          .or(`fecha_fin.gte.${startOfToday},and(fecha_fin.is.null,fecha_inicio.gte.${startOfToday})`)
           .gte('lat', minLat)
           .lte('lat', maxLat)
           .gte('lng', minLng)
@@ -444,14 +444,14 @@ const applyFilters = async () => {
     await fetchActorsForItems(result)
   }
 
-  // 1. Filter events from current month onwards
+  // 1. Filter active/upcoming events (effective end date >= start of today)
   const today = new Date()
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
   result = result.filter(item => {
     if (item.tipo !== 'evento') return true
     if (!item.fecha_fin && !item.fecha_inicio) return false
     const dateToCompare = item.fecha_fin ? new Date(item.fecha_fin) : new Date(item.fecha_inicio)
-    return dateToCompare >= startOfMonth
+    return dateToCompare >= startOfToday
   })
 
   // 2. Advanced Search Filters

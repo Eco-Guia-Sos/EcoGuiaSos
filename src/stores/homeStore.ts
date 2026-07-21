@@ -39,15 +39,15 @@ export const useHomeStore = defineStore('home', () => {
         .eq('activo', true)
         .order('orden', { ascending: true })
 
-      // Fetch events (upcoming and active events, lightweight payload)
+      // Fetch events active today or in the future
       const today = new Date()
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0).toISOString()
       
       let queryEventos = supabase
         .from('eventos')
         .select('id, nombre, categoria, ubicacion, lat, lng, imagen_url, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, owner_id, modalidad, tiene_sesion_online, imagenes')
         .eq('estado', 'approved')
-        .or(`fecha_fin.gte.${startOfMonth},fecha_inicio.gte.${startOfMonth}`)
+        .or(`fecha_fin.gte.${startOfToday},and(fecha_fin.is.null,fecha_inicio.gte.${startOfToday})`)
 
       // Apply geographic bounding box filter if coordinates are provided
       if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {

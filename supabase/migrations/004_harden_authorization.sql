@@ -181,5 +181,18 @@ CREATE POLICY "Insercion autenticada en storage"
   TO authenticated
   WITH CHECK (bucket_id IN ('imagenes-plataforma', 'imagenes-causas', 'avatares'));
 
+-- 5. FUNCIÓN DE PURGA DE EVENTOS EXPIRADOS (> 60 DÍAS) USANDO FECHA EFECTIVA
+CREATE OR REPLACE FUNCTION public.purge_expired_events()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Eliminar eventos cuya fecha efectiva (fecha_fin o fecha_inicio) supere los 60 días de antigüedad
+  DELETE FROM public.eventos
+  WHERE COALESCE(fecha_fin, fecha_inicio) < (NOW() - INTERVAL '60 days');
+END;
+$$;
+
 -- NOTIFICAR A POSTGREST
 NOTIFY pgrst, 'reload schema';

@@ -91,11 +91,20 @@ const filteredRecursos = computed(() => {
   return result
 })
 
-const filteredEventos = computed(() => {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth() // 0-indexed (5 for June)
+const esEventoFinalizado = (ev: any) => {
+  const eventDateStr = ev.fecha_fin || ev.fecha_inicio || ev.fecha
+  if (!eventDateStr) return false
+  try {
+    const today = new Date()
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
+    const d = new Date(eventDateStr)
+    return d < startOfToday
+  } catch (e) {
+    return false
+  }
+}
 
+const filteredEventos = computed(() => {
   const parseLocalDate = (dateStr: string): Date => {
     const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
     if (match && match[1] && match[2] && match[3]) {
@@ -107,21 +116,21 @@ const filteredEventos = computed(() => {
     return new Date(dateStr)
   }
 
+  const today = new Date()
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
+
   return eventos.value.filter(ev => {
     // Falls back from fecha_fin to fecha_inicio or fecha
     const eventDateStr = ev.fecha_fin || ev.fecha_inicio || ev.fecha
     if (!eventDateStr) return eventFilter.value === 'actuales' // default to current if no date is found
     try {
       const eventDate = parseLocalDate(eventDateStr)
-      const evYear = eventDate.getFullYear()
-      const evMonth = eventDate.getMonth()
-
-      const isCurrentOrFutureMonth = (evYear > currentYear) || (evYear === currentYear && evMonth >= currentMonth)
+      const isCurrentOrFuture = eventDate >= startOfToday
 
       if (eventFilter.value === 'actuales') {
-        return isCurrentOrFutureMonth
+        return isCurrentOrFuture
       } else {
-        return !isCurrentOrFutureMonth
+        return !isCurrentOrFuture
       }
     } catch (e) {
       return eventFilter.value === 'actuales'
@@ -659,6 +668,9 @@ onMounted(async () => {
                     </div>
 
                     <div class="card-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 20px; margin-bottom: 4px;">
+                      <span v-if="esEventoFinalizado(ev)" class="status-badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.65rem; border: 1px solid rgba(239, 68, 68, 0.25); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                        ⏳ Evento Finalizado
+                      </span>
                       <span v-if="ev.modalidad === 'en_linea'" class="status-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; font-size: 0.65rem; border: 1px solid rgba(14, 165, 233, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                         🖥️ En Línea
                       </span>
