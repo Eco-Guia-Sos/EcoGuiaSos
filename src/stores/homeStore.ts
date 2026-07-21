@@ -47,7 +47,7 @@ export const useHomeStore = defineStore('home', () => {
         .from('eventos')
         .select('id, nombre, categoria, ubicacion, lat, lng, imagen_url, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, owner_id, modalidad, tiene_sesion_online, imagenes')
         .eq('estado', 'approved')
-        .gte('fecha_fin', startOfMonth)
+        .or(`fecha_fin.gte.${startOfMonth},fecha_inicio.gte.${startOfMonth}`)
 
       // Apply geographic bounding box filter if coordinates are provided
       if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {

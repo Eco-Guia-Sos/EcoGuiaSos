@@ -333,7 +333,7 @@ const fetchMarkersInBounds = (minLng: number, minLat: number, maxLng: number, ma
         supabase.from('eventos')
           .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id')
           .eq('estado', 'approved')
-          .gte('fecha_fin', startOfMonth)
+          .or(`fecha_fin.gte.${startOfMonth},fecha_inicio.gte.${startOfMonth}`)
           .gte('lat', minLat)
           .lte('lat', maxLat)
           .gte('lng', minLng)
