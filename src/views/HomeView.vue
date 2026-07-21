@@ -1006,8 +1006,7 @@ const formatearFechaSubtext = (fecha: string) => {
   if (!fecha) return ''
   try {
     const d = new Date(fecha)
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-    return d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
   } catch (e) {
     return ''
   }
