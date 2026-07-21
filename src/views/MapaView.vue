@@ -527,11 +527,11 @@ const refreshMarkers = () => {
     const el = document.createElement('div')
 
     if (count > 1) {
-      el.className = `map-cluster-marker type-${firstItem.tipo}`
+      el.className = `map-cluster-marker cluster-multi`
       const img = document.createElement('img')
-      img.src = firstItem.imagen_url || '/assets/img/ajolote.webp'
-      img.alt = firstItem.nombre || 'Item'
-      img.onerror = () => { img.src = '/assets/img/ajolote.webp' }
+      img.src = '/assets/img/logo-app.webp'
+      img.alt = `Grupo de ${count} elementos`
+      img.onerror = () => { img.src = '/assets/img/logo-app.webp' }
 
       const badge = document.createElement('div')
       badge.className = 'cluster-count-badge'

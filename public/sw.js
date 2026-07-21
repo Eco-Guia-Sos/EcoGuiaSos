@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ecoguiasos-v15';
+const CACHE_NAME = 'ecoguiasos-v16';
 
 // URLs que NO deben ser interceptadas por el SW (APIs dinámicas y recursos externos CDN/imágenes/fuentes/CSP)
 const BYPASS_PATTERNS = [

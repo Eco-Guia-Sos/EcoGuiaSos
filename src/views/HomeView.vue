@@ -616,11 +616,11 @@ const actualizarMiniMapa = () => {
     const el = document.createElement('div')
 
     if (count > 1) {
-      el.className = `map-cluster-marker type-${p.tipo}`
+      el.className = `map-cluster-marker cluster-multi`
 
       const img = document.createElement('img')
-      img.src = p.imagen || '/assets/img/logo-app.webp'
-      img.alt = p.nombre || 'Proyecto'
+      img.src = '/assets/img/logo-app.webp'
+      img.alt = `Grupo de ${count} proyectos`
       img.onerror = () => { img.src = '/assets/img/logo-app.webp' }
 
       const badge = document.createElement('div')
