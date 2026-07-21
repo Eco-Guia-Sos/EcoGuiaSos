@@ -303,14 +303,24 @@ const actualizarMapa = () => {
     const cachedAvatar = localStorage.getItem('eco_user_avatar')
     if (cachedAvatar) avatarSrc = cachedAvatar
 
-    el.innerHTML = `
-      <div class="user-marker-avatar">
-        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/logo-app.webp'">
-      </div>
-      <div class="user-marker-label">
-        Tú <span class="status">Aquí</span>
-      </div>
-    `
+    const avatarDiv = document.createElement('div')
+    avatarDiv.className = 'user-marker-avatar'
+    const avatarImg = document.createElement('img')
+    avatarImg.src = avatarSrc
+    avatarImg.alt = 'Tú'
+    avatarImg.onerror = () => { avatarImg.src = '/assets/img/logo-app.webp' }
+    avatarDiv.appendChild(avatarImg)
+
+    const labelDiv = document.createElement('div')
+    labelDiv.className = 'user-marker-label'
+    labelDiv.textContent = 'Tú '
+    const statusSpan = document.createElement('span')
+    statusSpan.className = 'status'
+    statusSpan.textContent = 'Aquí'
+    labelDiv.appendChild(statusSpan)
+
+    el.appendChild(avatarDiv)
+    el.appendChild(labelDiv)
 
     const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
       .setLngLat([userCoords.value.lng, userCoords.value.lat])
@@ -327,10 +337,19 @@ const actualizarMapa = () => {
       const el = document.createElement('div')
       el.className = 'map-card-marker type-event'
       el.style.borderColor = '#72b04d'
-      el.innerHTML = `
-        <div class="marker-card-pulse" style="background: rgba(114,176,77,0.4)"></div>
-        <img src="${ev.imagen_url || '/assets/img/logo-app.webp'}" alt="${ev.nombre}" onerror="this.src='/assets/img/logo-app.webp'">
-      `
+
+      const pulse = document.createElement('div')
+      pulse.className = 'marker-card-pulse'
+      pulse.style.background = 'rgba(114,176,77,0.4)'
+
+      const img = document.createElement('img')
+      img.src = ev.imagen_url || '/assets/img/logo-app.webp'
+      img.alt = ev.nombre || 'Evento'
+      img.onerror = () => { img.src = '/assets/img/logo-app.webp' }
+
+      el.appendChild(pulse)
+      el.appendChild(img)
+
       markerElements.set(ev.id, el)
 
       el.onclick = () => {
@@ -338,13 +357,27 @@ const actualizarMapa = () => {
         mapInstance?.flyTo({ center: [ev.lng, ev.lat], zoom: 15 })
       }
 
-      const popup = new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
-        <div style="color: black; font-family: 'Inter', sans-serif; padding: 4px;">
-          <h4 style="margin: 0 0 4px 0; font-weight:800; font-size:0.9rem;">${ev.nombre}</h4>
-          <span style="font-size:0.7rem; color:#72b04d; font-weight:700; text-transform:uppercase;">${ev.categoria || 'Evento'}</span>
-          <p style="margin:4px 0 0 0; font-size:0.75rem; color:#475569;">${ev.ubicacion || 'CDMX'}</p>
-        </div>
-      `)
+      const popupContainer = document.createElement('div')
+      popupContainer.style.cssText = 'color: black; font-family: "Inter", sans-serif; padding: 4px;'
+
+      const h4 = document.createElement('h4')
+      h4.style.cssText = 'margin: 0 0 4px 0; font-weight:800; font-size:0.9rem;'
+      h4.textContent = ev.nombre || ''
+
+      const catSpan = document.createElement('span')
+      catSpan.style.cssText = 'font-size:0.7rem; color:#72b04d; font-weight:700; text-transform:uppercase;'
+      catSpan.textContent = ev.categoria || 'Evento'
+
+      const locP = document.createElement('p')
+      locP.style.cssText = 'margin:4px 0 0 0; font-size:0.75rem; color:#475569;'
+      locP.textContent = ev.ubicacion || 'CDMX'
+
+      popupContainer.appendChild(h4)
+      popupContainer.appendChild(catSpan)
+      popupContainer.appendChild(locP)
+
+      const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
+        .setDOMContent(popupContainer)
 
       const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
         .setLngLat([ev.coordenadas.lng, ev.coordenadas.lat])

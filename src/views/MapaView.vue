@@ -309,39 +309,52 @@ const fetchActorsForItems = async (items: any[]) => {
   }
 }
 
-// Fetch markers within visible bounding box
-const fetchMarkersInBounds = async (minLng: number, minLat: number, maxLng: number, maxLat: number) => {
-  try {
-    const today = new Date()
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+// Fetch markers within visible bounding box with debounce and sequence control
+let bboxTimer: ReturnType<typeof setTimeout> | null = null
+let bboxReqId = 0
 
-    const [lugaresRes, eventosRes] = await Promise.all([
-      supabase.from('lugares')
-        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, owner_id')
-        .eq('estado', 'approved')
-        .gte('lat', minLat)
-        .lte('lat', maxLat)
-        .gte('lng', minLng)
-        .lte('lng', maxLng),
-      supabase.from('eventos')
-        .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id')
-        .eq('estado', 'approved')
-        .gte('fecha_fin', startOfMonth)
-        .gte('lat', minLat)
-        .lte('lat', maxLat)
-        .gte('lng', minLng)
-        .lte('lng', maxLng)
-    ])
+const fetchMarkersInBounds = (minLng: number, minLat: number, maxLng: number, maxLat: number) => {
+  const currentReq = ++bboxReqId
+  if (bboxTimer) clearTimeout(bboxTimer)
 
-    const places = (lugaresRes.data || []).map(l => ({ ...l, tipo: 'lugar', lat: Number(l.lat), lng: Number(l.lng) }))
-    const events = (eventosRes.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
+  bboxTimer = setTimeout(async () => {
+    try {
+      const today = new Date()
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
 
-    allItems.value = [...places, ...events]
-    await fetchActorsForItems(allItems.value)
-    applyFilters()
-  } catch (err) {
-    console.error('Error al cargar marcadores en coordenadas:', err)
-  }
+      const [lugaresRes, eventosRes] = await Promise.all([
+        supabase.from('lugares')
+          .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, owner_id')
+          .eq('estado', 'approved')
+          .gte('lat', minLat)
+          .lte('lat', maxLat)
+          .gte('lng', minLng)
+          .lte('lng', maxLng),
+        supabase.from('eventos')
+          .select('id, nombre, lat, lng, categoria, imagen_url, ubicacion, fecha_inicio, fecha_fin, es_gratuito, pet_friendly, apto_ninos, lugar_id, owner_id')
+          .eq('estado', 'approved')
+          .gte('fecha_fin', startOfMonth)
+          .gte('lat', minLat)
+          .lte('lat', maxLat)
+          .gte('lng', minLng)
+          .lte('lng', maxLng)
+      ])
+
+      // Ignore out of order / stale requests
+      if (currentReq !== bboxReqId) return
+
+      const places = (lugaresRes.data || []).map(l => ({ ...l, tipo: 'lugar', lat: Number(l.lat), lng: Number(l.lng) }))
+      const events = (eventosRes.data || []).map(e => ({ ...e, tipo: 'evento', lat: Number(e.lat), lng: Number(e.lng) }))
+
+      allItems.value = [...places, ...events]
+      await fetchActorsForItems(allItems.value)
+      if (currentReq === bboxReqId) {
+        applyFilters()
+      }
+    } catch (err) {
+      console.error('Error al cargar marcadores en coordenadas:', err)
+    }
+  }, 250)
 }
 
 // Filter items locally or spatially
@@ -487,18 +500,23 @@ const refreshMarkers = () => {
 
   // Clustering logic
   filteredItems.value.forEach(p => {
-    if (isNaN(p.lat) || isNaN(p.lng)) return
+    const latNum = Number(p.lat)
+    const lngNum = Number(p.lng)
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return
 
     const found = clusters.find(c => {
-      const dLat = Math.abs(c.lat - p.lat)
-      const dLng = Math.abs(c.lng - p.lng)
+      const dLat = Math.abs(c.lat - latNum)
+      const dLng = Math.abs(c.lng - lngNum)
       return dLat < THRESHOLD && dLng < THRESHOLD
     })
 
     if (found) {
+      const total = found.items.length + 1
+      found.lat = (found.lat * (total - 1) + latNum) / total
+      found.lng = (found.lng * (total - 1) + lngNum) / total
       found.items.push(p)
     } else {
-      clusters.push({ lat: p.lat, lng: p.lng, items: [p] })
+      clusters.push({ lat: latNum, lng: lngNum, items: [p] })
     }
   })
 
@@ -510,10 +528,18 @@ const refreshMarkers = () => {
 
     if (count > 1) {
       el.className = `map-cluster-marker type-${firstItem.tipo}`
-      el.innerHTML = `
-        <img src="${firstItem.imagen_url || '/assets/img/ajolote.webp'}" alt="${firstItem.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
-        <div class="cluster-count-badge">${count > 9 ? '9+' : count}</div>
-      `
+      const img = document.createElement('img')
+      img.src = firstItem.imagen_url || '/assets/img/ajolote.webp'
+      img.alt = firstItem.nombre || 'Item'
+      img.onerror = () => { img.src = '/assets/img/ajolote.webp' }
+
+      const badge = document.createElement('div')
+      badge.className = 'cluster-count-badge'
+      badge.textContent = count > 9 ? '9+' : String(count)
+
+      el.appendChild(img)
+      el.appendChild(badge)
+
       el.onclick = () => {
         if (!map) return
         const z = map.getZoom()
@@ -526,14 +552,22 @@ const refreshMarkers = () => {
       }
     } else {
       el.className = `map-card-marker type-${firstItem.tipo}`
-      el.innerHTML = `
-        <div class="marker-card-pulse"></div>
-        <img src="${firstItem.imagen_url || '/assets/img/ajolote.webp'}" alt="${firstItem.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
-      `
+
+      const pulse = document.createElement('div')
+      pulse.className = 'marker-card-pulse'
+
+      const img = document.createElement('img')
+      img.src = firstItem.imagen_url || '/assets/img/ajolote.webp'
+      img.alt = firstItem.nombre || 'Item'
+      img.onerror = () => { img.src = '/assets/img/ajolote.webp' }
+
+      el.appendChild(pulse)
+      el.appendChild(img)
+
       el.onclick = () => openDetail(firstItem)
     }
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
       .setLngLat([c.lng, c.lat])
       .addTo(activeMap)
     
@@ -652,7 +686,9 @@ const formatDateBadge = (dateStr: string) => {
   if (!dateStr) return ''
   try {
     const d = new Date(dateStr)
-    return d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })
+    const datePart = d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })
+    const timePart = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true })
+    return `${datePart}, ${timePart}`
   } catch (_) {
     return ''
   }

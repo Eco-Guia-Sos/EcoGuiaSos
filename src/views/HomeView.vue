@@ -537,20 +537,38 @@ const actualizarMiniMapa = () => {
     const cachedAvatar = localStorage.getItem('eco_user_avatar')
     if (cachedAvatar) avatarSrc = cachedAvatar
 
-    el.innerHTML = `
-      <div class="user-marker-avatar">
-        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/logo-app.webp'">
-      </div>
-      <div class="user-marker-label">
-        Tú <span class="status">Ahora</span>
-      </div>
-    `
+    const avatarDiv = document.createElement('div')
+    avatarDiv.className = 'user-marker-avatar'
+    const avatarImg = document.createElement('img')
+    avatarImg.src = avatarSrc
+    avatarImg.alt = 'Tú'
+    avatarImg.onerror = () => { avatarImg.src = '/assets/img/logo-app.webp' }
+    avatarDiv.appendChild(avatarImg)
+
+    const labelDiv = document.createElement('div')
+    labelDiv.className = 'user-marker-label'
+    labelDiv.textContent = 'Tú '
+    const statusSpan = document.createElement('span')
+    statusSpan.className = 'status'
+    statusSpan.textContent = 'Ahora'
+    labelDiv.appendChild(statusSpan)
+
+    el.appendChild(avatarDiv)
+    el.appendChild(labelDiv)
     
+    const userPopupContent = document.createElement('div')
+    userPopupContent.style.cssText = 'text-align: center; color: #72B04D; padding: 8px;'
+    const userH4 = document.createElement('h4')
+    userH4.style.cssText = 'margin: 0; font-weight: 800; font-size: 16px;'
+    userH4.textContent = '📍 Tu ubicación'
+    const userP = document.createElement('p')
+    userP.style.cssText = 'margin: 5px 0 0; font-size: 12px; color: #444;'
+    userP.textContent = 'Estás explorando cerca de aquí'
+    userPopupContent.appendChild(userH4)
+    userPopupContent.appendChild(userP)
+
     const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
-      .setHTML(`<div style="text-align: center; color: #72B04D; padding: 8px;">
-                  <h4 style="margin: 0; font-weight: 800; font-size: 16px;">📍 Tu ubicación</h4>
-                  <p style="margin: 5px 0 0; font-size: 12px; color: #444;">Estás explorando cerca de aquí</p>
-                </div>`)
+      .setDOMContent(userPopupContent)
 
     const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
       .setLngLat([userCoords.value.lng, userCoords.value.lat])
@@ -567,20 +585,26 @@ const actualizarMiniMapa = () => {
   const CLUSTER_THRESHOLD = 0.002
 
   filteredProyectos.value.forEach(p => {
-    if (!p.coordenadas || !p.coordenadas.lat || !p.coordenadas.lng) return
+    if (!p.coordenadas) return
+    const latNum = Number(p.coordenadas.lat)
+    const lngNum = Number(p.coordenadas.lng)
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return
     
     const foundCluster = clusters.find(c => {
-      const dLat = Math.abs(c.lat - p.coordenadas.lat)
-      const dLng = Math.abs(c.lng - p.coordenadas.lng)
+      const dLat = Math.abs(c.lat - latNum)
+      const dLng = Math.abs(c.lng - lngNum)
       return dLat < CLUSTER_THRESHOLD && dLng < CLUSTER_THRESHOLD
     })
 
     if (foundCluster) {
+      const total = foundCluster.items.length + 1
+      foundCluster.lat = (foundCluster.lat * (total - 1) + latNum) / total
+      foundCluster.lng = (foundCluster.lng * (total - 1) + lngNum) / total
       foundCluster.items.push(p)
     } else {
       clusters.push({
-        lat: p.coordenadas.lat,
-        lng: p.coordenadas.lng,
+        lat: latNum,
+        lng: lngNum,
         items: [p]
       })
     }
@@ -593,10 +617,19 @@ const actualizarMiniMapa = () => {
 
     if (count > 1) {
       el.className = `map-cluster-marker type-${p.tipo}`
-      el.innerHTML = `
-        <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/logo-app.webp'">
-        <div class="cluster-count-badge">${count > 2 ? '2+' : count}</div>
-      `
+
+      const img = document.createElement('img')
+      img.src = p.imagen || '/assets/img/logo-app.webp'
+      img.alt = p.nombre || 'Proyecto'
+      img.onerror = () => { img.src = '/assets/img/logo-app.webp' }
+
+      const badge = document.createElement('div')
+      badge.className = 'cluster-count-badge'
+      badge.textContent = count > 2 ? '2+' : String(count)
+
+      el.appendChild(img)
+      el.appendChild(badge)
+
       el.addEventListener('click', (e) => {
         e.stopPropagation()
         const currentZoom = mapInstance.getZoom()
@@ -612,7 +645,13 @@ const actualizarMiniMapa = () => {
       })
     } else {
       el.className = `map-card-marker type-${p.tipo}`
-      el.innerHTML = `<img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='/assets/img/logo-app.webp'">`
+
+      const img = document.createElement('img')
+      img.src = p.imagen || '/assets/img/logo-app.webp'
+      img.alt = p.nombre || 'Proyecto'
+      img.onerror = () => { img.src = '/assets/img/logo-app.webp' }
+
+      el.appendChild(img)
       
       el.addEventListener('click', (e) => {
         e.stopPropagation()
@@ -620,7 +659,7 @@ const actualizarMiniMapa = () => {
       })
     }
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
       .setLngLat([c.lng, c.lat])
       .addTo(mapInstance)
 

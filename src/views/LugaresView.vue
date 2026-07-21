@@ -444,20 +444,38 @@ const actualizarMapa = () => {
     const cachedAvatar = localStorage.getItem('eco_user_avatar')
     if (cachedAvatar) avatarSrc = cachedAvatar
 
-    el.innerHTML = `
-      <div class="user-marker-avatar">
-        <img src="${avatarSrc}" alt="Tú" onerror="this.src='/assets/img/logo-app.webp'">
-      </div>
-      <div class="user-marker-label">
-        Tú <span class="status">Ahora</span>
-      </div>
-    `
+    const avatarDiv = document.createElement('div')
+    avatarDiv.className = 'user-marker-avatar'
+    const avatarImg = document.createElement('img')
+    avatarImg.src = avatarSrc
+    avatarImg.alt = 'Tú'
+    avatarImg.onerror = () => { avatarImg.src = '/assets/img/logo-app.webp' }
+    avatarDiv.appendChild(avatarImg)
+
+    const labelDiv = document.createElement('div')
+    labelDiv.className = 'user-marker-label'
+    labelDiv.textContent = 'Tú '
+    const statusSpan = document.createElement('span')
+    statusSpan.className = 'status'
+    statusSpan.textContent = 'Ahora'
+    labelDiv.appendChild(statusSpan)
+
+    el.appendChild(avatarDiv)
+    el.appendChild(labelDiv)
+
+    const userPopupContent = document.createElement('div')
+    userPopupContent.style.cssText = 'text-align: center; color: #72B04D; padding: 8px;'
+    const userH4 = document.createElement('h4')
+    userH4.style.cssText = 'margin: 0; font-weight: 800; font-size: 16px;'
+    userH4.textContent = '📍 Tu ubicación'
+    const userP = document.createElement('p')
+    userP.style.cssText = 'margin: 5px 0 0; font-size: 12px; color: #444;'
+    userP.textContent = 'Estás explorando cerca de aquí'
+    userPopupContent.appendChild(userH4)
+    userPopupContent.appendChild(userP)
 
     const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
-      .setHTML(`<div style="text-align: center; color: #72B04D; padding: 8px;">
-                  <h4 style="margin: 0; font-weight: 800; font-size: 16px;">📍 Tu ubicación</h4>
-                  <p style="margin: 5px 0 0; font-size: 12px; color: #444;">Estás explorando cerca de aquí</p>
-                </div>`)
+      .setDOMContent(userPopupContent)
 
     const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
       .setLngLat([userCoords.value.lng, userCoords.value.lat])
@@ -474,23 +492,44 @@ const actualizarMapa = () => {
     if (p.coordenadas && p.coordenadas.lat && p.coordenadas.lng) {
       const el = document.createElement('div')
       el.className = 'map-card-marker type-lugar'
-      el.innerHTML = `
-        <div class="marker-card-pulse"></div>
-        <img src="${p.imagen || '/assets/img/ajolote.webp'}" alt="${p.nombre}" onerror="this.src='/assets/img/ajolote.webp'">
-      `
+
+      const pulse = document.createElement('div')
+      pulse.className = 'marker-card-pulse'
+
+      const img = document.createElement('img')
+      img.src = p.imagen || '/assets/img/ajolote.webp'
+      img.alt = p.nombre || 'Lugar'
+      img.onerror = () => { img.src = '/assets/img/ajolote.webp' }
+
+      el.appendChild(pulse)
+      el.appendChild(img)
 
       el.onclick = () => {
         selectedLugarDetail.value = p
         mapInstance?.flyTo({ center: [p.lng, p.lat], zoom: 14 })
       }
 
-      const popup = new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(`
-        <div style="color: black; font-family: 'Inter', sans-serif; padding: 4px;">
-          <h4 style="margin: 0 0 4px 0; font-weight:800; font-size:0.9rem;">${p.nombre}</h4>
-          <span style="font-size:0.7rem; color:#0ea5e9; font-weight:700; text-transform:uppercase;">${formatCategory(p.categoria)}</span>
-          <p style="margin:4px 0 0 0; font-size:0.75rem; color:#475569;">${p.ubicacion}</p>
-        </div>
-      `)
+      const popupContainer = document.createElement('div')
+      popupContainer.style.cssText = 'color: black; font-family: "Inter", sans-serif; padding: 4px;'
+
+      const h4 = document.createElement('h4')
+      h4.style.cssText = 'margin: 0 0 4px 0; font-weight:800; font-size:0.9rem;'
+      h4.textContent = p.nombre || ''
+
+      const catSpan = document.createElement('span')
+      catSpan.style.cssText = 'font-size:0.7rem; color:#0ea5e9; font-weight:700; text-transform:uppercase;'
+      catSpan.textContent = formatCategory(p.categoria)
+
+      const locP = document.createElement('p')
+      locP.style.cssText = 'margin:4px 0 0 0; font-size:0.75rem; color:#475569;'
+      locP.textContent = p.ubicacion || ''
+
+      popupContainer.appendChild(h4)
+      popupContainer.appendChild(catSpan)
+      popupContainer.appendChild(locP)
+
+      const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
+        .setDOMContent(popupContainer)
 
       const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
         .setLngLat([p.coordenadas.lng, p.coordenadas.lat])
