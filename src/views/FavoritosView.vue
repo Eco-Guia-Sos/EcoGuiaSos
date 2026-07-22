@@ -91,13 +91,24 @@ const filteredRecursos = computed(() => {
   return result
 })
 
+const parseLocalDate = (dateStr: string): Date => {
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match && match[1] && match[2] && match[3]) {
+    const year = parseInt(match[1], 10)
+    const month = parseInt(match[2], 10) - 1
+    const day = parseInt(match[3], 10)
+    return new Date(year, month, day)
+  }
+  return new Date(dateStr)
+}
+
 const esEventoFinalizado = (ev: any) => {
   const eventDateStr = ev.fecha_fin || ev.fecha_inicio || ev.fecha
   if (!eventDateStr) return false
   try {
     const today = new Date()
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
-    const d = new Date(eventDateStr)
+    const d = parseLocalDate(eventDateStr)
     return d < startOfToday
   } catch (e) {
     return false
@@ -105,17 +116,6 @@ const esEventoFinalizado = (ev: any) => {
 }
 
 const filteredEventos = computed(() => {
-  const parseLocalDate = (dateStr: string): Date => {
-    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
-    if (match && match[1] && match[2] && match[3]) {
-      const year = parseInt(match[1], 10)
-      const month = parseInt(match[2], 10) - 1
-      const day = parseInt(match[3], 10)
-      return new Date(year, month, day)
-    }
-    return new Date(dateStr)
-  }
-
   const today = new Date()
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
 

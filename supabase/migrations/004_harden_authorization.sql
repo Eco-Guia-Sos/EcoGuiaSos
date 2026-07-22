@@ -50,75 +50,93 @@ CREATE POLICY "Lectura pública de super_eventos"
   ON public.super_eventos FOR SELECT
   USING (true);
 
-DROP POLICY IF EXISTS "Escritura de super_eventos por admin o staff permitido" ON public.super_eventos;
-CREATE POLICY "Escritura de super_eventos por admin o staff permitido"
-  ON public.super_eventos FOR ALL
+DROP POLICY IF EXISTS "Insercion super_eventos por admin o staff con permiso" ON public.super_eventos;
+CREATE POLICY "Insercion super_eventos por admin o staff con permiso"
+  ON public.super_eventos FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
+    OR
+    EXISTS (SELECT 1 FROM public.permisos_funciones WHERE user_id = auth.uid() AND puede_crear_super_eventos = true)
+  );
+
+DROP POLICY IF EXISTS "Modificacion super_eventos por admin o creador autorizado" ON public.super_eventos;
+CREATE POLICY "Modificacion super_eventos por admin o creador autorizado"
+  ON public.super_eventos FOR UPDATE
   TO authenticated
   USING (
     EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
     OR
-    EXISTS (SELECT 1 FROM public.permisos_funciones WHERE user_id = auth.uid() AND puede_crear_super_eventos = true)
+    (owner_id = auth.uid() AND EXISTS (SELECT 1 FROM public.permisos_funciones WHERE user_id = auth.uid() AND puede_crear_super_eventos = true))
   )
   WITH CHECK (
     EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
     OR
-    EXISTS (SELECT 1 FROM public.permisos_funciones WHERE user_id = auth.uid() AND puede_crear_super_eventos = true)
+    (owner_id = auth.uid() AND EXISTS (SELECT 1 FROM public.permisos_funciones WHERE user_id = auth.uid() AND puede_crear_super_eventos = true))
   );
 
--- 3.2 CHAT DE SOPORTE (CONVERSACIONES Y MENSAJES)
-ALTER TABLE IF EXISTS public.chat_conversaciones ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.chat_mensajes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Eliminacion super_eventos solo por admin" ON public.super_eventos;
+CREATE POLICY "Eliminacion super_eventos solo por admin"
+  ON public.super_eventos FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
+  );
+
+-- 3.2 CHAT DE SOPORTE (CONVERSACIONES Y MENSAJES DE SOPORTE)
+ALTER TABLE IF EXISTS public.conversaciones_soporte ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.mensajes_soporte ENABLE ROW LEVEL SECURITY;
 
 -- Conversaciones
-DROP POLICY IF EXISTS "Ver conversaciones propias o admin" ON public.chat_conversaciones;
+DROP POLICY IF EXISTS "Ver conversaciones propias o admin" ON public.conversaciones_soporte;
 CREATE POLICY "Ver conversaciones propias o admin"
-  ON public.chat_conversaciones FOR SELECT
+  ON public.conversaciones_soporte FOR SELECT
   TO authenticated
   USING (
     usuario_id = auth.uid()
     OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
   );
 
-DROP POLICY IF EXISTS "Crear conversacion propia" ON public.chat_conversaciones;
+DROP POLICY IF EXISTS "Crear conversacion propia" ON public.conversaciones_soporte;
 CREATE POLICY "Crear conversacion propia"
-  ON public.chat_conversaciones FOR INSERT
+  ON public.conversaciones_soporte FOR INSERT
   TO authenticated
   WITH CHECK (
     usuario_id = auth.uid()
     OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
   );
 
-DROP POLICY IF EXISTS "Actualizar conversacion propia o admin" ON public.chat_conversaciones;
+DROP POLICY IF EXISTS "Actualizar conversacion propia o admin" ON public.conversaciones_soporte;
 CREATE POLICY "Actualizar conversacion propia o admin"
-  ON public.chat_conversaciones FOR UPDATE
+  ON public.conversaciones_soporte FOR UPDATE
   TO authenticated
   USING (
     usuario_id = auth.uid()
     OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin')
   );
 
--- Mensajes
-DROP POLICY IF EXISTS "Ver mensajes de conversacion propia o admin" ON public.chat_mensajes;
+-- Mensajes de Soporte
+DROP POLICY IF EXISTS "Ver mensajes de conversacion propia o admin" ON public.mensajes_soporte;
 CREATE POLICY "Ver mensajes de conversacion propia o admin"
-  ON public.chat_mensajes FOR SELECT
+  ON public.mensajes_soporte FOR SELECT
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.chat_conversaciones c
-      WHERE c.id = chat_mensajes.conversacion_id
+      SELECT 1 FROM public.conversaciones_soporte c
+      WHERE c.id = mensajes_soporte.conversacion_id
         AND (c.usuario_id = auth.uid() OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin'))
     )
   );
 
-DROP POLICY IF EXISTS "Enviar mensaje en conversacion propia o admin" ON public.chat_mensajes;
+DROP POLICY IF EXISTS "Enviar mensaje en conversacion propia o admin" ON public.mensajes_soporte;
 CREATE POLICY "Enviar mensaje en conversacion propia o admin"
-  ON public.chat_mensajes FOR INSERT
+  ON public.mensajes_soporte FOR INSERT
   TO authenticated
   WITH CHECK (
     remitente_id = auth.uid()
     AND EXISTS (
-      SELECT 1 FROM public.chat_conversaciones c
-      WHERE c.id = chat_mensajes.conversacion_id
+      SELECT 1 FROM public.conversaciones_soporte c
+      WHERE c.id = mensajes_soporte.conversacion_id
         AND (c.usuario_id = auth.uid() OR EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol = 'admin'))
     )
   );
@@ -179,13 +197,20 @@ DROP POLICY IF EXISTS "Insercion autenticada en storage" ON storage.objects;
 CREATE POLICY "Insercion autenticada en storage"
   ON storage.objects FOR INSERT
   TO authenticated
-  WITH CHECK (bucket_id IN ('imagenes-plataforma', 'imagenes-causas', 'avatares'));
+  WITH CHECK (
+    bucket_id IN ('imagenes-plataforma', 'imagenes-causas', 'avatares')
+    AND (
+      EXISTS (SELECT 1 FROM public.perfiles WHERE id = auth.uid() AND rol IN ('admin', 'actor'))
+      OR (storage.foldername(name))[1] = auth.uid()::text
+    )
+  );
 
--- 5. FUNCIÓN DE PURGA DE EVENTOS EXPIRADOS (> 60 DÍAS) USANDO FECHA EFECTIVA
+-- 5. FUNCIÓN PROTEGIDA DE PURGA DE EVENTOS EXPIRADOS (> 60 DÍAS) USANDO FECHA EFECTIVA
 CREATE OR REPLACE FUNCTION public.purge_expired_events()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $$
 BEGIN
   -- Eliminar eventos cuya fecha efectiva (fecha_fin o fecha_inicio) supere los 60 días de antigüedad
@@ -193,6 +218,10 @@ BEGIN
   WHERE COALESCE(fecha_fin, fecha_inicio) < (NOW() - INTERVAL '60 days');
 END;
 $$;
+
+-- Restringir permisos de ejecución únicamente a service_role (procesos backend / Edge Functions)
+REVOKE EXECUTE ON FUNCTION public.purge_expired_events() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.purge_expired_events() TO service_role;
 
 -- NOTIFICAR A POSTGREST
 NOTIFY pgrst, 'reload schema';

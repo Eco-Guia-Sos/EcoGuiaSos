@@ -765,14 +765,15 @@ const calendarEvents = ref<any[]>([])
 
 const fetchCalendarEvents = async () => {
   try {
-    const startOfMonth = new Date(currentYear.value, currentMonth.value, 1, 0, 0, 0).toISOString()
+    const today = new Date()
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0).toISOString()
     const endOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0, 23, 59, 59).toISOString()
     
     const { data, error } = await supabase
       .from('eventos')
       .select('id, nombre, categoria, ubicacion, imagen_url, fecha_inicio, fecha_fin, modalidad, lat, lng, tiene_sesion_online, imagenes, es_gratuito, pet_friendly, apto_ninos')
       .eq('estado', 'approved')
-      .gte('fecha_inicio', startOfMonth)
+      .or(`fecha_fin.gte.${startOfToday},and(fecha_fin.is.null,fecha_inicio.gte.${startOfToday})`)
       .lte('fecha_inicio', endOfMonth)
       
     if (error) throw error
