@@ -128,6 +128,13 @@ const fetchSuperEventos = async () => {
   }
 }
 
+const resolveImgUrl = (url: string) => {
+  if (!url) return '/assets/img/logo-app.webp'
+  if (url.startsWith('http') || url.startsWith('/assets/')) return url
+  const supabaseUrlStr = import.meta.env.VITE_SUPABASE_URL || ''
+  return `${supabaseUrlStr}/storage/v1/object/public/imagenes-plataforma/${url.startsWith('/') ? url.slice(1) : url}`
+}
+
 onMounted(() => {
   fetchSuperEventos()
   fetchCover()
@@ -138,7 +145,7 @@ onMounted(() => {
   <div class="theme-ajolote" style="min-height: 100vh; background: #0b1329;">
     <header 
       class="interior-hero" 
-      :style="coverUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(${coverUrl})` } : {}"
+      :style="coverUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(${resolveImgUrl(coverUrl)})` } : {}"
     >
       <!-- Admin Cover Changer Floating Widget -->
       <div v-if="isAdmin" class="admin-cover-widget">
@@ -202,7 +209,7 @@ onMounted(() => {
         >
           <div class="card-image">
             <img 
-              :src="se.imagen_url || '/assets/img/logo-app.webp'" 
+              :src="resolveImgUrl(se.imagen_url)" 
               @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
               style="width: 100%; height: 100%; object-fit: cover;"
             >
