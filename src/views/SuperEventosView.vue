@@ -209,8 +209,8 @@ onMounted(() => {
         >
           <div class="card-image">
             <img 
-              :src="resolveImgUrl(se.imagen_url)" 
-              @error="($event.target as HTMLImageElement).src='/assets/img/logo-app.webp'"
+              :src="resolveImgUrl(se.imagen_url || coverUrl || '/assets/img/secciones/super-eventos/agrolimpiadas.jpeg')" 
+              @error="($event.target as HTMLImageElement).src='/assets/img/secciones/super-eventos/agrolimpiadas.jpeg'"
               style="width: 100%; height: 100%; object-fit: cover;"
             >
           </div>
