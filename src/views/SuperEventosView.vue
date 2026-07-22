@@ -100,6 +100,18 @@ const fetchSuperEventos = async () => {
   loading.value = true
   errorMsg.value = ''
   try {
+    // Attempt querying the active view first
+    const { data: viewData, error: viewError } = await supabase
+      .from('super_eventos_activos')
+      .select('*')
+      .order('fecha_ultimo_evento', { ascending: true })
+
+    if (!viewError && viewData) {
+      superEventos.value = viewData
+      return
+    }
+
+    // Fallback: Query super_eventos table directly
     const { data, error } = await supabase
       .from('super_eventos')
       .select('*')

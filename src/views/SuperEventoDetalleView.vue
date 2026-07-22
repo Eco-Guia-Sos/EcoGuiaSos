@@ -402,11 +402,27 @@ const selectCard = (ev: any) => {
   }
 }
 
+const esSubeventoFinalizado = (ev: any) => {
+  const dateStr = ev.fecha_fin || ev.fecha_inicio
+  if (!dateStr) return false
+  try {
+    const today = new Date()
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    const d = (match && match[1] && match[2] && match[3]) 
+      ? new Date(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10))
+      : new Date(dateStr)
+    return d < startOfToday
+  } catch (e) {
+    return false
+  }
+}
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return ''
   try {
     const d = new Date(dateStr)
-    return d.toLocaleDateString('es-MX', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleDateString('es-MX', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
   } catch (e) {
     return dateStr
   }
@@ -551,9 +567,14 @@ watch(selectedEventDetail, (newVal, oldVal) => {
                     />
                   </div>
                   <div style="display: flex; flex-direction: column; justify-content: center; gap: 5px;">
-                    <span style="font-size: 0.75rem; color: #72b04d; font-weight: 700; text-transform: uppercase;">
-                      {{ ev.categoria || 'Taller' }}
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                      <span style="font-size: 0.75rem; color: #72b04d; font-weight: 700; text-transform: uppercase;">
+                        {{ ev.categoria || 'Taller' }}
+                      </span>
+                      <span v-if="esSubeventoFinalizado(ev)" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.65rem; border: 1px solid rgba(239, 68, 68, 0.25); padding: 1px 5px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                        ⏳ Finalizado
+                      </span>
+                    </div>
                     <h4 style="color: white; font-weight: 700; font-size: 1rem; margin: 0; line-height: 1.2;">{{ ev.nombre }}</h4>
                     <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">
                       <i class="fa-solid fa-clock" style="margin-right: 5px;"></i> {{ formatDate(ev.fecha_inicio) }}

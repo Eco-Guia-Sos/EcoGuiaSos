@@ -223,5 +223,28 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.purge_expired_events() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.purge_expired_events() TO service_role;
 
+-- 6. RESTRICCIÓN ÚNICA EN PORTADAS_SECCIONES PARA MAYBESINGLE() DE SUPABASE
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'portadas_secciones_seccion_id_key'
+  ) THEN
+    ALTER TABLE public.portadas_secciones
+      ADD CONSTRAINT portadas_secciones_seccion_id_key UNIQUE (seccion_id);
+  END IF;
+END $$;
+
+-- 7. VISTA DE SÚPER EVENTOS ACTIVOS (VIGENTES MIENTRAS EXISTA AL MENOS UN SUBEVENTO ACTIVO/FUTURO)
+CREATE OR REPLACE VIEW public.super_eventos_activos AS
+SELECT
+  se.*,
+  MAX(COALESCE(e.fecha_fin, e.fecha_inicio)) AS fecha_ultimo_evento
+FROM public.super_eventos se
+JOIN public.eventos e ON e.super_evento_id = se.id
+WHERE se.estado = 'approved'
+  AND e.estado = 'approved'
+GROUP BY se.id
+HAVING MAX(COALESCE(e.fecha_fin, e.fecha_inicio)) >= (NOW() AT TIME ZONE 'America/Mexico_City')::date;
+
 -- NOTIFICAR A POSTGREST
 NOTIFY pgrst, 'reload schema';
