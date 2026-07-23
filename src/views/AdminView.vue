@@ -222,6 +222,7 @@ const profileForm = ref({
   twitter: '',
   youtube: '',
   web: '',
+  avatar_url: '',
   videos_presentacion: [] as string[],
   zonas_impacto: [] as string[]
 })
@@ -244,7 +245,6 @@ const municipiosListAdmin = ref<Territory[]>([])
 const avatarFile = ref<File | null>(null)
 const avatarUploading = ref(false)
 
-// Admin Profile Modal state
 const selectedActorForProfile = ref<any>(null)
 const profileAdminForm = ref({
   nombre_completo: '',
@@ -2197,6 +2197,7 @@ const loadProfileForm = () => {
     twitter: p.links_sociales?.twitter || '',
     youtube: p.links_sociales?.youtube || '',
     web: p.links_sociales?.web || '',
+    avatar_url: p.avatar_url || '',
     videos_presentacion: Array.isArray(p.videos_presentacion) ? [...p.videos_presentacion] : [],
     zonas_impacto: Array.isArray(p.zonas_impacto) ? [...p.zonas_impacto] : []
   }
