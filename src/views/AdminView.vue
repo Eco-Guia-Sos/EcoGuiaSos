@@ -1073,7 +1073,7 @@ const loadStaffList = async () => {
   
   let query = supabase
     .from('perfiles')
-    .select('id, nombre_completo, email, rol, actor_status, created_at')
+    .select('id, nombre_completo, email, rol, actor_status, created_at, avatar_url, bio, telefono, links_sociales, videos_presentacion, permitir_edicion_videos, is_validated, zonas_impacto')
   
   if (actorModerationFilter.value === 'approved') {
     if (showAdmins.value) {
