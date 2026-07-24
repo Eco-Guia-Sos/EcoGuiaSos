@@ -19,9 +19,15 @@ declare const particlesJS: any
 // 6. Validar el token en handleSubmit() antes de llamar a supabase.auth.signUp()
 
 
+import PrivacyModal from '../components/PrivacyModal.vue'
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+const isPrivacyOpen = ref(false)
+const regAcceptedPrivacy = ref(false)
+const actorAcceptedPrivacy = ref(false)
 
 // Validation composable
 const { validateForm } = useValidation()
@@ -286,6 +292,11 @@ const handleLogin = async () => {
 
 const handleSignup = async () => {
   signupErrors.value = {}
+  if (!regAcceptedPrivacy.value) {
+    showMessage('Debes aceptar el Aviso de Privacidad para crear una cuenta.', 'error')
+    return
+  }
+
   const { valid, errors } = validateForm(AuthSchema, {
     email: regEmail.value,
     password: regPassword.value
@@ -340,6 +351,11 @@ const handleSignup = async () => {
 
 const handleActorRequest = async () => {
   actorErrors.value = {}
+  if (!actorAcceptedPrivacy.value) {
+    showMessage('Debes aceptar el Aviso de Privacidad para enviar tu solicitud.', 'error')
+    return
+  }
+
   const { valid, errors } = validateForm(AuthSchema, {
     email: actorEmail.value,
     password: actorPassword.value
@@ -497,6 +513,14 @@ const handleActorRequest = async () => {
         <form v-if="activeTab === 'signup'" @submit.prevent="handleSignup" class="auth-form active">
           <h2>Crea tu Cuenta</h2>
           <p>Únete como voluntario para recibir noticias y participar.</p>
+
+          <div class="role-explanation-card voluntario-card">
+            <span class="role-icon">🙋</span>
+            <div>
+              <strong>Perfil Voluntario / Usuario</strong>
+              <p>Para explorar mapa y atlas, unirte a voluntariados comunitarios, guardar causas favoritas y recibir noticias.</p>
+            </div>
+          </div>
           
           <div class="profile-pic-upload">
             <label for="reg-avatar">
@@ -579,6 +603,13 @@ const handleActorRequest = async () => {
             <span v-if="signupErrors.password" class="error-msg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 4px; display: block;">{{ signupErrors.password }}</span>
           </div>
 
+          <div class="privacy-checkbox-group">
+            <label class="privacy-label">
+              <input type="checkbox" v-model="regAcceptedPrivacy" required>
+              <span>Acepto el <a href="#" @click.prevent="isPrivacyOpen = true" class="privacy-link">Aviso de Privacidad y Protección de Datos</a>.</span>
+            </label>
+          </div>
+
           <button type="submit" class="btn btn-primary auth-btn shimmer-extra" :disabled="isSignupSubmitting">
             {{ isSignupSubmitting ? 'Registrando...' : 'Crear Cuenta' }}
           </button>
@@ -588,6 +619,14 @@ const handleActorRequest = async () => {
         <form v-if="activeTab === 'actor'" @submit.prevent="handleActorRequest" class="auth-form active">
           <h2>Solicitud de Actor</h2>
           <p>Cuéntanos sobre tu organización para darte permisos de publicación.</p>
+
+          <div class="role-explanation-card actor-card">
+            <span class="role-icon">🏛️</span>
+            <div>
+              <strong>Perfil Actor / Organización</strong>
+              <p>Para ONGs, colectivos, huertos y centros de acopio que desean publicar talleres, convocatorias, eventos y causas. Sujeto a validación.</p>
+            </div>
+          </div>
           
           <div class="profile-pic-upload">
             <label for="actor-avatar">
@@ -677,6 +716,13 @@ const handleActorRequest = async () => {
             </div>
           </div>
 
+          <div class="privacy-checkbox-group">
+            <label class="privacy-label">
+              <input type="checkbox" v-model="actorAcceptedPrivacy" required>
+              <span>Acepto el <a href="#" @click.prevent="isPrivacyOpen = true" class="privacy-link">Aviso de Privacidad y Protección de Datos</a>.</span>
+            </label>
+          </div>
+
           <button type="submit" class="btn btn-primary auth-btn shimmer-extra btn-actor-submit" :disabled="isActorSubmitting">
             {{ isActorSubmitting ? 'Procesando...' : 'Enviar Solicitud' }}
           </button>
@@ -686,6 +732,8 @@ const handleActorRequest = async () => {
         <div v-if="messageText" class="auth-message" :class="messageType" style="display: block;">
           {{ messageText }}
         </div>
+
+        <PrivacyModal :is-open="isPrivacyOpen" @close="isPrivacyOpen = false" />
       </main>
     </div>
   </div>

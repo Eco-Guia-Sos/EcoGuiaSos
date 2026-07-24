@@ -403,4 +403,83 @@
     color: var(--color-eco);
 }
 
+/* Role Explanation Cards */
+.role-explanation-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: #cbd5e1;
+}
+
+.voluntario-card {
+    border-left: 4px solid #72b04d;
+    background: rgba(114, 176, 77, 0.08);
+}
+
+.actor-card {
+    border-left: 4px solid #0077b6;
+    background: rgba(0, 119, 182, 0.08);
+}
+
+.role-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.role-explanation-card strong {
+    color: #ffffff;
+    display: block;
+    margin-bottom: 3px;
+    font-size: 0.9rem;
+}
+
+.role-explanation-card p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+/* Privacy Checkbox Group */
+.privacy-checkbox-group {
+    margin: 15px 0 20px 0;
+}
+
+.privacy-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.privacy-label input[type="checkbox"] {
+    accent-color: #72b04d;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+}
+
+.privacy-link {
+    color: #72b04d;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.privacy-link:hover {
+    color: #a3e635;
+}
+
+.password-toggle-btn:hover {
+    color: var(--color-eco);
+}
+
 

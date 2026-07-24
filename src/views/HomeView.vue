@@ -203,6 +203,10 @@ const handleWindowClick = () => {
   activeTooltip.value = null
 }
 
+const openLevelsInfo = () => {
+  window.dispatchEvent(new CustomEvent('open-levels-modal'))
+}
+
 watch(() => authStore.user, (newUser) => {
   if (newUser) {
     setTimeout(() => obtenerUbicacionSilenciosa(), 1000)
@@ -1100,6 +1104,16 @@ const scrollToSection = (id: string) => {
 
         <!-- BOTONES DE NIVELES (MOVIDO AL HERO) -->
         <div class="level-buttons-container main-levels">
+          <!-- AYUDA NIVELES (Círculo Amarillo Flotante) -->
+          <button 
+            type="button" 
+            class="level-help-circle-btn" 
+            @click="openLevelsInfo" 
+            title="¿Qué significan los Niveles EcoGuía?"
+          >
+            <i class="fa-solid fa-question"></i>
+          </button>
+
           <!-- COLIBRÍ -->
           <div class="btn-wrapper">
             <div class="level-btn-group level-btn-colibri" :class="{ 'dropdown-open': activeTooltip === 'colibri' }">

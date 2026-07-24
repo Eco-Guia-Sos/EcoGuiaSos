@@ -2,6 +2,8 @@
 import { ref, onMounted, computed, watch, onErrorCaptured } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import UserChatWidget from './components/UserChatWidget.vue'
+import PrivacyModal from './components/PrivacyModal.vue'
+import LevelsInfoModal from './components/LevelsInfoModal.vue'
 import { useAuthStore } from './stores/authStore'
 import { useHomeStore } from './stores/homeStore'
 import { supabase } from './services/supabase.service'
@@ -11,6 +13,18 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const homeStore = useHomeStore()
+
+const isPrivacyOpen = ref(false)
+const isLevelsOpen = ref(false)
+
+onMounted(() => {
+  window.addEventListener('open-levels-modal', () => {
+    isLevelsOpen.value = true
+  })
+  window.addEventListener('open-privacy-modal', () => {
+    isPrivacyOpen.value = true
+  })
+})
 
 const routerLoading = ref(false)
 const showGlobalLoader = computed(() => {
@@ -587,6 +601,14 @@ onErrorCaptured((err, instance, info) => {
           <p>Email: contacto@ecogaiasos.com</p>
         </div>
         <div class="footer-section">
+          <h4>Legal & Información</h4>
+          <p style="margin-bottom: 6px;">
+            <a href="#" @click.prevent="isPrivacyOpen = true" style="color: #94a3b8; text-decoration: underline;">
+              <i class="fa-solid fa-shield-halved"></i> Aviso de Privacidad
+            </a>
+          </p>
+        </div>
+        <div class="footer-section">
           <h4>Síguenos</h4>
           <div class="social-icons">
             <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
@@ -601,9 +623,13 @@ onErrorCaptured((err, instance, info) => {
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados.</p>
+        <p>&copy; 2026 EcoGuía SOS. Todos los derechos reservados. | <a href="#" @click.prevent="isPrivacyOpen = true" style="color: #64748b;">Protección de Datos Personales</a></p>
       </div>
     </footer>
+
+    <!-- MODALES GLOBALES -->
+    <PrivacyModal :is-open="isPrivacyOpen" @close="isPrivacyOpen = false" />
+    <LevelsInfoModal :is-open="isLevelsOpen" @close="isLevelsOpen = false" />
 
     <!-- GLOBAL NOTIFICATION MODAL -->
     <div 
